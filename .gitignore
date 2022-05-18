@@ -1,2 +1,6 @@
+# Build
+/build
 # IDE
 .vscode
+# PlatformIO
+.pio
