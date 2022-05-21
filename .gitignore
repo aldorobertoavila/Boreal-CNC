@@ -1,6 +1,7 @@
-# Build
+# Project
 /build
-# IDE
-.vscode
-# PlatformIO
+/data
+/lib
+# Environment
 .pio
+.vscode
