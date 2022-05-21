@@ -1,5 +1,5 @@
-#include <Arduino.h>
 #include <AccelStepper.h>
+#include <Arduino.h>
 
 #define STEP_X1_PIN 2
 #define STEP_X2_PIN 3
