@@ -1,5 +1,8 @@
 #include <AccelStepper.h>
 #include <Arduino.h>
+#include <Axis.h>
+#include <Cartesian.h>
+#include <CNC.h>
 
 #define STEP_X1_PIN 2
 #define STEP_X2_PIN 3
@@ -16,41 +19,40 @@ AccelStepper stepperX2(AccelStepper::DRIVER, STEP_X2_PIN, DIR_X2_PIN);
 AccelStepper stepperY(AccelStepper::DRIVER, STEP_Y_PIN, DIR_Y_PIN);
 AccelStepper stepperZ(AccelStepper::DRIVER, STEP_Z_PIN, DIR_Z_PIN);
 
-const int MAX_SPEED = 1000;
-const int MAX_ACCEL = 500;
+AccelStepper motors_x[] = {stepperX1, stepperX2};
+AccelStepper motors_y[] = {stepperY};
+AccelStepper motors_z[] = {stepperZ};
+
+Axis X(motors_x);
+Axis Y(motors_y);
+Axis Z(motors_z);
+
+Axis axes[] = {X, Y, Z};
+
+Cartesian cartesian(axes, 3, Cartesian::ABSOLUTE);
+CNC cnc(cartesian);
+
+/*GCode gcode();
+GUI lcd();*/
 
 void setup() {
-  stepperX1.setMaxSpeed(MAX_SPEED);
-  stepperX1.setAcceleration(MAX_ACCEL);
-  stepperX1.setCurrentPosition(0);
+  /*gcode.begin();a
+  cnc.begin();
+  lcd.begin();
 
-  stepperX2.setMaxSpeed(MAX_SPEED);
-  stepperX2.setAcceleration(MAX_ACCEL);
-  stepperX2.setCurrentPosition(0);
+  lcd.on(GUI.LIST_SD, &gcode.list);
+  lcd.on(GUI.RELEASE_SD, &gcode.release);
+  lcd.on(GUI.SELECT_FILE, &gcode.select);
+  lcd.on(GUI.FAN_ON, &cnc.fan_on);
+  lcd.on(GUI.FAN_OFF, &cnc.fan_off);
 
-  stepperY.setMaxSpeed(MAX_SPEED);
-  stepperY.setAcceleration(MAX_ACCEL);
-  stepperY.setCurrentPosition(0);
-
-  stepperZ.setMaxSpeed(MAX_SPEED);
-  stepperZ.setAcceleration(MAX_ACCEL);
-  stepperZ.setCurrentPosition(0);
+  lcd.on(GUI.PAUSE, &cnc.pause);
+  lcd.on(GUI.RESUME, &cnc.resume);
+  lcd.on(GUI.START, &cnc.start);
+  lcd.on(GUI.STOP, &cnc.stop);*/
 }
 
 void loop() {
-  /*
-  Non-blocking example
-  
-  stepperX1.moveTo(800);
-  stepperX2.moveTo(800);
-  stepperY.moveTo(800);
-  stepperZ.moveTo(800);
-  
-  while (stepperX1.currentPosition() != 0 || stepperX2.currentPosition() != 0 || stepperY.currentPosition() != 0 || stepperZ.currentPosition() != 0) {
-    stepperX1.run();
-    stepperX2.run();
-    stepperY.run();
-    stepperZ.run();
-  }
-  */
+  /*lcd.update();*/
+  cnc.update();
 }
