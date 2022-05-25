@@ -5,5 +5,5 @@ public:
 
     virtual void execute() = 0;
 
-    virtual bool continues() = 0;
+    virtual bool completed() = 0;
 };

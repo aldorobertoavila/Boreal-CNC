@@ -33,7 +33,7 @@ public:
         _cartesian->travel();
     }
 
-    bool continues() override
+    bool completed() override
     {
         // TODO check if target reached
         return false;
