@@ -1,7 +1,7 @@
 #include <Axis.h>
 #include <Cartesian.h>
 
-Cartesian::Cartesian(Axis *axes, byte size, Positioning positioning) : _axes(axes), _size(size), _positioning(positioning)
+Cartesian::Cartesian(Axis *axes, uint8_t size, Positioning positioning) : _axes(axes), _size(size), _positioning(positioning)
 {
     _acceleration = 0;
     _axes = axes;
@@ -10,11 +10,8 @@ Cartesian::Cartesian(Axis *axes, byte size, Positioning positioning) : _axes(axe
     _target = {};
 }
 
-Axis Cartesian::getAxis(byte index)
+Axis Cartesian::getAxis(uint8_t index)
 {
-    if (index > getSize() - 1)
-        return NULL;
-
     return _axes[index];
 }
 
@@ -23,14 +20,14 @@ Axis *Cartesian::getAxes()
     return _axes;
 }
 
-byte Cartesian::getSize()
+uint8_t Cartesian::getSize()
 {
     return _size;
 }
 
 void Cartesian::travel()
 {
-    for (byte i = 0; i < getSize(); i++)
+    for (uint8_t i = 0; i < getSize(); i++)
     {
         // TODO: if linear move, set acceleration to 0
         getAxis(i);

@@ -12,13 +12,13 @@ public:
         RELATIVE
     };
 
-    Cartesian(Axis *axes, byte size, Positioning positioning);
+    Cartesian(Axis *axes, uint8_t size, Positioning positioning);
 
-    Axis getAxis(byte index);
+    Axis getAxis(uint8_t index);
 
     Axis *getAxes();
 
-    byte getSize();
+    uint8_t getSize();
 
     void travel();
 
@@ -33,7 +33,7 @@ public:
 private:
     float _acceleration;
     Axis *_axes;
-    byte _size;
+    uint8_t _size;
     float *_target;
     Positioning _positioning;
 };

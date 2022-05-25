@@ -23,7 +23,7 @@ AccelStepper motors_x[] = {stepperX1, stepperX2};
 AccelStepper motors_y[] = {stepperY};
 AccelStepper motors_z[] = {stepperZ};
 
-Axis X(motors_x);
+Axis X(motors_x, 2);
 Axis Y(motors_y);
 Axis Z(motors_z);
 
