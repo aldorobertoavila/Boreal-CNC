@@ -41,37 +41,12 @@ CNC cnc(cartesian);
 Explorer explorer(CONFIG_FILE, 127);
 GCode gcode(explorer);
 
-void start(const char *path)
-{
-  // Bytestream stream = explorer.openStream(path);
-  // gcode.start(stream);
-}
-
-void select()
-{
-  // Dir *directories = explorer.listDir("/", 0);
-  // TODO: map directories to items
-  // MenuItem *items
-  // for items
-  //    selectItem.onClicked(&select);
-  // lcd.menu(SELECT, items)
-}
-
 void setup()
 {
-  // lcd.begin();
-  // MenuItem *items = { selectItem };
-  // lcd.menu(OPTIONS, items);
-  // selectItem.onClicked(&select);
+
 }
 
 void loop()
 {
-  // lcd.update();
-  // gcode.update();
-  // while(gcode.available())
-  //    command = gcode.get();
-  //    Serial.println(command.getBuffer())
-  //    cnc.push(command);
-  // cnc.update();
+
 }
