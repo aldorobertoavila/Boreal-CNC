@@ -5,6 +5,7 @@
 #include <CNC.h>
 #include <Explorer.h>
 #include <GCode.h>
+#include <SD.h>
 
 #define STEP_X1_PIN 0
 #define STEP_X2_PIN 0
@@ -43,7 +44,14 @@ GCode gcode(explorer);
 
 void setup()
 {
+    Serial.begin(115200);
+    Serial.print("SD ");
 
+    if(!SD.begin(SS)) {
+        Serial.print("failed to mount!");
+        return;
+    }
+    Serial.println("mount!");
 }
 
 void loop()
