@@ -17,8 +17,6 @@
 #define DIR_Y_PIN 0
 #define DIR_Z_PIN 0
 
-#define CS_PIN D8
-
 const char CONFIG_FILE[13] = "settings.cfg";
 
 AccelStepper stepperX1(AccelStepper::DRIVER, STEP_X1_PIN, DIR_X1_PIN);
@@ -44,17 +42,8 @@ GCode gcode(explorer);
 
 void setup()
 {
-    Serial.begin(115200);
-    Serial.print("SD ");
-
-    if(!SD.begin(SS)) {
-        Serial.print("failed to mount!");
-        return;
-    }
-    Serial.println("mount!");
 }
 
 void loop()
 {
-
 }
