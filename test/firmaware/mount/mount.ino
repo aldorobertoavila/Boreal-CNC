@@ -7,7 +7,7 @@ void setup()
 
     if (!SD.begin(SS))
     {
-        Serial.print("failed to mount!");
+        Serial.println("failed to mount!");
         return;
     }
     Serial.println("mount!");
