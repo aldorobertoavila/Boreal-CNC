@@ -4,11 +4,8 @@
 #define EN_SW_PIN 3
 #define EN_CLK_PIN 4
 
-// Debounce Time (ms)
 const int EN_DEBOUNCE = 5;
-// Limit Inferior
 const int EN_LI = 0;
-// Limit Superior
 const int EN_LS = 100;
 
 volatile int volatile_pos = 50;

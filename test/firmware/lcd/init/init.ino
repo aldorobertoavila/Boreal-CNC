@@ -1,9 +1,9 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
-#define LCD_ADDR 0x27
-#define LCD_COLS 20
-#define LCD_ROWS 4
+const int LCD_ADDR = 0x27;
+const int LCD_COLS = 20;
+const int LCD_ROWS = 4;
 
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
