@@ -19,16 +19,16 @@ const byte ARROW_CHAR = 0;
 const byte ARROW_OFFSET = 2;
 
 byte ARROW[8] =
-{
-0b00000,
-0b00100,
-0b00110,
-0b11111,
-0b11111,
-0b00110,
-0b00100,
-0b00000
-};
+    {
+        0b00000,
+        0b00100,
+        0b00110,
+        0b11111,
+        0b11111,
+        0b00110,
+        0b00100,
+        0b00000
+    };
 
 char *MENU[EN_LS] = {"Option 1", "Option 2", "Option 3", "Option 4", "Option 5", "Option 6", "Option 7", "Option 8"};
 
@@ -44,7 +44,7 @@ void encoder()
     static unsigned long prevMillis = 0;
     unsigned long currentMillis = millis();
 
-    if (currentMillis - prevMillis > EN_DEBOUNCE) 
+    if (currentMillis - prevMillis > EN_DEBOUNCE)
     {
         if (digitalRead(EN_CLK_PIN))
         {
@@ -75,7 +75,7 @@ void printChar(int col, int row, int character)
 
 void printMenu(int pos, int prevPos, int cursor, int prevCursor)
 {
-    if(pos + LCD_ROWS > EN_LS)
+    if (pos + LCD_ROWS > EN_LS)
     {
         clearChar(0, prevCursor);
         printChar(0, cursor, ARROW_CHAR);
@@ -85,7 +85,7 @@ void printMenu(int pos, int prevPos, int cursor, int prevCursor)
     lcd.clear();
     printChar(0, 0, ARROW_CHAR);
 
-    for(int i = 0; i < LCD_ROWS; i++) 
+    for (int i = 0; i < LCD_ROWS; i++)
     {
         lcd.setCursor(ARROW_OFFSET, i);
         lcd.print(MENU[pos++]);
@@ -113,7 +113,7 @@ void loop()
 {
     int cursor;
     int pos;
-    
+
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
         cursor = volatileCursor;
@@ -122,10 +122,12 @@ void loop()
 
     if (pos != prevPos)
     {
+        /*
         Serial.print("Pos: ");
         Serial.print(pos);
         Serial.print(", Cursor: ");
         Serial.println(cursor);
+        */
         printMenu(pos, prevPos, cursor, prevCursor);
         prevCursor = cursor;
         prevPos = pos;
