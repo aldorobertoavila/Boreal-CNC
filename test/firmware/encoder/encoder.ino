@@ -1,33 +1,23 @@
 #include <util/atomic.h>
+#include <Rotory.h>
 
 #define EN_DT_PIN 2
 #define EN_SW_PIN 3
 #define EN_CLK_PIN 4
 
 const int EN_DEBOUNCE = 5;
+const int EN_START_POS = 50;
 const int EN_LI = 0;
 const int EN_LS = 100;
 
-volatile int volatile_pos = 50;
-int prevPos = 50;
+int pos;
+int prevPos;
 
-void encoder()
+Rotory rotory(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
+
+void tick()
 {
-    static unsigned long prevMillis = 0;
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - prevMillis > EN_DEBOUNCE)
-        if (digitalRead(EN_CLK_PIN))
-        {
-            volatile_pos++;
-        }
-        else
-        {
-            volatile_pos--;
-        }
-
-    volatile_pos = min(EN_LS, max(EN_LI, volatile_pos));
-    prevMillis = currentMillis;
+    rotory.tick();
 }
 
 void setup()
@@ -38,16 +28,19 @@ void setup()
     pinMode(EN_DT_PIN, INPUT);
     pinMode(EN_SW_PIN, INPUT_PULLUP);
 
-    attachInterrupt(digitalPinToInterrupt(EN_DT_PIN), encoder, LOW);
+    rotory.setDebounceTime(EN_DEBOUNCE);
+    rotory.setLowerBound(EN_LI);
+    rotory.setPosition(EN_START_POS);
+    rotory.setUpperBound(EN_LS);
+
+    attachInterrupt(digitalPinToInterrupt(EN_DT_PIN), tick, LOW);
 }
 
 void loop()
 {
-    int pos;
-    
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        pos = volatile_pos;
+        pos = rotory.getPosition();
     }
 
     if (pos != prevPos)
