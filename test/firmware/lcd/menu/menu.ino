@@ -1,15 +1,18 @@
 #include <util/atomic.h>
 
 #include <LiquidCrystal_I2C.h>
+#include <LiquidMonitor.h>
 #include <Wire.h>
 
 #define EN_DT_PIN 2
 #define EN_SW_PIN 3
 #define EN_CLK_PIN 4
 
+const byte OPTIONS = 8;
+
 const byte EN_DEBOUNCE = 5;
 const byte EN_LI = 0;
-const byte EN_LS = 8;
+const byte EN_LS = 7;
 
 const byte LCD_ADDR = 0x27;
 const byte LCD_COLS = 20;
@@ -30,35 +33,20 @@ byte ARROW[8] =
         0b00000
     };
 
-char *MENU[EN_LS] = {"Option 1", "Option 2", "Option 3", "Option 4", "Option 5", "Option 6", "Option 7", "Option 8"};
+char *MENU[OPTIONS] = {"Option 1", "Option 2", "Option 3", "Option 4", "Option 5", "Option 6", "Option 7", "Option 8"};
 
 volatile int volatileCursor;
-volatile int volatilePos;
 int prevCursor;
 int prevPos;
 
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
-void encoder()
+Rotory rotory(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
+
+void tick()
 {
-    static unsigned long prevMillis = 0;
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - prevMillis > EN_DEBOUNCE)
-    {
-        if (digitalRead(EN_CLK_PIN))
-        {
-            volatilePos++;
-        }
-        else
-        {
-            volatilePos--;
-        }
-
-        volatilePos = min(EN_LS - 1, max(EN_LI, volatilePos));
-        volatileCursor = volatilePos % LCD_ROWS;
-        prevMillis = currentMillis;
-    }
+    rotory.tick();
+    volatileCursor = rotory.getPosition() % LCD_ROWS;
 }
 
 void clearChar(int col, int row)
@@ -82,7 +70,6 @@ void printMenu(int pos, int prevPos, int cursor, int prevCursor)
         return;
     }
 
-    lcd.clear();
     printChar(0, 0, ARROW_CHAR);
 
     for (int i = 0; i < LCD_ROWS; i++)
@@ -99,13 +86,18 @@ void setup()
     pinMode(EN_CLK_PIN, INPUT);
     pinMode(EN_DT_PIN, INPUT);
     pinMode(EN_SW_PIN, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(EN_DT_PIN), encoder, LOW);
+
+    attachInterrupt(digitalPinToInterrupt(EN_DT_PIN), tick, LOW);
+
+    rotory.setDebounceTime(EN_DEBOUNCE);
+    rotory.setLowerBound(EN_LI);
+    rotory.setUpperBound(EN_LS);
 
     lcd.init();
     lcd.backlight();
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.createChar(0, ARROW);
+    lcd.createChar(ARROW_CHAR, ARROW);
     printMenu(0, 0, 0, 0);
 }
 
@@ -117,17 +109,16 @@ void loop()
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
         cursor = volatileCursor;
-        pos = volatilePos;
+        pos = rotory.getPosition();
     }
 
     if (pos != prevPos)
     {
-        /*
         Serial.print("Pos: ");
         Serial.print(pos);
-        Serial.print(", Cursor: ");
+        Serial.print(" Cursor: ");
         Serial.println(cursor);
-        */
+
         printMenu(pos, prevPos, cursor, prevCursor);
         prevCursor = cursor;
         prevPos = pos;

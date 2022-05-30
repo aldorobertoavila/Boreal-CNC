@@ -42,7 +42,7 @@ void Rotory::tick()
     prevMillis = currentMillis;
 }
 
-void Rotory::setDebounceTime(long debounceTime)
+void Rotory::setDebounceTime(unsigned long debounceTime)
 {
     _debounceTime = debounceTime;
 }
