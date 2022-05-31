@@ -1,6 +1,6 @@
 #include <LiquidMonitor.h>
 
-LiquidScreen::LiquidScreen(uint8_t startingLine = 0, uint8_t maxLines = 8) : _currentLine(startingLine), _maxLines(maxLines)
+LiquidScreen::LiquidScreen(uint8_t startingLine = 0, uint8_t maxLines = 255) : _currentLine(startingLine), _maxLines(maxLines)
 {
     _currentLine = startingLine;
     _maxLines = maxLines;
@@ -10,14 +10,14 @@ void LiquidScreen::addLine(uint8_t id, LiquidLine &line)
 {
     if (_lineCount < _maxLines)
     {
-        _lines[id] = line;
+        _lines[id] = &line;
         _lineCount++;
     }
 }
 
-LiquidLine *LiquidScreen::getCurrentLine() const
+LiquidLine *LiquidScreen::getCurrentLine()
 {
-    return &_lines[_currentLine];
+    return _lines[_currentLine];
 }
 
 void LiquidScreen::nextLine()
@@ -40,18 +40,17 @@ void LiquidScreen::previousLine()
     }
     else
     {
-        _currentLine = _lineCount - 1;
+        _currentLine = 0;
     }
 }
 
 void LiquidScreen::print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
 {
+    lcd.setCursor(0, _prevFocusedRow);
+    lcd.print(" ");
 
-    if (_currentLine + rows > _lineCount)
+    if (_currentLine + rows > _maxLines - 1)
     {
-        lcd.setCursor(0, _prevFocusedRow);
-        lcd.print(" ");
-
         lcd.setCursor(0, _focusedRow);
         lcd.write(_symbol);
         return;
@@ -60,16 +59,17 @@ void LiquidScreen::print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
     lcd.setCursor(0, 0);
     lcd.write(_symbol);
 
-    uint8_t pos = _currentLine;
+    uint8_t lineIndex = _currentLine;
 
-    for (int i = 0; i < rows; i++)
+    for (int row = 0; row < rows; row++)
     {
-        LiquidLine *line = getCurrentLine();
+        LiquidLine *line = _lines[lineIndex];
 
         if (line)
         {
-            line->print(lcd, cols, rows);
-            pos++;
+            line->setRow(row);
+            line->print(lcd);
+            lineIndex++;
         }
     }
 }
@@ -80,9 +80,4 @@ bool LiquidScreen::setFocusPosition(uint8_t col, uint8_t row)
     _prevFocusedRow = _focusedRow;
     _focusedCol = col;
     _focusedRow = row;
-}
-
-bool LiquidScreen::setFocusSymbol(uint8_t id)
-{
-    _symbol = id;
 }

@@ -22,7 +22,7 @@ char *LiquidLine::getText()
     return _text;
 }
 
-void LiquidLine::print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
+void LiquidLine::print(LiquidCrystal_I2C &lcd)
 {
     lcd.setCursor(_col, _row);
     lcd.print(_text);

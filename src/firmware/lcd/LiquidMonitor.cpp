@@ -13,7 +13,7 @@ void LiquidMonitor::addScreen(uint8_t id, LiquidScreen &screen)
 {
     if (_screenCount < _maxScreens)
     {
-        _screens[id] = screen;
+        _screens[id] = &screen;
         _screenCount++;
     }
 }
@@ -22,7 +22,7 @@ LiquidScreen *LiquidMonitor::getCurrentScreen() const
 {
     if (_screenCount > 0)
     {
-        return &_screens[_currentScreen];
+        return _screens[_currentScreen];
     }
 }
 

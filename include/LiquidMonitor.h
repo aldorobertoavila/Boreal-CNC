@@ -1,5 +1,7 @@
 #include <LiquidCrystal_I2C.h>
 
+#include <LiquidCrystal_I2C.h>
+
 class LiquidLine
 {
 public:
@@ -11,7 +13,7 @@ public:
 
     char *getText();
 
-    void print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
+    void print(LiquidCrystal_I2C &lcd);
 
     void setColumn(uint8_t col);
 
@@ -28,11 +30,11 @@ protected:
 class LiquidScreen
 {
 public:
-    LiquidScreen(uint8_t startingLine = 0, uint8_t maxLines = 8);
+    LiquidScreen(uint8_t startingLine = 0, uint8_t maxLines = 255);
 
     void addLine(uint8_t id, LiquidLine &line);
 
-    LiquidLine *getCurrentLine() const;
+    LiquidLine *getCurrentLine();
 
     void nextLine();
 
@@ -53,11 +55,12 @@ protected:
     uint8_t _focusedLine;
     uint8_t _maxLines;
     uint8_t _lineCount;
-    LiquidLine *_lines;
+    LiquidLine *_lines[255];
     uint8_t _prevFocusedCol;
     uint8_t _prevFocusedRow;
     uint8_t _symbol;
 };
+
 
 class LiquidMonitor
 {
@@ -83,5 +86,5 @@ protected:
     uint8_t _currentScreen;
     uint8_t _maxScreens;
     uint8_t _screenCount;
-    LiquidScreen *_screens;
+    LiquidScreen *_screens[40];
 };
