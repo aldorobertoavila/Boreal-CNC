@@ -1,9 +1,9 @@
-class Rotory
+class Rotary
 {
 public:
-    Rotory();
+    Rotary();
 
-    Rotory(uint8_t dt, uint8_t clk, uint8_t sw);
+    Rotary(uint8_t dt, uint8_t clk, uint8_t sw);
 
     void tick();
     volatile long getPosition();

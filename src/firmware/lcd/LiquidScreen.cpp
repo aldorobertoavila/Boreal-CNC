@@ -1,14 +1,13 @@
 #include <LiquidMonitor.h>
 
-LiquidScreen::LiquidScreen(uint8_t startingLine = 0, uint8_t maxLines = 255) : _currentLine(startingLine), _maxLines(maxLines)
+LiquidScreen::LiquidScreen()
 {
-    _currentLine = startingLine;
-    _maxLines = maxLines;
+
 }
 
 void LiquidScreen::addLine(uint8_t id, LiquidLine &line)
 {
-    if (_lineCount < _maxLines)
+    if (_lineCount < MAX_LINES)
     {
         _lines[id] = &line;
         _lineCount++;
@@ -22,7 +21,7 @@ LiquidLine *LiquidScreen::getCurrentLine()
 
 void LiquidScreen::nextLine()
 {
-    if (_currentLine < _maxLines)
+    if (_currentLine < MAX_LINES)
     {
         _currentLine++;
     }
@@ -49,7 +48,7 @@ void LiquidScreen::print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
     lcd.setCursor(0, _prevFocusedRow);
     lcd.print(" ");
 
-    if (_currentLine + rows > _maxLines - 1)
+    if (_currentLine + rows > _lineCount)
     {
         lcd.setCursor(0, _focusedRow);
         lcd.write(_symbol);
@@ -74,7 +73,7 @@ void LiquidScreen::print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
     }
 }
 
-bool LiquidScreen::setFocusPosition(uint8_t col, uint8_t row)
+void LiquidScreen::setFocusPosition(uint8_t col, uint8_t row)
 {
     _prevFocusedCol = _focusedCol;
     _prevFocusedRow = _focusedRow;

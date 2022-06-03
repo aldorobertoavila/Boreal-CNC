@@ -1,19 +1,19 @@
 #include <Arduino.h>
-#include <Rotory.h>
+#include <Rotary.h>
 
-Rotory::Rotory(uint8_t dt, uint8_t clk, uint8_t sw) : _dt(dt), _clk(clk), _sw(sw)
+Rotary::Rotary(uint8_t dt, uint8_t clk, uint8_t sw) : _dt(dt), _clk(clk), _sw(sw)
 {
     _dt = dt;
     _clk = clk;
     _sw = sw;
 }
 
-volatile long Rotory::getPosition()
+volatile long Rotary::getPosition()
 {
     return _volatilePos;
 }
 
-void Rotory::tick()
+void Rotary::tick()
 {
     static unsigned long prevMillis = 0;
     unsigned long currentMillis = millis();
@@ -42,22 +42,22 @@ void Rotory::tick()
     prevMillis = currentMillis;
 }
 
-void Rotory::setDebounceTime(unsigned long debounceTime)
+void Rotary::setDebounceTime(unsigned long debounceTime)
 {
     _debounceTime = debounceTime;
 }
 
-void Rotory::setLowerBound(int lowerBound)
+void Rotary::setLowerBound(int lowerBound)
 {
     _lowerBound = lowerBound;
 }
 
-void Rotory::setPosition(long position)
+void Rotary::setPosition(long position)
 {
     _volatilePos = position;
 }
 
-void Rotory::setUpperBound(int upperBound)
+void Rotary::setUpperBound(int upperBound)
 {
     _upperBound = upperBound;
 }

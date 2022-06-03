@@ -1,11 +1,12 @@
 #include <LiquidCrystal_I2C.h>
 
-#include <LiquidCrystal_I2C.h>
+#define MAX_SCREENS 8
+#define MAX_LINES 16
 
 class LiquidLine
 {
 public:
-    LiquidLine(uint8_t col, uint8_t row, char *text = "");
+    LiquidLine(uint8_t col, uint8_t row, char *text);
 
     uint8_t getColumn() const;
 
@@ -30,7 +31,7 @@ protected:
 class LiquidScreen
 {
 public:
-    LiquidScreen(uint8_t startingLine = 0, uint8_t maxLines = 255);
+    LiquidScreen();
 
     void addLine(uint8_t id, LiquidLine &line);
 
@@ -42,20 +43,19 @@ public:
 
     void print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
 
-    bool setCurrentLine(uint8_t id);
+    void setCurrentLine(uint8_t id);
 
-    bool setFocusPosition(uint8_t col, uint8_t row);
+    void setFocusPosition(uint8_t col, uint8_t row);
 
-    bool setFocusSymbol(uint8_t id);
+    void setFocusSymbol(uint8_t id);
 
 protected:
     uint8_t _currentLine;
     uint8_t _focusedCol;
     uint8_t _focusedRow;
     uint8_t _focusedLine;
-    uint8_t _maxLines;
     uint8_t _lineCount;
-    LiquidLine *_lines[255];
+    LiquidLine *_lines[MAX_LINES];
     uint8_t _prevFocusedCol;
     uint8_t _prevFocusedRow;
     uint8_t _symbol;
@@ -65,7 +65,7 @@ protected:
 class LiquidMonitor
 {
 public:
-    LiquidMonitor(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, uint8_t startingScreen = 0, uint8_t maxScreens = 8);
+    LiquidMonitor(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
 
     void addScreen(uint8_t id, LiquidScreen &screen);
 
@@ -77,14 +77,13 @@ public:
 
     void print();
 
-    bool setCurrentScreen(uint8_t id);
+    void setCurrentScreen(uint8_t id);
 
 protected:
     LiquidCrystal_I2C _lcd;
     uint8_t _cols;
     uint8_t _rows;
     uint8_t _currentScreen;
-    uint8_t _maxScreens;
     uint8_t _screenCount;
-    LiquidScreen *_screens[40];
+    LiquidScreen *_screens[MAX_SCREENS];
 };

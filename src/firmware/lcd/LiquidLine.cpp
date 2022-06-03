@@ -1,6 +1,6 @@
 #include <LiquidMonitor.h>
 
-LiquidLine::LiquidLine(uint8_t col, uint8_t row, char *text = "") : _col(col), _row(row), _text(text)
+LiquidLine::LiquidLine(uint8_t col, uint8_t row, char *text) : _col(col), _row(row), _text(text)
 {
     _col = col;
     _row = row;

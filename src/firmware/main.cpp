@@ -3,8 +3,6 @@
 #include <Axis.h>
 #include <Cartesian.h>
 #include <CNC.h>
-#include <Explorer.h>
-#include <GCode.h>
 #include <SD.h>
 
 #define STEP_X1_PIN 0
@@ -36,9 +34,6 @@ Axis axes[3] = {X, Y, Z};
 
 Cartesian cartesian(axes, 3, Cartesian::ABSOLUTE);
 CNC cnc(cartesian);
-
-Explorer explorer(CONFIG_FILE, 127);
-GCode gcode(explorer);
 
 void setup()
 {

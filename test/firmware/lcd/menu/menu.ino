@@ -7,18 +7,21 @@
 #define EN_SW_PIN 3
 #define EN_CLK_PIN 4
 
-const byte OPTIONS = 8;
+#define EN_DT_PIN 2
+#define EN_SW_PIN 3
+#define EN_CLK_PIN 4
 
-const byte EN_DEBOUNCE = 5;
-const byte EN_LI = 0;
-const byte EN_LS = 7;
+#define OPTIONS 8;
+#define EN_DEBOUNCE 5
+#define EN_LI 0
+#define EN_LS 7
 
-const byte LCD_ADDR = 0x27;
-const byte LCD_COLS = 20;
-const byte LCD_ROWS = 4;
+#define LCD_ADDR 0x27
+#define LCD_COLS 20
+#define LCD_ROWS 4
 
-const byte ARROW_CHAR = 0;
-const byte ARROW_OFFSET = 2;
+#define ARROW_CHAR 0
+#define ARROW_OFFSET 2
 
 byte ARROW[8] =
     {
@@ -33,9 +36,9 @@ byte ARROW[8] =
     };
 
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
-Rotory rotory(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
+Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 
-LiquidScreen screen(0, 9);
+LiquidScreen screen;
 
 LiquidLine option1(2, 0, "Option 1");
 LiquidLine option2(2, 0, "Option 2");
@@ -51,7 +54,7 @@ unsigned long prevPos;
 
 void tick()
 {
-    rotory.tick();
+    rotary.tick();
 }
 
 void setup()
@@ -64,9 +67,9 @@ void setup()
 
     attachInterrupt(digitalPinToInterrupt(EN_DT_PIN), tick, LOW);
 
-    rotory.setDebounceTime(EN_DEBOUNCE);
-    rotory.setLowerBound(EN_LI);
-    rotory.setUpperBound(EN_LS);
+    rotary.setDebounceTime(EN_DEBOUNCE);
+    rotary.setLowerBound(EN_LI);
+    rotary.setUpperBound(EN_LS);
 
     lcd.init();
     lcd.backlight();
@@ -90,7 +93,7 @@ void loop()
 {
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        pos = rotory.getPosition();
+        pos = rotary.getPosition();
     }
 
     if (pos != prevPos)
