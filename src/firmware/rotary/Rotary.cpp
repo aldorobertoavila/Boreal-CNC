@@ -18,23 +18,29 @@ volatile long Rotary::getPreviousPosition()
     return _prevPosition;
 }
 
-void Rotary::onChange(changeCallback onChange)
+void Rotary::onClicked(rotaryCallback onClicked)
 {
-    _onChange = onChange;
+    _onClicked = onClicked;
 }
 
-void Rotary::onRotationCW(rotationCallback onRotationCW)
+void Rotary::onRotationChange(changeCallback onRotationChange)
+{
+    _onChange = onRotationChange;
+}
+
+void Rotary::onRotationCW(rotaryCallback onRotationCW)
 {
     _onRotationCW = onRotationCW;
 }
 
-void Rotary::onRotationCCW(rotationCallback onRotationCCW)
+void Rotary::onRotationCCW(rotaryCallback onRotationCCW)
 {
     _onRotationCCW = onRotationCCW;
 }
 
 void Rotary::tick()
 {
+    static unsigned long prevClickMillis = 0;
     static unsigned long prevRotationMillis = 0;
     unsigned long currentMillis = millis();
 
@@ -53,6 +59,19 @@ void Rotary::tick()
         }
 
         prevRotationMillis = currentMillis;
+    }
+
+    if (digitalRead(_sw) == LOW)
+    {
+        if (currentMillis - prevClickMillis > _debounceTime)
+        {
+            if (_onClicked)
+            {
+                _onClicked();
+            }
+        }
+
+        prevClickMillis = currentMillis;
     }
 }
 

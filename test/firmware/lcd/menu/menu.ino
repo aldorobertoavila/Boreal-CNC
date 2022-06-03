@@ -51,20 +51,25 @@ LiquidLine option6(ARROW_OFFSET, 0, "Option 6");
 LiquidLine option7(ARROW_OFFSET, 0, "Option 7");
 LiquidLine option8(ARROW_OFFSET, 0, "Option 8");
 
-void onChange(long pos, long prevPos)
+void onClicked()
+{
+  Serial.println("Clicked!");
+}
+
+void onRotationChange(long pos, long prevPos)
 {
   screen.setFocusPosition(0, pos % LCD_ROWS);
   screen.print(lcd, LCD_COLS, LCD_ROWS);
 }
 
-void onRotationCW()
-{
-  screen.nextLine();
-}
-
 void onRotationCCW()
 {
   screen.previousLine();
+}
+
+void onRotationCW()
+{
+  screen.nextLine();
 }
 
 void setup()
@@ -75,9 +80,10 @@ void setup()
   pinMode(EN_DT_PIN, INPUT);
   pinMode(EN_SW_PIN, INPUT_PULLUP);
 
-  rotary.onChange(onChange);
-  rotary.onRotationCW(onRotationCW);
+  rotary.onClicked(onClicked);
+  rotary.onRotationChange(onRotationChange);
   rotary.onRotationCCW(onRotationCCW);
+  rotary.onRotationCW(onRotationCW);
 
   rotary.setDebounceTime(EN_DEBOUNCE);
   rotary.setLowerBound(EN_LI);
