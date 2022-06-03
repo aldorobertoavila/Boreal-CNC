@@ -1,5 +1,5 @@
 typedef void (*changeCallback)(long int, long int);
-typedef void (*rotaryCallback)();
+typedef void (*voidFunc)();
 
 class Rotary
 {
@@ -12,10 +12,10 @@ public:
     volatile long getPosition();
     volatile long getPreviousPosition();
 
-    void onClicked(rotaryCallback onClicked);
+    void onClicked(voidFunc onClicked);
     void onRotationChange(changeCallback onRotationChange);
-    void onRotationCW(rotaryCallback onRotationCW);
-    void onRotationCCW(rotaryCallback onRotationCCW);
+    void onRotationCW(voidFunc onRotationCW);
+    void onRotationCCW(voidFunc onRotationCCW);
 
     void setDebounceTime(unsigned long debounceTime);
     void setLowerBound(int lowerBound);
@@ -33,7 +33,7 @@ private:
     int _lowerBound = INT16_MIN;
     int _upperBound = INT16_MIN;
     changeCallback _onChange;
-    rotaryCallback _onClicked;
-    rotaryCallback _onRotationCW;
-    rotaryCallback _onRotationCCW;
+    voidFunc _onClicked;
+    voidFunc _onRotationCW;
+    voidFunc _onRotationCCW;
 };

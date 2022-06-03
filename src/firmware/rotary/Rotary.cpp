@@ -18,7 +18,7 @@ volatile long Rotary::getPreviousPosition()
     return _prevPosition;
 }
 
-void Rotary::onClicked(rotaryCallback onClicked)
+void Rotary::onClicked(voidFunc onClicked)
 {
     _onClicked = onClicked;
 }
@@ -28,12 +28,12 @@ void Rotary::onRotationChange(changeCallback onRotationChange)
     _onChange = onRotationChange;
 }
 
-void Rotary::onRotationCW(rotaryCallback onRotationCW)
+void Rotary::onRotationCW(voidFunc onRotationCW)
 {
     _onRotationCW = onRotationCW;
 }
 
-void Rotary::onRotationCCW(rotaryCallback onRotationCCW)
+void Rotary::onRotationCCW(voidFunc onRotationCCW)
 {
     _onRotationCCW = onRotationCCW;
 }
