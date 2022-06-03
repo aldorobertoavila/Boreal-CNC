@@ -1,5 +1,5 @@
 #include <util/atomic.h>
-#include <Rotory.h>
+#include <Rotary.h>
 
 #define EN_DT_PIN 2
 #define EN_SW_PIN 3
@@ -13,11 +13,11 @@ const int EN_LS = 100;
 int pos;
 int prevPos;
 
-Rotory rotory(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
+Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 
 void tick()
 {
-    rotory.tick();
+    rotary.tick();
 }
 
 void setup()
@@ -28,10 +28,10 @@ void setup()
     pinMode(EN_DT_PIN, INPUT);
     pinMode(EN_SW_PIN, INPUT_PULLUP);
 
-    rotory.setDebounceTime(EN_DEBOUNCE);
-    rotory.setLowerBound(EN_LI);
-    rotory.setPosition(EN_START_POS);
-    rotory.setUpperBound(EN_LS);
+    rotary.setDebounceTime(EN_DEBOUNCE);
+    rotary.setLowerBound(EN_LI);
+    rotary.setPosition(EN_START_POS);
+    rotary.setUpperBound(EN_LS);
 
     attachInterrupt(digitalPinToInterrupt(EN_DT_PIN), tick, LOW);
 }
@@ -40,7 +40,7 @@ void loop()
 {
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        pos = rotory.getPosition();
+        pos = rotary.getPosition();
     }
 
     if (pos != prevPos)
