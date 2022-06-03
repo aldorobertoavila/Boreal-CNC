@@ -6,13 +6,13 @@
 class LiquidLine
 {
 public:
-    LiquidLine(uint8_t col, uint8_t row, char *text);
+    LiquidLine(uint8_t col, uint8_t row, String text);
 
     uint8_t getColumn() const;
 
     uint8_t getRow() const;
 
-    char *getText();
+    String getText();
 
     void print(LiquidCrystal_I2C &lcd);
 
@@ -20,12 +20,12 @@ public:
 
     void setRow(uint8_t row);
 
-    void setText(char *text);
+    void setText(String text);
 
 protected:
     uint8_t _col;
     uint8_t _row;
-    char *_text;
+    String _text;
 };
 
 class LiquidScreen
