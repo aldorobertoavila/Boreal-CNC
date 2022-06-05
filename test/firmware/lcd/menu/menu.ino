@@ -53,7 +53,37 @@ LiquidLine option8(ARROW_OFFSET, 0, "Option 8");
 
 void onClicked()
 {
-  Serial.println("Clicked!");
+  uint8_t pos = rotary.getPosition();
+  
+  switch(pos)
+  {
+    case 0:
+      Serial.println("Clicked option one!");
+      break;
+    case 1:
+      Serial.println("Clicked option two!");
+      break;
+    case 2:
+      Serial.println("Clicked option three!");
+      break;
+    case 3:
+      Serial.println("Clicked option four!");
+      break;
+    case 4:
+      Serial.println("Clicked option five!");
+      break;
+    case 5:
+      Serial.println("Clicked option six!");
+      break;
+    case 6:
+      Serial.println("Clicked option seven!");
+      break;
+    case 7:
+      Serial.println("Clicked option eight!");
+      break;
+    default:
+      break;
+  }
 }
 
 void onRotationChange(long pos, long prevPos)

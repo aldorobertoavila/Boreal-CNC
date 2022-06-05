@@ -1,7 +1,6 @@
 #include <LiquidCrystal_I2C.h>
 #include <LiquidLine.h>
 
-#define MAX_SCREENS 8
 #define MAX_LINES 16
 
 class LiquidScreen

@@ -7,21 +7,6 @@ LiquidLine::LiquidLine(uint8_t col, uint8_t row, String text) : _col(col), _row(
     _text = text;
 }
 
-void LiquidLine::attach(uint8_t id, voidFunc callback)
-{
-    _functions[id] = &callback;
-}
-
-void LiquidLine::call(uint8_t id)
-{
-    voidFunc func = (voidFunc) _functions[id];
-
-    if (func)
-    {
-        func();
-    }
-}
-
 uint8_t LiquidLine::getColumn() const
 {
     return _col;
