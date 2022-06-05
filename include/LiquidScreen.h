@@ -10,13 +10,15 @@ public:
 
     void addLine(uint8_t id, LiquidLine &line);
 
+    uint8_t getCurrentIndex();
+
     LiquidLine *getCurrentLine();
 
     void nextLine();
 
     void previousLine();
 
-    void print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
+    void draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
 
     void setCurrentLine(uint8_t id);
 

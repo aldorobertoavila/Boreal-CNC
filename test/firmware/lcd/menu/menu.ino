@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <LiquidMonitor.h>
+#include <LiquidViewport.h>
 #include <Rotary.h>
 
 #include <LiquidCrystal_I2C.h>
@@ -22,6 +22,9 @@
 #define LCD_COLS 20
 #define LCD_ROWS 4
 
+#define INFO_SCREEN 0
+#define MAIN_SCREEN 1
+
 #define ARROW_CHAR 0
 #define ARROW_OFFSET 2
 
@@ -40,7 +43,12 @@ byte ARROW[8] =
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 
-LiquidScreen screen;
+LiquidViewport viewport(lcd, LCD_COLS, LCD_ROWS);
+
+LiquidScreen infoScreen;
+LiquidScreen mainScreen;
+
+LiquidLine info1(0, 0, "Hello World!");
 
 LiquidLine option1(ARROW_OFFSET, 0, "Option 1");
 LiquidLine option2(ARROW_OFFSET, 0, "Option 2");
@@ -51,11 +59,13 @@ LiquidLine option6(ARROW_OFFSET, 0, "Option 6");
 LiquidLine option7(ARROW_OFFSET, 0, "Option 7");
 LiquidLine option8(ARROW_OFFSET, 0, "Option 8");
 
-void onClicked()
-{
-  uint8_t pos = rotary.getPosition();
-  
-  switch(pos)
+void onInfoClicked() {
+  viewport.setCurrentScreen(MAIN_SCREEN);
+  viewport.draw();
+}
+
+void onMainClicked() {
+  switch(mainScreen.getCurrentIndex())
   {
     case 0:
       Serial.println("Clicked option one!");
@@ -86,20 +96,57 @@ void onClicked()
   }
 }
 
+void onClicked()
+{  
+  switch(viewport.getCurrentIndex())
+  {
+    case INFO_SCREEN:
+      onInfoClicked();
+      break;
+    case MAIN_SCREEN:
+      onMainClicked();
+      break;
+    default:
+      break;
+  }
+}
+
 void onRotationChange(long pos, long prevPos)
 {
-  screen.setFocusPosition(0, pos % LCD_ROWS);
-  screen.print(lcd, LCD_COLS, LCD_ROWS);
+  switch(viewport.getCurrentIndex())
+  {
+    case MAIN_SCREEN:
+      mainScreen.setFocusPosition(0, pos % LCD_ROWS);
+      break;
+    default:
+      break;
+  }
+
+  viewport.draw();
 }
 
 void onRotationCCW()
-{
-  screen.previousLine();
+{  
+  switch(viewport.getCurrentIndex())
+  {
+    case MAIN_SCREEN:
+      mainScreen.previousLine();
+      break;
+    default:
+      break;
+  }
 }
 
 void onRotationCW()
 {
-  screen.nextLine();
+  switch(viewport.getCurrentIndex())
+  {
+    case MAIN_SCREEN:
+      mainScreen.nextLine();
+      break;
+    default:
+      break;
+  }
 }
 
 void setup()
@@ -125,16 +172,21 @@ void setup()
   lcd.setCursor(0, 0);
   lcd.createChar(ARROW_CHAR, ARROW);
 
-  screen.addLine(0, option1);
-  screen.addLine(1, option2);
-  screen.addLine(2, option3);
-  screen.addLine(3, option4);
-  screen.addLine(4, option5);
-  screen.addLine(5, option6);
-  screen.addLine(6, option7);
-  screen.addLine(7, option8);
+  infoScreen.addLine(0, info1);
 
-  screen.print(lcd, LCD_COLS, LCD_ROWS);
+  mainScreen.addLine(0, option1);
+  mainScreen.addLine(1, option2);
+  mainScreen.addLine(2, option3);
+  mainScreen.addLine(3, option4);
+  mainScreen.addLine(4, option5);
+  mainScreen.addLine(5, option6);
+  mainScreen.addLine(6, option7);
+  mainScreen.addLine(7, option8);
+
+  viewport.addScreen(INFO_SCREEN, infoScreen);
+  viewport.addScreen(MAIN_SCREEN, mainScreen);
+
+  viewport.draw();
 }
 
 void loop()

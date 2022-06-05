@@ -3,12 +3,14 @@
 
 #define MAX_SCREENS 8
 
-class LiquidMonitor
+class LiquidViewport
 {
 public:
-    LiquidMonitor(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
+    LiquidViewport(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
 
     void addScreen(uint8_t id, LiquidScreen &screen);
+
+    uint8_t getCurrentIndex();
 
     LiquidScreen *getCurrentScreen() const;
 
@@ -16,7 +18,7 @@ public:
 
     void previousScreen();
 
-    void print();
+    void draw();
 
     void setCurrentScreen(uint8_t id);
 

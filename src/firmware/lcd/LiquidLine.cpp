@@ -1,4 +1,4 @@
-#include <LiquidMonitor.h>
+#include <LiquidViewport.h>
 
 LiquidLine::LiquidLine(uint8_t col, uint8_t row, String text) : _col(col), _row(row), _text(text)
 {
@@ -22,10 +22,10 @@ String LiquidLine::getText()
     return _text;
 }
 
-void LiquidLine::print(LiquidCrystal_I2C &lcd)
+void LiquidLine::draw(LiquidCrystal_I2C &lcd)
 {
     lcd.setCursor(_col, _row);
-    lcd.print(_text);
+    lcd.draw(_text);
 }
 
 void LiquidLine::setColumn(uint8_t col)

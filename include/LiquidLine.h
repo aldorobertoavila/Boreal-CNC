@@ -11,7 +11,7 @@ public:
 
     String getText();
 
-    void print(LiquidCrystal_I2C &lcd);
+    void draw(LiquidCrystal_I2C &lcd);
 
     void setColumn(uint8_t col);
 

@@ -1,4 +1,4 @@
-#include <LiquidMonitor.h>
+#include <LiquidViewport.h>
 
 LiquidScreen::LiquidScreen()
 {
@@ -12,6 +12,11 @@ void LiquidScreen::addLine(uint8_t id, LiquidLine &line)
         _lines[id] = &line;
         _lineCount++;
     }
+}
+
+uint8_t LiquidScreen::getCurrentIndex()
+{
+    return _currentLine;
 }
 
 LiquidLine *LiquidScreen::getCurrentLine()
@@ -43,7 +48,7 @@ void LiquidScreen::previousLine()
     }
 }
 
-void LiquidScreen::print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
+void LiquidScreen::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
 {
     lcd.setCursor(0, _prevFocusedRow);
     lcd.print(" ");
@@ -67,7 +72,7 @@ void LiquidScreen::print(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
         if (line)
         {
             line->setRow(row);
-            line->print(lcd);
+            line->draw(lcd);
             lineIndex++;
         }
     }
