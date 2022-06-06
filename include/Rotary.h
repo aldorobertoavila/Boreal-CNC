@@ -17,7 +17,8 @@ public:
     void onRotationCW(voidFunc onRotationCW);
     void onRotationCCW(voidFunc onRotationCCW);
 
-    void setDebounceTime(unsigned long debounceTime);
+    void setClickDebounceTime(unsigned long debounceTime);
+    void setRotationDebounceTime(unsigned long debounceTime);
     void setLowerBound(int lowerBound);
     void setPosition(long position, bool callback);
     void setPosition(long position);
@@ -26,7 +27,8 @@ public:
 private:
     volatile long _position;
     volatile long _prevPosition;
-    unsigned long _debounceTime;
+    unsigned long _clickDebounceTime;
+    unsigned long _rotationDebounceTime;
     uint8_t _dt;
     uint8_t _clk;
     uint8_t _sw;

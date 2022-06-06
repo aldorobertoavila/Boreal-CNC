@@ -46,7 +46,7 @@ void Rotary::tick()
 
     if (digitalRead(_dt) == LOW)
     {
-        if (currentMillis - prevRotationMillis > _debounceTime)
+        if (currentMillis - prevRotationMillis > _rotationDebounceTime)
         {
             if (digitalRead(_clk))
             {
@@ -63,7 +63,7 @@ void Rotary::tick()
 
     if (digitalRead(_sw) == LOW)
     {
-        if (currentMillis - prevClickMillis > _debounceTime)
+        if (currentMillis - prevClickMillis > _clickDebounceTime)
         {
             if (_onClicked)
             {
@@ -75,9 +75,14 @@ void Rotary::tick()
     }
 }
 
-void Rotary::setDebounceTime(unsigned long debounceTime)
+void Rotary::setClickDebounceTime(unsigned long debounceTime)
 {
-    _debounceTime = debounceTime;
+    _clickDebounceTime = debounceTime;
+}
+
+void Rotary::setRotationDebounceTime(unsigned long debounceTime)
+{
+    _rotationDebounceTime = debounceTime;
 }
 
 void Rotary::setLowerBound(int lowerBound)

@@ -14,7 +14,10 @@
 #define EN_CLK_PIN 4
 
 #define OPTIONS 8;
-#define EN_DEBOUNCE 10
+
+#define EN_CLICK_DEBOUNCE 100
+#define EN_ROT_DEBOUNCE 10
+
 #define EN_LI 0
 #define EN_LS 7
 
@@ -162,7 +165,8 @@ void setup()
   rotary.onRotationCCW(onRotationCCW);
   rotary.onRotationCW(onRotationCW);
 
-  rotary.setDebounceTime(EN_DEBOUNCE);
+  rotary.setClickDebounceTime(EN_CLICK_DEBOUNCE);
+  rotary.setRotationDebounceTime(EN_ROT_DEBOUNCE);
   rotary.setLowerBound(EN_LI);
   rotary.setUpperBound(EN_LS);
 
