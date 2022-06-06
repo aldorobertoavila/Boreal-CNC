@@ -13,6 +13,8 @@ public:
 
     void draw(LiquidCrystal_I2C &lcd);
 
+    uint8_t length();
+
     void setColumn(uint8_t col);
 
     void setRow(uint8_t row);

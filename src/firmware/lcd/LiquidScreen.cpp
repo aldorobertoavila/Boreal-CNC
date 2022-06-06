@@ -96,6 +96,21 @@ void LiquidMenu::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
 
         if (line)
         {
+            uint8_t clearRow = _prevFocusedRow < _focusedRow ? row + 1 : row;
+            LiquidLine *prevLine = _lines[lineIndex - 1];
+
+            if (prevLine)
+            {
+                uint8_t startCol = line->getColumn() + line->length();
+                uint8_t endCol = prevLine->getColumn() + prevLine->length();
+
+                for (int col = startCol; col < endCol; col++)
+                {
+                    lcd.setCursor(col, clearRow);
+                    lcd.print(" ");
+                }
+            }
+
             line->setRow(row);
             line->draw(lcd);
             lineIndex++;

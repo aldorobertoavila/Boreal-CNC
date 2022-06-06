@@ -28,6 +28,11 @@ void LiquidLine::draw(LiquidCrystal_I2C &lcd)
     lcd.print(_text);
 }
 
+uint8_t LiquidLine::length()
+{
+    return _text.length();
+}
+
 void LiquidLine::setColumn(uint8_t col)
 {
     _col = col;

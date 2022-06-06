@@ -28,33 +28,6 @@ protected:
     LiquidLine *_lines[MAX_LINES];
 };
 
-#define MAX_LINES 16
-
-class LiquidScreen
-{
-public:
-    LiquidScreen();
-
-    void addLine(uint8_t id, LiquidLine &line);
-
-    uint8_t getCurrentIndex();
-
-    LiquidLine *getCurrentLine();
-
-    void nextLine();
-
-    void previousLine();
-
-    virtual void draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
-
-    void setCurrentLine(uint8_t id);
-
-protected:
-    uint8_t _currentLine;
-    uint8_t _lineCount;
-    LiquidLine *_lines[MAX_LINES];
-};
-
 class LiquidMenu : public LiquidScreen
 {
 public:
