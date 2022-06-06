@@ -2,7 +2,6 @@
 
 LiquidScreen::LiquidScreen()
 {
-
 }
 
 void LiquidScreen::addLine(uint8_t id, LiquidLine &line)
@@ -50,6 +49,32 @@ void LiquidScreen::previousLine()
 
 void LiquidScreen::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
 {
+    uint8_t lineIndex = _currentLine;
+
+    for (int row = 0; row < rows; row++)
+    {
+        LiquidLine *line = _lines[lineIndex];
+
+        if (line)
+        {
+            line->setRow(row);
+            line->draw(lcd);
+            lineIndex++;
+        }
+    }
+}
+
+void LiquidScreen::setCurrentLine(uint8_t id)
+{
+    _currentLine = id;
+}
+
+LiquidMenu::LiquidMenu()
+{
+}
+
+void LiquidMenu::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
+{
     lcd.setCursor(0, _prevFocusedRow);
     lcd.print(" ");
 
@@ -78,10 +103,15 @@ void LiquidScreen::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
     }
 }
 
-void LiquidScreen::setFocusPosition(uint8_t col, uint8_t row)
+void LiquidMenu::setFocusPosition(uint8_t col, uint8_t row)
 {
     _prevFocusedCol = _focusedCol;
     _prevFocusedRow = _focusedRow;
     _focusedCol = col;
     _focusedRow = row;
+}
+
+void LiquidMenu::setFocusSymbol(uint8_t id)
+{
+    _symbol = id;
 }

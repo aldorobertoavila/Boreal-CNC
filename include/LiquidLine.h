@@ -5,9 +5,9 @@ class LiquidLine
 public:
     LiquidLine(uint8_t col, uint8_t row, String text);
 
-    uint8_t getColumn() const;
+    uint8_t getColumn();
 
-    uint8_t getRow() const;
+    uint8_t getRow();
 
     String getText();
 

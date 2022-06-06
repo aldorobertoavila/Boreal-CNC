@@ -29,16 +29,16 @@
 #define ARROW_OFFSET 2
 
 byte ARROW[8] =
-    {
-        0b00000,
-        0b00100,
-        0b00110,
-        0b11111,
-        0b11111,
-        0b00110,
-        0b00100,
-        0b00000
-    };
+{
+  0b00000,
+  0b00100,
+  0b00110,
+  0b11111,
+  0b11111,
+  0b00110,
+  0b00100,
+  0b00000
+};
 
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
@@ -46,7 +46,7 @@ Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 LiquidViewport viewport(lcd, LCD_COLS, LCD_ROWS);
 
 LiquidScreen infoScreen;
-LiquidScreen mainScreen;
+LiquidMenu mainScreen;
 
 LiquidLine info1(0, 0, "Hello World!");
 
@@ -65,7 +65,7 @@ void onInfoClicked() {
 }
 
 void onMainClicked() {
-  switch(mainScreen.getCurrentIndex())
+  switch (mainScreen.getCurrentIndex())
   {
     case 0:
       Serial.println("Clicked option one!");
@@ -97,8 +97,8 @@ void onMainClicked() {
 }
 
 void onClicked()
-{  
-  switch(viewport.getCurrentIndex())
+{
+  switch (viewport.getCurrentIndex())
   {
     case INFO_SCREEN:
       onInfoClicked();
@@ -113,7 +113,7 @@ void onClicked()
 
 void onRotationChange(long pos, long prevPos)
 {
-  switch(viewport.getCurrentIndex())
+  switch (viewport.getCurrentIndex())
   {
     case MAIN_SCREEN:
       mainScreen.setFocusPosition(0, pos % LCD_ROWS);
@@ -126,8 +126,8 @@ void onRotationChange(long pos, long prevPos)
 }
 
 void onRotationCCW()
-{  
-  switch(viewport.getCurrentIndex())
+{
+  switch (viewport.getCurrentIndex())
   {
     case MAIN_SCREEN:
       mainScreen.previousLine();
@@ -139,7 +139,7 @@ void onRotationCCW()
 
 void onRotationCW()
 {
-  switch(viewport.getCurrentIndex())
+  switch (viewport.getCurrentIndex())
   {
     case MAIN_SCREEN:
       mainScreen.nextLine();
@@ -186,6 +186,7 @@ void setup()
   viewport.addScreen(INFO_SCREEN, infoScreen);
   viewport.addScreen(MAIN_SCREEN, mainScreen);
 
+  viewport.setCurrentScreen(INFO_SCREEN);
   viewport.draw();
 }
 

@@ -7,12 +7,12 @@ LiquidLine::LiquidLine(uint8_t col, uint8_t row, String text) : _col(col), _row(
     _text = text;
 }
 
-uint8_t LiquidLine::getColumn() const
+uint8_t LiquidLine::getColumn()
 {
     return _col;
 }
 
-uint8_t LiquidLine::getRow() const
+uint8_t LiquidLine::getRow()
 {
     return _row;
 }
@@ -25,7 +25,7 @@ String LiquidLine::getText()
 void LiquidLine::draw(LiquidCrystal_I2C &lcd)
 {
     lcd.setCursor(_col, _row);
-    lcd.draw(_text);
+    lcd.print(_text);
 }
 
 void LiquidLine::setColumn(uint8_t col)

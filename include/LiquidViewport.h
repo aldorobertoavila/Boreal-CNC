@@ -12,18 +12,14 @@ public:
 
     uint8_t getCurrentIndex();
 
-    LiquidScreen *getCurrentScreen() const;
-
-    void nextScreen();
-
-    void previousScreen();
+    LiquidScreen *getCurrentScreen();
 
     void draw();
 
     void setCurrentScreen(uint8_t id);
 
 protected:
-    LiquidCrystal_I2C _lcd;
+    LiquidCrystal_I2C &_lcd;
     uint8_t _cols;
     uint8_t _rows;
     uint8_t _currentScreen;

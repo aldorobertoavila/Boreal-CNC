@@ -21,33 +21,9 @@ uint8_t LiquidViewport::getCurrentIndex()
     return _currentScreen;
 }
 
-LiquidScreen *LiquidViewport::getCurrentScreen() const
+LiquidScreen *LiquidViewport::getCurrentScreen()
 {
     return _screens[_currentScreen];
-}
-
-void LiquidViewport::nextScreen()
-{
-    if (_currentScreen < MAX_SCREENS)
-    {
-        _currentScreen++;
-    }
-    else
-    {
-        _currentScreen = 0;
-    }
-}
-
-void LiquidViewport::previousScreen()
-{
-    if (_currentScreen > 0)
-    {
-        _currentScreen--;
-    }
-    else
-    {
-        _currentScreen = 0;
-    }
 }
 
 void LiquidViewport::draw()
@@ -64,6 +40,7 @@ void LiquidViewport::setCurrentScreen(uint8_t id)
 {
     if (id < MAX_SCREENS)
     {
+        _lcd.clear();
         _currentScreen = id;
     }
 }
