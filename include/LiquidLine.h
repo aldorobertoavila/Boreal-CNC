@@ -11,7 +11,7 @@ public:
 
     String getText();
 
-    void draw(LiquidCrystal_I2C &lcd);
+    void display(LiquidCrystal_I2C &lcd);
 
     uint8_t length();
 

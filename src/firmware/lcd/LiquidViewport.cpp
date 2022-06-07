@@ -26,14 +26,19 @@ LiquidScreen *LiquidViewport::getCurrentScreen()
     return _screens[_currentScreen];
 }
 
-void LiquidViewport::draw()
+void LiquidViewport::display(bool redraw)
 {
     LiquidScreen *screen = getCurrentScreen();
 
     if (screen)
     {
-        screen->draw(_lcd, _cols, _rows);
+        screen->display(_lcd, _cols, _rows, redraw);
     }
+}
+
+void LiquidViewport::display()
+{
+    display(false);
 }
 
 void LiquidViewport::setCurrentScreen(uint8_t id)

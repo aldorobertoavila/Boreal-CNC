@@ -18,7 +18,7 @@ public:
 
     void previousLine();
 
-    virtual void draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
+    virtual void display(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, bool redraw);
 
     void setCurrentLine(uint8_t id);
 
@@ -33,7 +33,7 @@ class LiquidMenu : public LiquidScreen
 public:
     LiquidMenu();
 
-    void draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows) override;
+    void display(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, bool redraw) override;
 
     void setFocusPosition(uint8_t col, uint8_t row);
 

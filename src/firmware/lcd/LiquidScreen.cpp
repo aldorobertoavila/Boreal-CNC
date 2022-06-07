@@ -47,7 +47,7 @@ void LiquidScreen::previousLine()
     }
 }
 
-void LiquidScreen::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
+void LiquidScreen::display(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, bool redraw)
 {
     uint8_t lineIndex = _currentLine;
 
@@ -58,7 +58,7 @@ void LiquidScreen::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
         if (line)
         {
             line->setRow(row);
-            line->draw(lcd);
+            line->display(lcd);
             lineIndex++;
         }
     }
@@ -73,16 +73,37 @@ LiquidMenu::LiquidMenu()
 {
 }
 
-void LiquidMenu::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
+void LiquidMenu::display(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, bool redraw)
 {
     lcd.setCursor(0, _prevFocusedRow);
     lcd.print(" ");
 
-    if (_currentLine + rows > _lineCount)
+    if (_lineCount > 0)
     {
-        lcd.setCursor(0, _focusedRow);
-        lcd.write(_symbol);
-        return;
+        if (_currentLine + rows > _lineCount)
+        {
+            lcd.setCursor(0, _focusedRow);
+            lcd.write(_symbol);
+
+            if (redraw)
+            {
+                uint8_t lineIndex = _currentLine;
+
+                for (int row = 0; row < rows; row++)
+                {
+                    LiquidLine *line = _lines[lineIndex - _focusedRow];
+
+                    if (line)
+                    {
+                        line->setRow(row);
+                        line->display(lcd);
+                        lineIndex++;
+                    }
+                }
+            }
+
+            return;
+        }
     }
 
     lcd.setCursor(0, 0);
@@ -96,11 +117,12 @@ void LiquidMenu::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
 
         if (line)
         {
-            uint8_t clearRow = _prevFocusedRow < _focusedRow ? row + 1 : row;
             LiquidLine *prevLine = _lines[lineIndex - 1];
 
             if (prevLine)
             {
+                uint8_t clearRow = _prevFocusedRow < _focusedRow ? row + 1 : row;
+
                 uint8_t startCol = line->getColumn() + line->length();
                 uint8_t endCol = prevLine->getColumn() + prevLine->length();
 
@@ -112,7 +134,7 @@ void LiquidMenu::draw(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows)
             }
 
             line->setRow(row);
-            line->draw(lcd);
+            line->display(lcd);
             lineIndex++;
         }
     }

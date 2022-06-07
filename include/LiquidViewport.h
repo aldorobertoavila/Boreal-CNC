@@ -14,7 +14,9 @@ public:
 
     LiquidScreen *getCurrentScreen();
 
-    void draw();
+    void display(bool redraw);
+
+    void display();
 
     void setCurrentScreen(uint8_t id);
 
