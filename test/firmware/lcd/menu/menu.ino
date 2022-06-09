@@ -41,12 +41,19 @@ byte ARROW[8] =
 const uint32_t BAUD_RATE = 115200;
 const uint32_t CLOCK_FREQ = 400000;
 
-const uint8_t INFO_SCREEN = 0;
-const uint8_t MAIN_SCREEN = 1;
-const uint8_t PREP_SCREEN = 2;
-const uint8_t CTRL_SCREEN = 3;
-const uint8_t CARD_SCREEN = 4;
-const uint8_t ABOUT_SCREEN = 5;
+enum Screen
+{
+  INFO,
+  MAIN,
+  PREP,
+  CTRL,
+  CARD,
+  ABOUT,
+  MOVE_AXIS,
+  MOVE_X,
+  MOVE_Y,
+  MOVE_Z
+};
 
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
@@ -67,12 +74,21 @@ LiquidLine autoHomeLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Auto home       ");
 LiquidLine setHomeLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Set home offsets");
 LiquidLine disableLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Disable steppers");
 
+LiquidLine moveXLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move X");
+LiquidLine moveYLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Y");
+LiquidLine moveZLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Z");
+
 LiquidScreen infoScreen;
 LiquidScreen aboutScreen;
+LiquidMenu mainScreen;
 LiquidMenu prepScreen;
 LiquidMenu ctrlScreen;
 LiquidMenu cardScreen;
-LiquidMenu mainScreen;
+
+LiquidMenu moveAxisScreen;
+LiquidMenu moveXScreen;
+LiquidMenu moveYScreen;
+LiquidMenu moveZScreen;
 
 LiquidViewport viewport(lcd, LCD_COLS, LCD_ROWS);
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
@@ -99,30 +115,30 @@ void setScreen(uint8_t screenId, bool forcePosition)
 
 void infoScreenClicked()
 {
-  setScreen(MAIN_SCREEN);
+  setScreen(Screen::MAIN);
 }
 
 void mainScreenClicked()
 {
 
-  switch (viewport.getCurrentLineIndex(MAIN_SCREEN))
+  switch (viewport.getCurrentLineIndex(Screen::MAIN))
   {
   case 0:
-    setScreen(INFO_SCREEN);
+    setScreen(Screen::INFO);
     break;
   case 1:
-    setScreen(PREP_SCREEN);
+    setScreen(Screen::PREP);
     break;
   case 2:
-    setScreen(CTRL_SCREEN);
+    setScreen(Screen::CTRL);
     break;
   case 3:
     /*
-      setScreen(CARD_SCREEN);
+      setScreen(Screen::CARD);
     */
     break;
   case 4:
-    setScreen(ABOUT_SCREEN);
+    setScreen(Screen::ABOUT);
     break;
   default:
     break;
@@ -131,10 +147,13 @@ void mainScreenClicked()
 
 void prepScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(PREP_SCREEN))
+  switch (viewport.getCurrentLineIndex(Screen::PREP))
   {
   case 0:
-    setScreen(MAIN_SCREEN, true);
+    setScreen(Screen::MAIN, true);
+    break;
+  case 1:
+    setScreen(Screen::MOVE_AXIS);
     break;
   default:
     break;
@@ -143,10 +162,10 @@ void prepScreenClicked()
 
 void ctrlScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(CTRL_SCREEN))
+  switch (viewport.getCurrentLineIndex(Screen::CTRL))
   {
   case 0:
-    setScreen(MAIN_SCREEN, true);
+    setScreen(Screen::MAIN, true);
     break;
   default:
     break;
@@ -155,10 +174,10 @@ void ctrlScreenClicked()
 
 void cardScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(CARD_SCREEN))
+  switch (viewport.getCurrentLineIndex(Screen::CARD))
   {
   case 0:
-    setScreen(MAIN_SCREEN, true);
+    setScreen(Screen::MAIN, true);
     break;
   default:
     break;
@@ -167,31 +186,76 @@ void cardScreenClicked()
 
 void aboutScreenClicked()
 {
-  setScreen(MAIN_SCREEN, viewport.getCurrentLineIndex(MAIN_SCREEN));
+  setScreen(Screen::MAIN, true);
+}
+
+void axisScreenClicked()
+{
+  switch (viewport.getCurrentLineIndex(Screen::MOVE_AXIS))
+  {
+  case 0:
+    setScreen(Screen::PREP, true);
+    break;
+  case 1:
+    setScreen(Screen::MOVE_X);
+    break;
+  case 2:
+    setScreen(Screen::MOVE_Y);
+    break;
+  case 3:
+    setScreen(Screen::MOVE_Z);
+    break;
+  default:
+    break;
+  }
+}
+
+void moveXScreenClicked()
+{
+  setScreen(Screen::MOVE_AXIS, true);
+}
+
+void moveYScreenClicked()
+{
+  setScreen(Screen::MOVE_AXIS, true);
+}
+
+void moveZScreenClicked()
+{
+  setScreen(Screen::MOVE_AXIS, true);
 }
 
 void onClicked()
 {
   switch (viewport.getCurrentScreenIndex())
   {
-  case INFO_SCREEN:
+  case INFO:
     infoScreenClicked();
     break;
-  case MAIN_SCREEN:
+  case MAIN:
     mainScreenClicked();
     break;
-  case PREP_SCREEN:
+  case PREP:
     prepScreenClicked();
     break;
-  case CTRL_SCREEN:
+  case CTRL:
     ctrlScreenClicked();
     break;
-  case CARD_SCREEN:
+  case CARD:
     cardScreenClicked();
     break;
-  case ABOUT_SCREEN:
+  case ABOUT:
     aboutScreenClicked();
     break;
+  case MOVE_AXIS:
+    axisScreenClicked();
+    break;
+  case MOVE_X:
+    moveXScreenClicked();
+  case MOVE_Y:
+    moveYScreenClicked();
+  case MOVE_Z:
+    moveZScreenClicked();
   default:
     break;
   }
@@ -201,11 +265,12 @@ void onRotationCCW()
 {
   switch (viewport.getCurrentScreenIndex())
   {
-  case MAIN_SCREEN:
-  case PREP_SCREEN:
-  case CTRL_SCREEN:
-  case CARD_SCREEN:
-  case ABOUT_SCREEN:
+  case MAIN:
+  case PREP:
+  case CTRL:
+  case CARD:
+  case ABOUT:
+  case MOVE_AXIS:
     viewport.previousLine();
     viewport.display();
     break;
@@ -218,11 +283,12 @@ void onRotationCW()
 {
   switch (viewport.getCurrentScreenIndex())
   {
-  case MAIN_SCREEN:
-  case PREP_SCREEN:
-  case CTRL_SCREEN:
-  case CARD_SCREEN:
-  case ABOUT_SCREEN:
+  case MAIN:
+  case PREP:
+  case CTRL:
+  case CARD:
+  case ABOUT:
+  case MOVE_AXIS:
     viewport.nextLine();
     viewport.display();
     break;
@@ -271,18 +337,31 @@ void setup()
   prepScreen.addLine(3, setHomeLine);
   prepScreen.addLine(4, disableLine);
 
+  moveAxisScreen.addLine(0, prepLine);
+  moveAxisScreen.addLine(1, moveXLine);
+  moveAxisScreen.addLine(2, moveYLine);
+  moveAxisScreen.addLine(3, moveZLine);
+
+  moveXScreen.addLine(0, moveAxisLine);
+  moveYScreen.addLine(0, moveAxisLine);
+  moveZScreen.addLine(0, moveAxisLine);
+
   ctrlScreen.addLine(0, mainLine);
   cardScreen.addLine(0, mainLine);
   aboutScreen.addLine(0, mainLine);
 
-  viewport.addScreen(INFO_SCREEN, infoScreen);
-  viewport.addScreen(MAIN_SCREEN, mainScreen);
-  viewport.addScreen(PREP_SCREEN, prepScreen);
-  viewport.addScreen(CTRL_SCREEN, ctrlScreen);
-  viewport.addScreen(CARD_SCREEN, cardScreen);
-  viewport.addScreen(ABOUT_SCREEN, aboutScreen);
+  viewport.addScreen(Screen::INFO, infoScreen);
+  viewport.addScreen(Screen::MAIN, mainScreen);
+  viewport.addScreen(Screen::PREP, prepScreen);
+  viewport.addScreen(Screen::CTRL, ctrlScreen);
+  viewport.addScreen(Screen::CARD, cardScreen);
+  viewport.addScreen(Screen::ABOUT, aboutScreen);
+  viewport.addScreen(Screen::MOVE_AXIS, moveAxisScreen);
+  viewport.addScreen(Screen::MOVE_X, moveXScreen);
+  viewport.addScreen(Screen::MOVE_Y, moveYScreen);
+  viewport.addScreen(Screen::MOVE_Z, moveZScreen);
 
-  viewport.setCurrentScreen(INFO_SCREEN);
+  viewport.setCurrentScreen(Screen::INFO);
   viewport.display();
 }
 
