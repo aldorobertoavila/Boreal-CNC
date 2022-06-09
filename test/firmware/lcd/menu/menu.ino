@@ -263,37 +263,21 @@ void onClicked()
 
 void onRotationCCW()
 {
-  switch (viewport.getCurrentScreenIndex())
-  {
-  case MAIN:
-  case PREP:
-  case CTRL:
-  case CARD:
-  case ABOUT:
-  case MOVE_AXIS:
+  LiquidScreen *screen = viewport.getCurrentScreen();
+  
+  if(LiquidMenu* menu = static_cast<LiquidMenu*>(screen)) {
     viewport.previousLine();
     viewport.display();
-    break;
-  default:
-    break;
   }
 }
 
 void onRotationCW()
 {
-  switch (viewport.getCurrentScreenIndex())
-  {
-  case MAIN:
-  case PREP:
-  case CTRL:
-  case CARD:
-  case ABOUT:
-  case MOVE_AXIS:
+  LiquidScreen *screen = viewport.getCurrentScreen();
+  
+  if(LiquidMenu* menu = static_cast<LiquidMenu*>(screen)) {
     viewport.nextLine();
     viewport.display();
-    break;
-  default:
-    break;
   }
 }
 
