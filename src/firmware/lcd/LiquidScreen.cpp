@@ -96,25 +96,38 @@ LiquidMenu::LiquidMenu()
 
 void LiquidMenu::display(LiquidCrystal_I2C &lcd)
 {
-    if (_prevLine > 0)
+    if (_lineCount > _rows)
     {
-        lcd.setCursor(0, _prevLine - 1);
-        lcd.print(" ");
-    }
+        if (_prevLine > 0)
+        {
+            lcd.setCursor(0, _prevLine - 1);
+            lcd.print(" ");
+        }
 
-    if (_currentLine + _rows > _lineCount && _lineCount > 1)
-    {
-        lcd.setCursor(0, _currentLine - 1);
+        if (_currentLine + _rows > _lineCount && _lineCount > 1)
+        {
+            lcd.setCursor(0, _currentLine - 1);
+            lcd.write(_symbol);
+
+            displayLines(lcd, _lineCount - _rows);
+            return;
+        }
+
+        lcd.setCursor(0, 0);
         lcd.write(_symbol);
 
-        displayLines(lcd, _lineCount - _rows);
-        return;
+        displayLines(lcd, _currentLine);
     }
+    else
+    {
+        lcd.setCursor(0, _prevLine);
+        lcd.print(" ");
 
-    lcd.setCursor(0, 0);
-    lcd.write(_symbol);
+        lcd.setCursor(0, _currentLine);
+        lcd.write(_symbol);
 
-    displayLines(lcd, _currentLine);
+        displayLines(lcd, 0);
+    }
 }
 
 void LiquidMenu::setFocusSymbol(uint8_t id)

@@ -77,7 +77,7 @@ void LiquidViewport::display()
 
 void LiquidViewport::setCurrentScreen(uint8_t id)
 {
-    if (id < MAX_SCREENS)
+    if (id < _screenCount)
     {
         _lcd.clear();
         _currentScreen = id;
