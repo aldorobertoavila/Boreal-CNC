@@ -3,131 +3,115 @@
 
 Rotary::Rotary(uint8_t dt, uint8_t clk, uint8_t sw) : _dt(dt), _clk(clk), _sw(sw)
 {
-    _dt = dt;
-    _clk = clk;
-    _sw = sw;
+  _dt = dt;
+  _clk = clk;
+  _sw = sw;
 }
 
-volatile long Rotary::getPosition()
+void Rotary::forcePosition(long position)
 {
-    return _position;
+  setPosition(position, false);
 }
 
-volatile long Rotary::getPreviousPosition()
+long Rotary::getPosition()
 {
-    return _prevPosition;
+  return _position;
 }
 
 void Rotary::onClicked(voidFunc onClicked)
 {
-    _onClicked = onClicked;
-}
-
-void Rotary::onRotationChange(changeCallback onRotationChange)
-{
-    _onChange = onRotationChange;
+  _onClicked = onClicked;
 }
 
 void Rotary::onRotationCW(voidFunc onRotationCW)
 {
-    _onRotationCW = onRotationCW;
+  _onRotationCW = onRotationCW;
 }
 
 void Rotary::onRotationCCW(voidFunc onRotationCCW)
 {
-    _onRotationCCW = onRotationCCW;
-}
-
-void Rotary::tick()
-{
-    static unsigned long prevClickMillis = 0;
-    static unsigned long prevRotationMillis = 0;
-    unsigned long currentMillis = millis();
-
-    if (digitalRead(_dt) == LOW)
-    {
-        if (currentMillis - prevRotationMillis > _rotationDebounceTime)
-        {
-            if (digitalRead(_clk))
-            {
-                setPosition(_position + 1);
-            }
-            else
-            {
-                setPosition(_position - 1);
-            }
-        }
-
-        prevRotationMillis = currentMillis;
-    }
-
-    if (digitalRead(_sw) == LOW)
-    {
-        if (currentMillis - prevClickMillis > _clickDebounceTime)
-        {
-            if (_onClicked)
-            {
-                _onClicked();
-            }
-        }
-
-        prevClickMillis = currentMillis;
-    }
+  _onRotationCCW = onRotationCCW;
 }
 
 void Rotary::setClickDebounceTime(unsigned long debounceTime)
 {
-    _clickDebounceTime = debounceTime;
+  _clickDebounceTime = debounceTime;
 }
 
 void Rotary::setRotationDebounceTime(unsigned long debounceTime)
 {
-    _rotationDebounceTime = debounceTime;
+  _rotationDebounceTime = debounceTime;
 }
 
 void Rotary::setLowerBound(int lowerBound)
 {
-    _lowerBound = lowerBound;
+  _lowerBound = lowerBound;
 }
 
 void Rotary::setPosition(long position, bool callback)
 {
-    _prevPosition = _position;
-    _position = position;
+  _prevPosition = _position;
+  _position = position;
 
-    if (_position < _lowerBound)
+  if (_position < _lowerBound)
+  {
+    _position = _lowerBound;
+  }
+  else if (_position >= _upperBound)
+  {
+    _position = _upperBound - 1;
+  }
+
+  if (_position != _prevPosition && callback)
+  {
+    if (_position > _prevPosition && _onRotationCW)
     {
-        _position = _lowerBound;
+      _onRotationCW();
     }
-    else if (_position > _upperBound)
+    else if (_position < _prevPosition && _onRotationCCW)
     {
-        _position = _upperBound;
+      _onRotationCCW();
     }
-
-    if (_position != _prevPosition && callback)
-    {
-        if (_position > _prevPosition && _onRotationCW)
-        {
-            _onRotationCW();
-        }
-        else if (_position < _prevPosition && _onRotationCCW)
-        {
-            _onRotationCCW();
-        }
-
-        if (_onChange)
-        {
-            _onChange(_position, _position);
-        }
-    }
-}
-
-void Rotary::setPosition(long position)
-{
-    setPosition(position, true);
+  }
 }
 
 void Rotary::setUpperBound(int upperBound)
 {
-    _upperBound = upperBound;
+  _upperBound = upperBound;
+}
+
+void Rotary::tick()
+{
+  static unsigned long prevClickMillis = 0;
+  static unsigned long prevRotationMillis = 0;
+  unsigned long currentMillis = millis();
+
+  if (digitalRead(_dt) == LOW)
+  {
+    if (currentMillis - prevRotationMillis > _rotationDebounceTime)
+    {
+      if (digitalRead(_clk))
+      {
+        setPosition(_position + 1, true);
+      }
+      else
+      {
+        setPosition(_position - 1, true);
+      }
+    }
+
+    prevRotationMillis = currentMillis;
+  }
+
+  if (digitalRead(_sw) == LOW)
+  {
+    if (currentMillis - prevClickMillis > _clickDebounceTime)
+    {
+      if (_onClicked)
+      {
+        _onClicked();
+        prevClickMillis = currentMillis;
+      }
+    }
+  }
 }

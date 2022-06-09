@@ -10,11 +10,17 @@ public:
 
     void addScreen(uint8_t id, LiquidScreen &screen);
 
-    uint8_t getCurrentIndex();
-
     LiquidScreen *getCurrentScreen();
 
-    void display(bool redraw);
+    uint8_t getCurrentLineIndex(uint8_t screenId);
+
+    uint8_t getCurrentScreenIndex();
+
+    LiquidScreen *getScreen(uint8_t screenId);
+
+    void nextLine();
+
+    void previousLine();
 
     void display();
 

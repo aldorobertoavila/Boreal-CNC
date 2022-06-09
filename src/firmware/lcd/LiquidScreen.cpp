@@ -13,25 +13,30 @@ void LiquidScreen::addLine(uint8_t id, LiquidLine &line)
     }
 }
 
-uint8_t LiquidScreen::getCurrentIndex()
-{
-    return _currentLine;
-}
-
 LiquidLine *LiquidScreen::getCurrentLine()
 {
     return _lines[_currentLine];
 }
 
+uint8_t LiquidScreen::getCurrentLineIndex()
+{
+    return _currentLine;
+}
+
+uint8_t LiquidScreen::getLineCount()
+{
+    return _lineCount;
+}
+
 void LiquidScreen::nextLine()
 {
-    if (_currentLine < MAX_LINES)
+    if (_currentLine < _lineCount - 1)
     {
-        _currentLine++;
+        setCurrentLine(_currentLine + 1);
     }
     else
     {
-        _currentLine = 0;
+        setCurrentLine(0);
     }
 }
 
@@ -39,19 +44,24 @@ void LiquidScreen::previousLine()
 {
     if (_currentLine > 0)
     {
-        _currentLine--;
+        setCurrentLine(_currentLine - 1);
     }
     else
     {
-        _currentLine = 0;
+        setCurrentLine(0);
     }
 }
 
-void LiquidScreen::display(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, bool redraw)
+void LiquidScreen::display(LiquidCrystal_I2C &lcd)
 {
-    uint8_t lineIndex = _currentLine;
+    displayLines(lcd, _currentLine);
+}
 
-    for (int row = 0; row < rows; row++)
+void LiquidScreen::displayLines(LiquidCrystal_I2C &lcd, uint8_t startLine)
+{
+    uint8_t lineIndex = startLine;
+
+    for (int row = 0; row < _rows; row++)
     {
         LiquidLine *line = _lines[lineIndex];
 
@@ -66,86 +76,45 @@ void LiquidScreen::display(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, b
 
 void LiquidScreen::setCurrentLine(uint8_t id)
 {
+    _prevLine = _currentLine;
     _currentLine = id;
+}
+
+void LiquidScreen::setCols(uint8_t cols)
+{
+    _cols = cols;
+}
+
+void LiquidScreen::setRows(uint8_t rows)
+{
+    _rows = rows;
 }
 
 LiquidMenu::LiquidMenu()
 {
 }
 
-void LiquidMenu::display(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows, bool redraw)
+void LiquidMenu::display(LiquidCrystal_I2C &lcd)
 {
-    lcd.setCursor(0, _prevFocusedRow);
-    lcd.print(" ");
-
-    if (_lineCount > 0)
+    if (_prevLine > 0)
     {
-        if (_currentLine + rows > _lineCount)
-        {
-            lcd.setCursor(0, _focusedRow);
-            lcd.write(_symbol);
+        lcd.setCursor(0, _prevLine - 1);
+        lcd.print(" ");
+    }
 
-            if (redraw)
-            {
-                uint8_t lineIndex = _currentLine;
+    if (_currentLine + _rows > _lineCount && _lineCount > 1)
+    {
+        lcd.setCursor(0, _currentLine - 1);
+        lcd.write(_symbol);
 
-                for (int row = 0; row < rows; row++)
-                {
-                    LiquidLine *line = _lines[lineIndex - _focusedRow];
-
-                    if (line)
-                    {
-                        line->setRow(row);
-                        line->display(lcd);
-                        lineIndex++;
-                    }
-                }
-            }
-
-            return;
-        }
+        displayLines(lcd, _lineCount - _rows);
+        return;
     }
 
     lcd.setCursor(0, 0);
     lcd.write(_symbol);
 
-    uint8_t lineIndex = _currentLine;
-
-    for (int row = 0; row < rows; row++)
-    {
-        LiquidLine *line = _lines[lineIndex];
-
-        if (line)
-        {
-            LiquidLine *prevLine = _lines[lineIndex - 1];
-
-            if (prevLine)
-            {
-                uint8_t clearRow = _prevFocusedRow < _focusedRow ? row + 1 : row;
-
-                uint8_t startCol = line->getColumn() + line->length();
-                uint8_t endCol = prevLine->getColumn() + prevLine->length();
-
-                for (int col = startCol; col < endCol; col++)
-                {
-                    lcd.setCursor(col, clearRow);
-                    lcd.print(" ");
-                }
-            }
-
-            line->setRow(row);
-            line->display(lcd);
-            lineIndex++;
-        }
-    }
-}
-
-void LiquidMenu::setFocusPosition(uint8_t col, uint8_t row)
-{
-    _prevFocusedCol = _focusedCol;
-    _prevFocusedRow = _focusedRow;
-    _focusedCol = col;
-    _focusedRow = row;
+    displayLines(lcd, _currentLine);
 }
 
 void LiquidMenu::setFocusSymbol(uint8_t id)

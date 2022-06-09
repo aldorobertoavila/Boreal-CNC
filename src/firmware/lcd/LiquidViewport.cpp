@@ -11,34 +11,68 @@ void LiquidViewport::addScreen(uint8_t id, LiquidScreen &screen)
 {
     if (_screenCount < MAX_SCREENS)
     {
+        screen.setCols(_cols);
+        screen.setRows(_rows);
         _screens[id] = &screen;
         _screenCount++;
     }
 }
 
-uint8_t LiquidViewport::getCurrentIndex()
+LiquidScreen *LiquidViewport::getCurrentScreen()
+{
+    return getScreen(_currentScreen);
+}
+
+uint8_t LiquidViewport::getCurrentLineIndex(uint8_t screenId)
+{
+    LiquidScreen *screen = getScreen(screenId);
+
+    if (screen)
+    {
+        return screen->getCurrentLineIndex();
+    }
+
+    return 0;
+}
+
+uint8_t LiquidViewport::getCurrentScreenIndex()
 {
     return _currentScreen;
 }
 
-LiquidScreen *LiquidViewport::getCurrentScreen()
+LiquidScreen *LiquidViewport::getScreen(uint8_t screenId)
 {
-    return _screens[_currentScreen];
+    return _screens[screenId];
 }
 
-void LiquidViewport::display(bool redraw)
+void LiquidViewport::nextLine()
 {
     LiquidScreen *screen = getCurrentScreen();
 
     if (screen)
     {
-        screen->display(_lcd, _cols, _rows, redraw);
+        screen->nextLine();
+    }
+}
+
+void LiquidViewport::previousLine()
+{
+    LiquidScreen *screen = getCurrentScreen();
+
+    if (screen)
+    {
+        screen->previousLine();
     }
 }
 
 void LiquidViewport::display()
 {
-    display(false);
+    LiquidScreen *screen = getCurrentScreen();
+
+    if (screen)
+    {
+        screen->display(_lcd);
+    }
 }
 
 void LiquidViewport::setCurrentScreen(uint8_t id)
