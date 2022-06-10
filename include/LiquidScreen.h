@@ -22,7 +22,7 @@ public:
 
     virtual void display(LCD &lcd, bool redraw);
 
-    void displayLines(LCD &lcd, uint8_t startLine);
+    virtual void displayLines(LCD &lcd, uint8_t startLine);
 
     void setCurrentLine(uint8_t id);
 
@@ -45,6 +45,8 @@ public:
     LiquidMenu();
 
     void display(LCD &lcd, bool redraw) override;
+
+    void displayLines(LCD &lcd, uint8_t startLine) override;
 
     void setFocusSymbol(uint8_t id);
 

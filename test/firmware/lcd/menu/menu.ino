@@ -21,6 +21,37 @@
 #define ARROW_COL_OFFSET 2
 #define ZERO_COL_OFFSET 0
 #define ZERO_ROW_OFFSET 0
+#define AXIS_COL_OFFSET 7
+
+enum Axis
+{
+  X,
+  Y,
+  Z
+};
+
+enum Screen
+{
+  INFO,
+  MAIN,
+  PREP,
+  CTRL,
+  CARD,
+  ABOUT,
+  MOVE_AXES,
+  MOVE_AXIS,
+  MOVE_X,
+  MOVE_Y,
+  MOVE_Z
+};
+
+const uint8_t TEN_MILLIMETER = 100;
+const uint8_t ONE_MILLIMETER = 10;
+const uint8_t TENTH_MILLIMETER = 1;
+
+Axis currentAxis;
+uint8_t currentUnit;
+uint16_t millimeters;
 
 byte ARROW[8] =
 {
@@ -32,20 +63,6 @@ byte ARROW[8] =
   0b00110,
   0b00100,
   0b00000
-};
-
-enum Screen
-{
-  INFO,
-  MAIN,
-  PREP,
-  CTRL,
-  CARD,
-  ABOUT,
-  MOVE_AXIS,
-  MOVE_X,
-  MOVE_Y,
-  MOVE_Z
 };
 
 LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
@@ -62,7 +79,7 @@ LiquidLine cardLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "No TF card");
 LiquidLine aboutLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "About CNC ");
 
 LiquidLine mainLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Main     ");
-LiquidLine moveAxisLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move axis");
+LiquidLine moveAxisLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move axes");
 LiquidLine autoHomeLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Auto home       ");
 LiquidLine setHomeLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Set home offsets");
 LiquidLine disableLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Disable steppers");
@@ -71,14 +88,31 @@ LiquidLine moveXLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move X");
 LiquidLine moveYLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Y");
 LiquidLine moveZLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Z");
 
+LiquidLine moveLine(AXIS_COL_OFFSET, 1, "Move %s"); // "Move X"
+LiquidLine milliLine(AXIS_COL_OFFSET, 2, "+%03d.%d"); // "+000.0"
+
+LiquidLine moveX10mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move X 10mm");
+LiquidLine moveX1mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move X 1mm");
+LiquidLine moveX01mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move X 0.1mm");
+
+LiquidLine moveY10mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Y 10mm");
+LiquidLine moveY1mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Y 1mm");
+LiquidLine moveY01mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Y 0.1mm");
+
+LiquidLine moveZ10mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Z 10mm");
+LiquidLine moveZ1mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Z 1mm");
+LiquidLine moveZ01mmLine(ARROW_COL_OFFSET, ZERO_ROW_OFFSET, "Move Z 0.1mm");
+
 LiquidScreen infoScreen;
 LiquidScreen aboutScreen;
+LiquidScreen moveAxisScreen;
+
 LiquidMenu mainScreen;
 LiquidMenu prepScreen;
 LiquidMenu ctrlScreen;
 LiquidMenu cardScreen;
 
-LiquidMenu moveAxisScreen;
+LiquidMenu moveAxesScreen;
 LiquidMenu moveXScreen;
 LiquidMenu moveYScreen;
 LiquidMenu moveZScreen;
@@ -86,9 +120,34 @@ LiquidMenu moveZScreen;
 LiquidViewport viewport(lcd, LCD_COLS, LCD_ROWS);
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 
+void autohome()
+{
+  Serial.println("Auto home");
+}
+
+void setHomeOffsets()
+{
+  Serial.println("Set Home Offsets");
+}
+
+void disableSteppers()
+{
+  Serial.println("Disable Steppers");
+}
+
 void setScreen(uint8_t screenId)
 {
   setScreen(screenId, false);
+}
+
+void setScreen(LiquidScreen *screen, uint8_t screenId, bool forcePosition)
+{
+  rotary.setLowerBound(0);
+  rotary.setUpperBound(screen->getLineCount());
+  rotary.forcePosition(forcePosition ? viewport.getCurrentLineIndex(screenId) : 0);
+
+  viewport.setCurrentScreen(screenId);
+  viewport.display(true);
 }
 
 void setScreen(uint8_t screenId, bool forcePosition)
@@ -97,13 +156,30 @@ void setScreen(uint8_t screenId, bool forcePosition)
 
   if (screen)
   {
-    rotary.setLowerBound(0);
-    rotary.setUpperBound(screen->getLineCount());
-    rotary.forcePosition(forcePosition ? viewport.getCurrentLineIndex(screenId) : 0);
-
-    viewport.setCurrentScreen(screenId);
-    viewport.display(true);
+    setScreen(screen, screenId, forcePosition);
   }
+}
+
+void setMoveAxisScreen(Axis axis, uint8_t unit) {
+  setScreen(MOVE_AXIS);
+  currentAxis = axis;
+  currentUnit = unit;
+
+  // TODO: lower bound from cnc max increment of unit
+  // TEN_MILLIMETER -> 100
+  // ONE_MILLIMETER -> 1,000
+  // TENTH_MILLIMETER -> 10,000
+  // [-100, lower) to reverse direction.
+
+  // upper bound cnc max decrement of unit if n > unit 
+  // rotary.setLowerBound(-100);
+  // rotary.setUpperBound(1);
+
+  // rotary won't change
+  rotary.setLowerBound(0);
+  rotary.setUpperBound(1);
+  viewport.setCurrentScreen(MOVE_AXIS);
+  viewport.display(true);
 }
 
 void infoScreenClicked()
@@ -146,7 +222,16 @@ void prepScreenClicked()
     setScreen(MAIN, true);
     break;
   case 1:
-    setScreen(MOVE_AXIS);
+    setScreen(MOVE_AXES);
+    break;
+  case 2:
+    autohome();
+    break;
+  case 3:
+    setHomeOffsets();
+    break;
+  case 4:
+    disableSteppers();
     break;
   default:
     break;
@@ -182,9 +267,9 @@ void aboutScreenClicked()
   setScreen(MAIN, true);
 }
 
-void moveAxisScreenClicked()
+void moveAxesScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(MOVE_AXIS))
+  switch (viewport.getCurrentLineIndex(MOVE_AXES))
   {
   case 0:
     setScreen(PREP, true);
@@ -203,19 +288,85 @@ void moveAxisScreenClicked()
   }
 }
 
+void moveAxisScreenClicked()
+{
+  switch (currentAxis)
+  {
+  case X:
+    setScreen(MOVE_X, true);
+    break;
+  case Y:
+    setScreen(MOVE_Y, true);
+    break;
+  case Z:
+    setScreen(MOVE_Z, true);
+    break;
+  default:
+    break;
+  }
+}
+
 void moveXScreenClicked()
 {
-  setScreen(MOVE_AXIS, true);
+  switch (viewport.getCurrentLineIndex(MOVE_X))
+  {
+  case 0:
+    setScreen(MOVE_AXES, true);
+    break;
+  case 1:
+    setMoveAxisScreen(X, TEN_MILLIMETER);
+    break;
+  case 2:
+    setMoveAxisScreen(X, ONE_MILLIMETER);
+    break;
+  case 3:
+    setMoveAxisScreen(X, TENTH_MILLIMETER);
+    break;
+  default:
+    break;
+  }
 }
 
 void moveYScreenClicked()
 {
-  setScreen(MOVE_AXIS, true);
+  switch (viewport.getCurrentLineIndex(MOVE_Y))
+  {
+  case 0:
+    setScreen(MOVE_AXES, true);
+    break;
+  case 1:
+    setMoveAxisScreen(Y, TEN_MILLIMETER);
+    break;
+  case 2:
+    setMoveAxisScreen(Y, ONE_MILLIMETER);
+    break;
+  case 3:
+    setMoveAxisScreen(Y, TENTH_MILLIMETER);
+    break;
+  default:
+    break;
+  }
 }
 
 void moveZScreenClicked()
 {
-  setScreen(MOVE_AXIS, true);
+  switch (viewport.getCurrentLineIndex(MOVE_Z))
+  {
+  case 0:
+    setScreen(MOVE_AXES, true);
+    break;
+  case 1:
+    setMoveAxisScreen(Z, TEN_MILLIMETER);
+    break;
+  case 2:
+    setMoveAxisScreen(Z, ONE_MILLIMETER);
+    break;
+  case 3:
+    setMoveAxisScreen(Z, TENTH_MILLIMETER);
+    break;
+  default:
+    break;
+  }
 }
 
 void onClicked()
@@ -240,6 +391,9 @@ void onClicked()
   case ABOUT:
     aboutScreenClicked();
     break;
+  case MOVE_AXES:
+    moveAxesScreenClicked();
+    break;
   case MOVE_AXIS:
     moveAxisScreenClicked();
     break;
@@ -261,14 +415,22 @@ void onRotationCCW()
 {
   switch (viewport.getCurrentScreenIndex())
   {
-  case MAIN:
-  case PREP:
-  case MOVE_AXIS:
-    viewport.previousLine();
-    viewport.display(false);
-    break;
-  default:
-    break;
+    case MAIN:
+    case PREP:
+    case MOVE_AXES:
+    case MOVE_X:
+    case MOVE_Y:
+    case MOVE_Z:
+      viewport.previousLine();
+      viewport.display(false);
+      break;
+    case MOVE_AXIS:
+      // cnc.move(currentAxis, Direction::POSITIVE, units);
+      millimeters+=currentUnit;
+      viewport.display(true);
+      break;
+    default:
+      break;
   }
 }
 
@@ -276,15 +438,47 @@ void onRotationCW()
 {
   switch (viewport.getCurrentScreenIndex())
   {
-  case MAIN:
-  case PREP:
-  case MOVE_AXIS:
-    viewport.nextLine();
-    viewport.display(false);
-    break;
-  default:
-    break;
+    case MAIN:
+    case PREP:
+    case MOVE_AXES:
+    case MOVE_X:
+    case MOVE_Y:
+    case MOVE_Z:
+      viewport.nextLine();
+      viewport.display(false);
+      break;
+    case MOVE_AXIS:
+      // cnc.move(currentAxis, Direction::NEGATIVE, units);
+      millimeters-=currentUnit;
+      if (millimeters < 0) millimeters = 0;
+      viewport.display(true);
+      break;
+    default:
+      break;
   }
+}
+
+void formatAxisLine(Buffer buf, char* text)
+{
+  switch (currentAxis)
+  {
+    case X:
+      snprintf(buf, sizeof(buf), text, "X");
+      break;
+    case Y:
+      snprintf(buf, sizeof(buf), text, "Y");
+      break;
+    case Z:
+      snprintf(buf, sizeof(buf), text, "Z");
+      break;
+  }
+}
+
+void formatMilliLine(Buffer buf, char* text)
+{
+  uint8_t tens = millimeters / 10;
+  uint8_t ones = millimeters % 10;
+  snprintf(buf, sizeof(buf), text, tens, ones);
 }
 
 void setup()
@@ -326,14 +520,31 @@ void setup()
   prepScreen.addLine(3, setHomeLine);
   prepScreen.addLine(4, disableLine);
 
-  moveAxisScreen.addLine(0, prepLine);
-  moveAxisScreen.addLine(1, moveXLine);
-  moveAxisScreen.addLine(2, moveYLine);
-  moveAxisScreen.addLine(3, moveZLine);
+  moveAxesScreen.addLine(0, prepLine);
+  moveAxesScreen.addLine(1, moveXLine);
+  moveAxesScreen.addLine(2, moveYLine);
+  moveAxesScreen.addLine(3, moveZLine);
 
   moveXScreen.addLine(0, moveAxisLine);
+  moveXScreen.addLine(1, moveX10mmLine);
+  moveXScreen.addLine(2, moveX1mmLine);
+  moveXScreen.addLine(3, moveX01mmLine);
+
   moveYScreen.addLine(0, moveAxisLine);
+  moveYScreen.addLine(1, moveY10mmLine);
+  moveYScreen.addLine(2, moveY1mmLine);
+  moveYScreen.addLine(3, moveY01mmLine);
+
   moveZScreen.addLine(0, moveAxisLine);
+  moveZScreen.addLine(1, moveZ10mmLine);
+  moveZScreen.addLine(2, moveZ1mmLine);
+  moveZScreen.addLine(3, moveZ01mmLine);
+
+  moveAxisScreen.addLine(0, moveLine);
+  moveAxisScreen.addLine(1, milliLine);
+
+  moveLine.setFormat(formatAxisLine);
+  milliLine.setFormat(formatMilliLine);
 
   ctrlScreen.addLine(0, mainLine);
   cardScreen.addLine(0, mainLine);
@@ -346,6 +557,7 @@ void setup()
   viewport.addScreen(CARD, cardScreen);
   viewport.addScreen(ABOUT, aboutScreen);
 
+  viewport.addScreen(MOVE_AXES, moveAxesScreen);
   viewport.addScreen(MOVE_AXIS, moveAxisScreen);
   viewport.addScreen(MOVE_X, moveXScreen);
   viewport.addScreen(MOVE_Y, moveYScreen);

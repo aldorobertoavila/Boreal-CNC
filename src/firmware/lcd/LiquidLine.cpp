@@ -1,6 +1,6 @@
 #include <LiquidViewport.h>
 
-LiquidLine::LiquidLine(uint8_t col, uint8_t row, String text) : _col(col), _row(row), _text(text)
+LiquidLine::LiquidLine(uint8_t col, uint8_t row, char *text) : _col(col), _row(row), _text(text)
 {
     _col = col;
     _row = row;
@@ -12,12 +12,17 @@ uint8_t LiquidLine::getColumn()
     return _col;
 }
 
+void LiquidLine::setFormat(FormatFunc format)
+{
+    _format = format;
+}
+
 uint8_t LiquidLine::getRow()
 {
     return _row;
 }
 
-String LiquidLine::getText()
+char *LiquidLine::getText()
 {
     return _text;
 }
@@ -25,12 +30,18 @@ String LiquidLine::getText()
 void LiquidLine::display(LCD &lcd)
 {
     lcd.setCursor(_col, _row);
-    lcd.print(_text);
-}
 
-uint8_t LiquidLine::length()
-{
-    return _text.length();
+    if (_format)
+    {
+        char bytearray[BUFFER_SIZE];
+        Buffer buf = bytearray;
+        _format(buf, _text);
+        lcd.print(buf);
+    }
+    else
+    {
+        lcd.print(_text);
+    }
 }
 
 void LiquidLine::setColumn(uint8_t col)
@@ -43,7 +54,7 @@ void LiquidLine::setRow(uint8_t row)
     _row = row;
 }
 
-void LiquidLine::setText(String text)
+void LiquidLine::setText(char *text)
 {
     _text = text;
 }

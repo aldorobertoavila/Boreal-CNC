@@ -70,10 +70,10 @@ void LiquidScreen::displayLines(LCD &lcd, uint8_t startLine)
 
         if (line)
         {
-            line->setRow(row);
             line->display(lcd);
-            lineIndex++;
         }
+
+        lineIndex++;
     }
 }
 
@@ -135,6 +135,23 @@ void LiquidMenu::display(LCD &lcd, bool redraw)
         if (redraw)
         {
             displayLines(lcd, 0);
+        }
+    }
+}
+
+void LiquidMenu::displayLines(LCD &lcd, uint8_t startLine)
+{
+    uint8_t lineIndex = startLine;
+
+    for (int row = 0; row < _rows; row++)
+    {
+        LiquidLine *line = _lines[lineIndex];
+
+        if (line)
+        {
+            line->setRow(row);
+            line->display(lcd);
+            lineIndex++;
         }
     }
 }
