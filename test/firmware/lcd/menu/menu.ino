@@ -9,10 +9,6 @@
 #define EN_SW_PIN 3
 #define EN_CLK_PIN 4
 
-#define EN_DT_PIN 2
-#define EN_SW_PIN 3
-#define EN_CLK_PIN 4
-
 #define EN_CLICK_DEBOUNCE 500
 #define EN_ROT_DEBOUNCE 100
 
@@ -38,9 +34,6 @@ byte ARROW[8] =
   0b00000
 };
 
-const uint32_t BAUD_RATE = 115200;
-const uint32_t CLOCK_FREQ = 400000;
-
 enum Screen
 {
   INFO,
@@ -55,7 +48,7 @@ enum Screen
   MOVE_Z
 };
 
-LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
+LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
 LiquidLine headerLine(0, 0, "Boreal CNC");
 LiquidLine motorsLine(0, 1, "X: 0 Y: 0 Z: 0");
@@ -109,7 +102,7 @@ void setScreen(uint8_t screenId, bool forcePosition)
     rotary.forcePosition(forcePosition ? viewport.getCurrentLineIndex(screenId) : 0);
 
     viewport.setCurrentScreen(screenId);
-    viewport.display();
+    viewport.display(true);
   }
 }
 
@@ -272,7 +265,7 @@ void onRotationCCW()
   case PREP:
   case MOVE_AXIS:
     viewport.previousLine();
-    viewport.display();
+    viewport.display(false);
     break;
   default:
     break;
@@ -287,7 +280,7 @@ void onRotationCW()
   case PREP:
   case MOVE_AXIS:
     viewport.nextLine();
-    viewport.display();
+    viewport.display(false);
     break;
   default:
     break;
@@ -296,9 +289,7 @@ void onRotationCW()
 
 void setup()
 {
-  Serial.begin(BAUD_RATE);
-  Wire.begin();
-  Wire.setClock(CLOCK_FREQ);
+  Serial.begin(115200);
 
   pinMode(EN_CLK_PIN, INPUT);
   pinMode(EN_DT_PIN, INPUT);
@@ -312,6 +303,7 @@ void setup()
   rotary.setRotationDebounceTime(EN_ROT_DEBOUNCE);
 
   lcd.init();
+  Wire.setClock(400000);
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -360,7 +352,7 @@ void setup()
   viewport.addScreen(MOVE_Z, moveZScreen);
 
   viewport.setCurrentScreen(INFO);
-  viewport.display();
+  viewport.display(true);
 }
 
 void loop()

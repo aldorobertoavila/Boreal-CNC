@@ -20,9 +20,9 @@ public:
 
     void previousLine();
 
-    virtual void display(LiquidCrystal_I2C &lcd);
+    virtual void display(LCD &lcd, bool redraw);
 
-    void displayLines(LiquidCrystal_I2C &lcd, uint8_t startLine);
+    void displayLines(LCD &lcd, uint8_t startLine);
 
     void setCurrentLine(uint8_t id);
 
@@ -44,7 +44,7 @@ class LiquidMenu : public LiquidScreen
 public:
     LiquidMenu();
 
-    void display(LiquidCrystal_I2C &lcd) override;
+    void display(LCD &lcd, bool redraw) override;
 
     void setFocusSymbol(uint8_t id);
 

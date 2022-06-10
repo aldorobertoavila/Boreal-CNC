@@ -52,12 +52,15 @@ void LiquidScreen::previousLine()
     }
 }
 
-void LiquidScreen::display(LiquidCrystal_I2C &lcd)
+void LiquidScreen::display(LCD &lcd, bool redraw)
 {
-    displayLines(lcd, _currentLine);
+    if (redraw)
+    {
+        displayLines(lcd, _currentLine);
+    }
 }
 
-void LiquidScreen::displayLines(LiquidCrystal_I2C &lcd, uint8_t startLine)
+void LiquidScreen::displayLines(LCD &lcd, uint8_t startLine)
 {
     uint8_t lineIndex = startLine;
 
@@ -94,7 +97,7 @@ LiquidMenu::LiquidMenu()
 {
 }
 
-void LiquidMenu::display(LiquidCrystal_I2C &lcd)
+void LiquidMenu::display(LCD &lcd, bool redraw)
 {
     if (_lineCount > _rows)
     {
@@ -109,7 +112,10 @@ void LiquidMenu::display(LiquidCrystal_I2C &lcd)
             lcd.setCursor(0, _currentLine - 1);
             lcd.write(_symbol);
 
-            displayLines(lcd, _lineCount - _rows);
+            if (redraw)
+            {
+                displayLines(lcd, _lineCount - _rows);
+            }
             return;
         }
 
@@ -126,7 +132,10 @@ void LiquidMenu::display(LiquidCrystal_I2C &lcd)
         lcd.setCursor(0, _currentLine);
         lcd.write(_symbol);
 
-        displayLines(lcd, 0);
+        if (redraw)
+        {
+            displayLines(lcd, 0);
+        }
     }
 }
 

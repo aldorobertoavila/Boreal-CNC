@@ -6,7 +6,7 @@
 class LiquidViewport
 {
 public:
-    LiquidViewport(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows);
+    LiquidViewport(LCD &lcd, uint8_t cols, uint8_t rows);
 
     void addScreen(uint8_t id, LiquidScreen &screen);
 
@@ -22,12 +22,12 @@ public:
 
     void previousLine();
 
-    void display();
+    void display(bool redraw);
 
     void setCurrentScreen(uint8_t id);
 
 protected:
-    LiquidCrystal_I2C &_lcd;
+    LCD &_lcd;
     uint8_t _cols;
     uint8_t _rows;
     uint8_t _currentScreen;

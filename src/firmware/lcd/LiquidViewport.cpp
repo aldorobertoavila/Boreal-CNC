@@ -1,6 +1,5 @@
 #include <LiquidViewport.h>
-
-LiquidViewport::LiquidViewport(LiquidCrystal_I2C &lcd, uint8_t cols, uint8_t rows) : _lcd(lcd), _cols(cols), _rows(rows)
+LiquidViewport::LiquidViewport(LCD &lcd, uint8_t cols, uint8_t rows) : _lcd(lcd), _cols(cols), _rows(rows)
 {
     _lcd = lcd;
     _cols = cols;
@@ -65,13 +64,13 @@ void LiquidViewport::previousLine()
     }
 }
 
-void LiquidViewport::display()
+void LiquidViewport::display(bool redraw)
 {
     LiquidScreen *screen = getCurrentScreen();
 
     if (screen)
     {
-        screen->display(_lcd);
+        screen->display(_lcd, redraw);
     }
 }
 

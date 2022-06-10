@@ -1,5 +1,7 @@
 #include <LiquidCrystal_I2C.h>
 
+using LCD = LiquidCrystal_I2C;
+
 class LiquidLine
 {
 public:
@@ -11,7 +13,7 @@ public:
 
     String getText();
 
-    void display(LiquidCrystal_I2C &lcd);
+    void display(LCD &lcd);
 
     uint8_t length();
 
