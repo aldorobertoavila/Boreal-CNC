@@ -1,14 +1,14 @@
 #include <LiquidCrystal_I2C.h>
 #include <LiquidLine.h>
 
-#define MAX_LINES 16
+#define MAX_LINES 10
 
 class LiquidScreen
 {
 public:
     LiquidScreen();
 
-    void addLine(uint8_t id, LiquidLine &line);
+    void addLine(LiquidLine &line);
 
     LiquidLine *getCurrentLine();
 

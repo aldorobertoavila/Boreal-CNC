@@ -4,11 +4,11 @@ LiquidScreen::LiquidScreen()
 {
 }
 
-void LiquidScreen::addLine(uint8_t id, LiquidLine &line)
+void LiquidScreen::addLine(LiquidLine &line)
 {
     if (_lineCount < MAX_LINES)
     {
-        _lines[id] = &line;
+        _lines[_lineCount] = &line;
         _lineCount++;
     }
 }
@@ -99,44 +99,28 @@ LiquidMenu::LiquidMenu()
 
 void LiquidMenu::display(LCD &lcd, bool redraw)
 {
-    if (_lineCount > _rows)
+    uint8_t startLine = _lineCount > _rows ? _lineCount - _rows : 0;
+
+    lcd.setCursor(0, _prevLine - startLine);
+    lcd.print(" ");
+
+    if (_currentLine + _rows > _lineCount)
     {
-        if (_prevLine > 0)
-        {
-            lcd.setCursor(0, _prevLine - 1);
-            lcd.print(" ");
-        }
-
-        if (_currentLine + _rows > _lineCount && _lineCount > 1)
-        {
-            lcd.setCursor(0, _currentLine - 1);
-            lcd.write(_symbol);
-
-            if (redraw)
-            {
-                displayLines(lcd, _lineCount - _rows);
-            }
-            return;
-        }
-
-        lcd.setCursor(0, 0);
-        lcd.write(_symbol);
-
-        displayLines(lcd, _currentLine);
-    }
-    else
-    {
-        lcd.setCursor(0, _prevLine);
-        lcd.print(" ");
-
-        lcd.setCursor(0, _currentLine);
+        lcd.setCursor(0, _currentLine - startLine);
         lcd.write(_symbol);
 
         if (redraw)
         {
-            displayLines(lcd, 0);
+            displayLines(lcd, startLine);
         }
+
+        return;
     }
+
+    lcd.setCursor(0, 0);
+    lcd.write(_symbol);
+
+    displayLines(lcd, _currentLine);
 }
 
 void LiquidMenu::displayLines(LCD &lcd, uint8_t startLine)
