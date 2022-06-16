@@ -11,7 +11,8 @@ void setup()
     pinMode(STEP_PIN, OUTPUT);
 
     stepper.setAcceleration(100);
-    stepper.setMaxSpeed(1000);
+    stepper.setMaxSpeed(500);
+    stepper.moveTo(5000);
 }
 
 void loop()
