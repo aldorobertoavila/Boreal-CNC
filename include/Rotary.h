@@ -38,7 +38,7 @@ private:
     uint8_t _clk;
     uint8_t _sw;
     int _lowerBound = INT16_MIN;
-    int _upperBound = INT16_MIN;
+    int _upperBound = INT16_MAX;
     voidFunc _onClicked;
     voidFunc _onRotationCW;
     voidFunc _onRotationCCW;
