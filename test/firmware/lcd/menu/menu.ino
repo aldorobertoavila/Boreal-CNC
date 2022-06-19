@@ -72,66 +72,6 @@ byte ARROW[8] =
 
 LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
-LiquidLine headerLine(0, 0, "Boreal CNC");
-LiquidLine motorsLine(0, 1, "X: 0 Y: 0 Z: 0");
-LiquidLine progressLine(0, 2, "0%");
-LiquidLine statusLine(0, 3, "CNC ready.");
-
-LiquidLine infoLine(ARROW_COL, ZERO_ROW, "Info   ");
-LiquidLine prepLine(ARROW_COL, ZERO_ROW, "Prepare");
-LiquidLine ctrlLine(ARROW_COL, ZERO_ROW, "Control   ");
-LiquidLine cardLine(ARROW_COL, ZERO_ROW, "No TF card");
-LiquidLine aboutLine(ARROW_COL, ZERO_ROW, "About CNC ");
-
-LiquidLine mainLine(ARROW_COL, ZERO_ROW, "Main     ");
-LiquidLine moveAxisLine(ARROW_COL, ZERO_ROW, "Move axes");
-LiquidLine autoHomeLine(ARROW_COL, ZERO_ROW, "Auto home       ");
-LiquidLine setHomeLine(ARROW_COL, ZERO_ROW, "Set home offsets");
-LiquidLine disableLine(ARROW_COL, ZERO_ROW, "Disable steppers");
-
-LiquidLine moveXLine(ARROW_COL, ZERO_ROW, "Move X");
-LiquidLine moveYLine(ARROW_COL, ZERO_ROW, "Move Y");
-LiquidLine moveZLine(ARROW_COL, ZERO_ROW, "Move Z");
-
-LiquidLine moveLine(AXIS_COL, 1, "Move %s");   // "Move X"
-LiquidLine milliLine(AXIS_COL, 2, "+%03d.%d"); // "+000.0"
-
-LiquidLine moveX10mmLine(ARROW_COL, ZERO_ROW, "Move X 10mm");
-LiquidLine moveX1mmLine(ARROW_COL, ZERO_ROW, "Move X 1mm");
-LiquidLine moveX01mmLine(ARROW_COL, ZERO_ROW, "Move X 0.1mm");
-
-LiquidLine moveY10mmLine(ARROW_COL, ZERO_ROW, "Move Y 10mm");
-LiquidLine moveY1mmLine(ARROW_COL, ZERO_ROW, "Move Y 1mm");
-LiquidLine moveY01mmLine(ARROW_COL, ZERO_ROW, "Move Y 0.1mm");
-
-LiquidLine moveZ10mmLine(ARROW_COL, ZERO_ROW, "Move Z 10mm");
-LiquidLine moveZ1mmLine(ARROW_COL, ZERO_ROW, "Move Z 1mm");
-LiquidLine moveZ01mmLine(ARROW_COL, ZERO_ROW, "Move Z 0.1mm");
-
-LiquidLine motionLine(ARROW_COL, ZERO_ROW, "Motion");
-LiquidLine laserLine(ARROW_COL, ZERO_ROW, "Laser");
-LiquidLine storeLine(ARROW_COL, ZERO_ROW, "Store settings");
-
-LiquidLine accelerationLine(ARROW_COL, ZERO_ROW, "Acceleration");
-LiquidLine velocityLine(ARROW_COL, ZERO_ROW, "Velocity");
-LiquidLine stepsLine(ARROW_COL, ZERO_ROW, "Steps/mm");
-
-LiquidLine xStepsLine(ARROW_COL, ZERO_ROW, "X steps/mm");
-LiquidLine yStepsLine(ARROW_COL, ZERO_ROW, "Y steps/mm");
-LiquidLine zStepsLine(ARROW_COL, ZERO_ROW, "Z steps/mm");
-
-LiquidLine accelLine(ARROW_COL, ZERO_ROW, "Accel ");
-LiquidLine aTravelLine(ARROW_COL, ZERO_ROW, "Travel");
-LiquidLine aMaxXLine(ARROW_COL, ZERO_ROW, "Amax X");
-LiquidLine aMaxYLine(ARROW_COL, ZERO_ROW, "Amax Y");
-LiquidLine aMaxZLine(ARROW_COL, ZERO_ROW, "Amax Z");
-
-LiquidLine velLine(ARROW_COL, ZERO_ROW, "Vel   ");
-LiquidLine velTravelLine(ARROW_COL, ZERO_ROW, "Travel");
-LiquidLine velmaxXLine(ARROW_COL, ZERO_ROW, "Vmax X");
-LiquidLine velmaxYLine(ARROW_COL, ZERO_ROW, "Vmax Y");
-LiquidLine velmaxZLine(ARROW_COL, ZERO_ROW, "Vmax Z");
-
 LiquidScreen infoScreen;
 LiquidScreen aboutScreen;
 LiquidScreen moveAxisScreen;
@@ -568,6 +508,13 @@ void storeSettings()
   Serial.println("Store Settings");
 }
 
+void addLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
+{
+  LiquidLine line = LiquidLine(col, row, text);
+
+  screen.addLine(line);
+}
+
 void setScreen(uint8_t screenId)
 {
   setScreen(screenId, false);
@@ -636,80 +583,83 @@ void setup()
   lcd.setCursor(0, 0);
   lcd.createChar(ARROW_CHAR, ARROW);
 
-  infoScreen.addLine(headerLine);
-  infoScreen.addLine(motorsLine);
-  infoScreen.addLine(progressLine);
-  infoScreen.addLine(statusLine);
+  addLine(infoScreen, ZERO_COL, 0, "Boreal CNC");
+  addLine(infoScreen, ZERO_COL, 1, "X: 0 Y: 0 Z: 0");
+  addLine(infoScreen, ZERO_COL, 2, "0%");
+  addLine(infoScreen, ZERO_COL, 3, "Boreal CNC");
 
-  mainScreen.addLine(infoLine);
-  mainScreen.addLine(prepLine);
-  mainScreen.addLine(ctrlLine);
-  mainScreen.addLine(cardLine);
-  mainScreen.addLine(aboutLine);
+  addLine(mainScreen, ARROW_COL, ZERO_ROW, "Info");
+  addLine(mainScreen, ARROW_COL, ZERO_ROW, "Prepare");
+  addLine(mainScreen, ARROW_COL, ZERO_ROW, "Control");
+  addLine(mainScreen, ARROW_COL, ZERO_ROW, "No TF card");
+  addLine(mainScreen, ARROW_COL, ZERO_ROW, "About CNC ");
 
-  prepScreen.addLine(mainLine);
-  prepScreen.addLine(moveAxisLine);
-  prepScreen.addLine(autoHomeLine);
-  prepScreen.addLine(setHomeLine);
-  prepScreen.addLine(disableLine);
+  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Main");
+  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Move axes");
+  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Auto home");
+  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Set home offsets");
+  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Disable steppers");
 
-  moveAxesScreen.addLine(prepLine);
-  moveAxesScreen.addLine(moveXLine);
-  moveAxesScreen.addLine(moveYLine);
-  moveAxesScreen.addLine(moveZLine);
+  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Prepare");
+  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move X");
+  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move Y");
+  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move Z");
 
-  moveXScreen.addLine(moveAxisLine);
-  moveXScreen.addLine(moveX10mmLine);
-  moveXScreen.addLine(moveX1mmLine);
-  moveXScreen.addLine(moveX01mmLine);
+  LiquidLine moveLine(AXIS_COL, 1, "Move %s");   // "Move X"
+  LiquidLine milliLine(AXIS_COL, 2, "+%03d.%d"); // "+000.0"
 
-  moveYScreen.addLine(moveAxisLine);
-  moveYScreen.addLine(moveY10mmLine);
-  moveYScreen.addLine(moveY1mmLine);
-  moveYScreen.addLine(moveY01mmLine);
+  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move Axes");
+  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 10mm");
+  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 1mm");
+  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 0.1mm");
 
-  moveZScreen.addLine(moveAxisLine);
-  moveZScreen.addLine(moveZ10mmLine);
-  moveZScreen.addLine(moveZ1mmLine);
-  moveZScreen.addLine(moveZ01mmLine);
+  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Axes");
+  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 10mm");
+  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 1mm");
+  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 0.1mm");
+
+  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Axes");
+  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 10mm");
+  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 1mm");
+  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 0.1mm");
+
+  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Main");
+  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Motion");
+  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Laser");
+  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Store settings");
+
+  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Control");
+  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Acceleration");
+  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Velocity");
+  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Steps/mm");
+
+  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "Motion");
+  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "X steps/mm");
+  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "Y steps/mm");
+  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "Z steps/mm");
+
+  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Motion");
+  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vel");
+  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Travel");
+  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax X");
+  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax Y");
+  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax Z");
+
+  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Motion");
+  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Accel");
+  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Travel");
+  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax X");
+  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax Y");
+  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax Z");
+
+  addLine(cardScreen, ARROW_COL, ZERO_ROW, "Main");
+  addLine(aboutScreen, ARROW_COL, ZERO_ROW, "Main");
 
   moveAxisScreen.addLine(moveLine);
   moveAxisScreen.addLine(milliLine);
 
   moveLine.setFormat(formatAxisLine);
   milliLine.setFormat(formatMilliLine);
-
-  ctrlScreen.addLine(mainLine);
-  ctrlScreen.addLine(motionLine);
-  ctrlScreen.addLine(laserLine);
-  ctrlScreen.addLine(storeLine);
-
-  motionScreen.addLine(ctrlLine);
-  motionScreen.addLine(accelerationLine);
-  motionScreen.addLine(velocityLine);
-  motionScreen.addLine(stepsLine);
-
-  stepsScreen.addLine(motionLine);
-  stepsScreen.addLine(xStepsLine);
-  stepsScreen.addLine(yStepsLine);
-  stepsScreen.addLine(zStepsLine);
-
-  velocityScreen.addLine(motionLine);
-  velocityScreen.addLine(velLine);
-  velocityScreen.addLine(velTravelLine);
-  velocityScreen.addLine(velmaxXLine);
-  velocityScreen.addLine(velmaxYLine);
-  velocityScreen.addLine(velmaxZLine);
-
-  accelScreen.addLine(motionLine);
-  accelScreen.addLine(accelLine);
-  accelScreen.addLine(aTravelLine);
-  accelScreen.addLine(aMaxXLine);
-  accelScreen.addLine(aMaxYLine);
-  accelScreen.addLine(aMaxZLine);
-
-  cardScreen.addLine(mainLine);
-  aboutScreen.addLine(mainLine);
 
   viewport.addScreen(INFO, infoScreen);
   viewport.addScreen(MAIN, mainScreen);
