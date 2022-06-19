@@ -22,8 +22,6 @@ public:
 
     void setColumn(uint8_t col);
 
-    void setFormat(FormatFunc format);
-
     void setRow(uint8_t row);
 
     void setText(char *text);
@@ -32,5 +30,16 @@ protected:
     uint8_t _col;
     uint8_t _row;
     char *_text;
+    FormatFunc _format;
+};
+
+class LiquidFormattedLine : public LiquidLine
+{
+public:
+    LiquidFormattedLine();
+
+    void display(LCD &lcd) override;
+
+protected:
     FormatFunc _format;
 };
