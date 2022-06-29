@@ -517,7 +517,8 @@ void addLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
 
 void addFormattedLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
 {
-  LiquidFormattedLine line = LiquidFormattedLine(col, row, text);
+  // LiquidFormattedLine line = LiquidFormattedLine(col, row, text);
+  LiquidLine line = LiquidLine(col, row, text);
 
   screen.addLine(line);
 }
@@ -659,8 +660,8 @@ void setup()
   addLine(cardScreen, ARROW_COL, ZERO_ROW, "Main");
   addLine(aboutScreen, ARROW_COL, ZERO_ROW, "Main");
 
-  addFormattedLine(moveAxisScreen, AXIS_COL, 1, "Move %s", formatAxisLine); // e.g "Move X"
-  addFormattedLine(moveAxisScreen, AXIS_COL, 2, "+%03d.%d", formatMilliLine); // e.g "+000.0"
+  addFormattedLine(moveAxisScreen, AXIS_COL, 1, "Move %s"); // e.g "Move X"
+  addFormattedLine(moveAxisScreen, AXIS_COL, 2, "+%03d.%d"); // e.g "+000.0"
 
   viewport.addScreen(INFO, infoScreen);
   viewport.addScreen(MAIN, mainScreen);
