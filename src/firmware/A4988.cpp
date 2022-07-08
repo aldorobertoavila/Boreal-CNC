@@ -1,6 +1,6 @@
 #include <A4988.h>
 
-A4988::A4988(uint8_t enaPin, uint8_t dirPin, uint8_t stepPin, uint8_t ms1Pin, uint8_t ms2Pin, uint8_t ms3Pin)
+PinOutMotorInterface::PinOutMotorInterface(uint8_t enaPin, uint8_t dirPin, uint8_t stepPin, uint8_t ms1Pin, uint8_t ms2Pin, uint8_t ms3Pin)
 {
     this->_enaPin = enaPin;
     this->_dirPin = dirPin;
@@ -8,7 +8,63 @@ A4988::A4988(uint8_t enaPin, uint8_t dirPin, uint8_t stepPin, uint8_t ms1Pin, ui
     this->_ms1Pin = ms1Pin;
     this->_ms2Pin = ms2Pin;
     this->_ms3Pin = ms3Pin;
+}
 
+void PinOutMotorInterface::enable()
+{
+    digitalWrite(_enaPin, LOW);
+}
+
+void PinOutMotorInterface::disable()
+{
+    digitalWrite(_enaPin, HIGH);
+}
+
+void PinOutMotorInterface::resolution(Resolution res)
+{
+    switch(res)
+    {
+        case FULL:
+            digitalWrite(_ms1Pin, LOW);
+            digitalWrite(_ms2Pin, LOW);
+            digitalWrite(_ms3Pin, LOW);
+            break;
+        case HALF:
+            digitalWrite(_ms1Pin, HIGH);
+            digitalWrite(_ms2Pin, LOW);
+            digitalWrite(_ms3Pin, LOW);
+            break;
+        case QUARTER:
+            digitalWrite(_ms1Pin, LOW);
+            digitalWrite(_ms2Pin, HIGH);
+            digitalWrite(_ms3Pin, LOW);
+            break;
+        case EIGHTH:
+            digitalWrite(_ms1Pin, HIGH);
+            digitalWrite(_ms2Pin, HIGH);
+            digitalWrite(_ms3Pin, LOW);
+            break;
+        case SIXTEENTH:
+            digitalWrite(_ms1Pin, HIGH);
+            digitalWrite(_ms2Pin, HIGH);
+            digitalWrite(_ms3Pin, HIGH);
+            break;
+        default:
+            break;
+    }
+}
+
+void PinOutMotorInterface::step(Direction dir, unsigned long pulseWidth)
+{
+    digitalWrite(_dirPin, dir);
+    digitalWrite(_stepPin, HIGH);
+    delayMicroseconds(pulseWidth);
+    digitalWrite(_stepPin, LOW);
+}
+
+A4988::A4988(MotorInterface &motorInterface) : _motorInterface(motorInterface)
+{
+    this->_motorInterface = motorInterface;
     this->_maxSpeed = 1.0;
     this->_minStepInterval = 1.0;
 }
@@ -73,7 +129,7 @@ void A4988::computeSpeed()
 
 void A4988::disable()
 {
-    digitalWrite(_enaPin, HIGH);
+    _motorInterface.disable();
 }
 
 long A4988::distanceTo()
@@ -83,7 +139,7 @@ long A4988::distanceTo()
 
 void A4988::enable()
 {
-    digitalWrite(_enaPin, LOW);
+    _motorInterface.enable();
 }
 
 float A4988::getAcceleration()
@@ -127,6 +183,8 @@ void A4988::moveTo(long absolute)
 
 bool A4988::run()
 {
+        Serial.println("Step");
+
     if(runSpeed())
     {
         computeSpeed();
@@ -139,7 +197,7 @@ bool A4988::run()
 bool A4988::runSpeed()
 {
     if(!_stepInterval || distanceTo() < 0)
-        return;
+        return false;
 
     unsigned long currentTime = micros();
 
@@ -197,40 +255,10 @@ void A4988::setMaxSpeed(float maxSpeed)
     }
 }
 
-void A4988::setResolution(Resolution resolution)
+void A4988::setResolution(Resolution res)
 {
-    _resolution = resolution;
-
-    switch(_resolution)
-    {
-        case FULL:
-            digitalWrite(_ms1Pin, LOW);
-            digitalWrite(_ms2Pin, LOW);
-            digitalWrite(_ms3Pin, LOW);
-            break;
-        case HALF:
-            digitalWrite(_ms1Pin, HIGH);
-            digitalWrite(_ms2Pin, LOW);
-            digitalWrite(_ms3Pin, LOW);
-            break;
-        case QUARTER:
-            digitalWrite(_ms1Pin, LOW);
-            digitalWrite(_ms2Pin, HIGH);
-            digitalWrite(_ms3Pin, LOW);
-            break;
-        case EIGHTH:
-            digitalWrite(_ms1Pin, HIGH);
-            digitalWrite(_ms2Pin, HIGH);
-            digitalWrite(_ms3Pin, LOW);
-            break;
-        case SIXTEENTH:
-            digitalWrite(_ms1Pin, HIGH);
-            digitalWrite(_ms2Pin, HIGH);
-            digitalWrite(_ms3Pin, HIGH);
-            break;
-        default:
-            break;
-    }
+    _motorInterface.resolution(res);
+    _resolution = res;
 }
 
 void A4988::setSpeed(float speed)
@@ -255,8 +283,5 @@ void A4988::setSpeed(float speed)
 
 void A4988::step()
 {
-    digitalWrite(_dirPin, _direction);
-    digitalWrite(_stepPin, HIGH);
-    delayMicroseconds(MIN_PULSE_WIDTH);
-    digitalWrite(_stepPin, LOW);
+    _motorInterface.step(_direction, MIN_PULSE_WIDTH);
 }
