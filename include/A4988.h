@@ -2,6 +2,13 @@
 
 #define MIN_PULSE_WIDTH 1
 
+enum Axis
+{
+    X,
+    Y,
+    Z
+};
+
 enum Direction
 {
     DIRECTION_CCW,
@@ -51,12 +58,34 @@ private:
     uint8_t _ms3Pin;
 };
 
-#define MIN_PULSE_WIDTH 1
+class ShiftRegisterMotorInterface : public MotorInterface
+{
+public:
+    ShiftRegisterMotorInterface(uint8_t latchPin, uint8_t clockPin, uint8_t dataPin);
+
+    void enable() override;
+
+    void disable() override;
+
+    void resolution(Resolution res) override;
+
+    void step(Direction dir, unsigned long pulseWidth) override;
+
+    void setAxis(Axis axis);
+
+    void updateShiftOut();
+
+private:
+    Axis _axis;
+    uint8_t _latchPin;
+    uint8_t _clockPin;
+    uint8_t _dataPin;
+    uint8_t _buffer;
+};
 
 class A4988
 {
 public:
-
     A4988(MotorInterface &motorInterface);
 
     void computeSpeed();
