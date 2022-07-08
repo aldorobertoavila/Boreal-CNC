@@ -1,4 +1,3 @@
-#include <LiquidCrystal_I2C.h>
 #include <LiquidLine.h>
 
 #ifndef MAX_LINES

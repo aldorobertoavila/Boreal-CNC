@@ -1,6 +1,6 @@
 #include <LiquidViewport.h>
 
-LiquidViewport::LiquidViewport(LCD &lcd, uint8_t cols, uint8_t rows)
+LiquidViewport::LiquidViewport(LCD &lcd, uint8_t cols, uint8_t rows) : _lcd(lcd)
 {
     this->_lcd = lcd;
     this->_cols = cols;
