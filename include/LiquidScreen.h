@@ -1,7 +1,9 @@
 #include <LiquidCrystal_I2C.h>
 #include <LiquidLine.h>
 
+#ifndef MAX_LINES
 #define MAX_LINES 10
+#endif
 
 class LiquidScreen
 {
@@ -29,6 +31,10 @@ public:
     void setCols(uint8_t cols);
 
     void setRows(uint8_t rows);
+
+    static void createLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text);
+
+    static void createFormattedLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text);
 
 protected:
     uint8_t _currentLine;

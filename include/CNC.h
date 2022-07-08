@@ -3,10 +3,10 @@
 class CNC
 {
 public:
-    CNC(Cartesian cartesian);
+    CNC(Cartesian &cartesian);
 
     void update();
 
 private:
-    Cartesian _cartesian;
+    Cartesian &_cartesian;
 };

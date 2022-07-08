@@ -508,21 +508,6 @@ void storeSettings()
   Serial.println("Store Settings");
 }
 
-void addLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
-{
-  LiquidLine line = LiquidLine(col, row, text);
-
-  screen.addLine(line);
-}
-
-void addFormattedLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
-{
-  // LiquidFormattedLine line = LiquidFormattedLine(col, row, text);
-  LiquidLine line = LiquidLine(col, row, text);
-
-  screen.addLine(line);
-}
-
 void setScreen(uint8_t screenId)
 {
   setScreen(screenId, false);
@@ -530,9 +515,12 @@ void setScreen(uint8_t screenId)
 
 void setScreen(LiquidScreen *screen, uint8_t screenId, bool forcePosition)
 {
-  rotary.setLowerBound(0);
-  rotary.setUpperBound(screen->getLineCount());
-  rotary.forcePosition(forcePosition ? viewport.getCurrentLineIndex(screenId) : 0);
+  uint8_t lineIndex = viewport.getCurrentLineIndex(screenId);
+  uint8_t lineCount = screen->getLineCount();
+
+  rotary.setBounds(0, lineCount);
+  rotary.forcePosition(forcePosition ? lineIndex : 0);
+
   viewport.setCurrentScreen(screenId);
   viewport.display(true);
 }
@@ -540,6 +528,7 @@ void setScreen(LiquidScreen *screen, uint8_t screenId, bool forcePosition)
 void setScreen(uint8_t screenId, bool forcePosition)
 {
   LiquidScreen *screen = viewport.getScreen(screenId);
+  
   if (screen)
   {
     setScreen(screen, screenId, forcePosition);
@@ -549,22 +538,12 @@ void setScreen(uint8_t screenId, bool forcePosition)
 void setMoveAxisScreen(Axis axis, uint8_t unit)
 {
   setScreen(MOVE_AXIS);
+
   currentAxis = axis;
   currentUnit = unit;
 
-  // TODO: lower bound from cnc max increment of unit
-  // TEN_MILLIMETER -> 100
-  // ONE_MILLIMETER -> 1,000
-  // TENTH_MILLIMETER -> 10,000
-  // [-100, lower) to reverse direction.
+  rotary.setBounds(-100, 1);
 
-  // upper bound cnc max decrement of unit if n > unit
-  // rotary.setLowerBound(-100);
-  // rotary.setUpperBound(1);
-
-  // rotary won't change
-  rotary.setLowerBound(0);
-  rotary.setUpperBound(1);
   viewport.setCurrentScreen(MOVE_AXIS);
   viewport.display(true);
 }
@@ -581,8 +560,7 @@ void setup()
   rotary.onRotationCCW(onRotationCCW);
   rotary.onRotationCW(onRotationCW);
 
-  rotary.setClickDebounceTime(EN_CLICK_DEBOUNCE);
-  rotary.setRotationDebounceTime(EN_ROT_DEBOUNCE);
+  rotary.setDebounceTime(EN_CLICK_DEBOUNCE, EN_ROT_DEBOUNCE);
 
   lcd.init();
   Wire.setClock(400000);
@@ -591,77 +569,77 @@ void setup()
   lcd.setCursor(0, 0);
   lcd.createChar(ARROW_CHAR, ARROW);
 
-  addLine(infoScreen, ZERO_COL, 0, "Boreal CNC");
-  addLine(infoScreen, ZERO_COL, 1, "X: 0 Y: 0 Z: 0");
-  addLine(infoScreen, ZERO_COL, 2, "0%");
-  addLine(infoScreen, ZERO_COL, 3, "Boreal CNC");
+  LiquidScreen::createLine(infoScreen, ZERO_COL, 0, "Boreal CNC");
+  LiquidScreen::createLine(infoScreen, ZERO_COL, 1, "X: 0 Y: 0 Z: 0");
+  LiquidScreen::createLine(infoScreen, ZERO_COL, 2, "0%");
+  LiquidScreen::createLine(infoScreen, ZERO_COL, 3, "Boreal CNC");
 
-  addLine(mainScreen, ARROW_COL, ZERO_ROW, "Info");
-  addLine(mainScreen, ARROW_COL, ZERO_ROW, "Prepare");
-  addLine(mainScreen, ARROW_COL, ZERO_ROW, "Control");
-  addLine(mainScreen, ARROW_COL, ZERO_ROW, "No TF card");
-  addLine(mainScreen, ARROW_COL, ZERO_ROW, "About CNC ");
+  LiquidScreen::createLine(mainScreen, ARROW_COL, ZERO_ROW, "Info");
+  LiquidScreen::createLine(mainScreen, ARROW_COL, ZERO_ROW, "Prepare");
+  LiquidScreen::createLine(mainScreen, ARROW_COL, ZERO_ROW, "Control");
+  LiquidScreen::createLine(mainScreen, ARROW_COL, ZERO_ROW, "No TF card");
+  LiquidScreen::createLine(mainScreen, ARROW_COL, ZERO_ROW, "About CNC ");
 
-  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Main");
-  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Move axes");
-  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Auto home");
-  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Set home offsets");
-  addLine(prepScreen, ARROW_COL, ZERO_ROW, "Disable steppers");
+  LiquidScreen::createLine(prepScreen, ARROW_COL, ZERO_ROW, "Main");
+  LiquidScreen::createLine(prepScreen, ARROW_COL, ZERO_ROW, "Move axes");
+  LiquidScreen::createLine(prepScreen, ARROW_COL, ZERO_ROW, "Auto home");
+  LiquidScreen::createLine(prepScreen, ARROW_COL, ZERO_ROW, "Set home offsets");
+  LiquidScreen::createLine(prepScreen, ARROW_COL, ZERO_ROW, "Disable steppers");
 
-  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Prepare");
-  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move X");
-  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move Y");
-  addLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move Z");
+  LiquidScreen::createLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Prepare");
+  LiquidScreen::createLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move X");
+  LiquidScreen::createLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move Y");
+  LiquidScreen::createLine(moveAxesScreen, ARROW_COL, ZERO_ROW, "Move Z");
 
-  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move Axes");
-  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 10mm");
-  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 1mm");
-  addLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 0.1mm");
+  LiquidScreen::createLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move Axes");
+  LiquidScreen::createLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 10mm");
+  LiquidScreen::createLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 1mm");
+  LiquidScreen::createLine(moveXScreen, ARROW_COL, ZERO_ROW, "Move X 0.1mm");
 
-  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Axes");
-  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 10mm");
-  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 1mm");
-  addLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 0.1mm");
+  LiquidScreen::createLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Axes");
+  LiquidScreen::createLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 10mm");
+  LiquidScreen::createLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 1mm");
+  LiquidScreen::createLine(moveYScreen, ARROW_COL, ZERO_ROW, "Move Y 0.1mm");
 
-  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Axes");
-  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 10mm");
-  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 1mm");
-  addLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 0.1mm");
+  LiquidScreen::createLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Axes");
+  LiquidScreen::createLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 10mm");
+  LiquidScreen::createLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 1mm");
+  LiquidScreen::createLine(moveZScreen, ARROW_COL, ZERO_ROW, "Move Z 0.1mm");
 
-  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Main");
-  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Motion");
-  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Laser");
-  addLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Store settings");
+  LiquidScreen::createLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Main");
+  LiquidScreen::createLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Motion");
+  LiquidScreen::createLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Laser");
+  LiquidScreen::createLine(ctrlScreen, ARROW_COL, ZERO_ROW, "Store settings");
 
-  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Control");
-  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Acceleration");
-  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Velocity");
-  addLine(motionScreen, ARROW_COL, ZERO_ROW, "Steps/mm");
+  LiquidScreen::createLine(motionScreen, ARROW_COL, ZERO_ROW, "Control");
+  LiquidScreen::createLine(motionScreen, ARROW_COL, ZERO_ROW, "Acceleration");
+  LiquidScreen::createLine(motionScreen, ARROW_COL, ZERO_ROW, "Velocity");
+  LiquidScreen::createLine(motionScreen, ARROW_COL, ZERO_ROW, "Steps/mm");
 
-  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "Motion");
-  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "X steps/mm");
-  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "Y steps/mm");
-  addLine(stepsScreen, ARROW_COL, ZERO_ROW, "Z steps/mm");
+  LiquidScreen::createLine(stepsScreen, ARROW_COL, ZERO_ROW, "Motion");
+  LiquidScreen::createLine(stepsScreen, ARROW_COL, ZERO_ROW, "X steps/mm");
+  LiquidScreen::createLine(stepsScreen, ARROW_COL, ZERO_ROW, "Y steps/mm");
+  LiquidScreen::createLine(stepsScreen, ARROW_COL, ZERO_ROW, "Z steps/mm");
 
-  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Motion");
-  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vel");
-  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Travel");
-  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax X");
-  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax Y");
-  addLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax Z");
+  LiquidScreen::createLine(velocityScreen, ARROW_COL, ZERO_ROW, "Motion");
+  LiquidScreen::createLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vel");
+  LiquidScreen::createLine(velocityScreen, ARROW_COL, ZERO_ROW, "Travel");
+  LiquidScreen::createLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax X");
+  LiquidScreen::createLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax Y");
+  LiquidScreen::createLine(velocityScreen, ARROW_COL, ZERO_ROW, "Vmax Z");
 
-  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Motion");
-  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Accel");
-  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Travel");
-  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax X");
-  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax Y");
-  addLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax Z");
+  LiquidScreen::createLine(accelScreen, ARROW_COL, ZERO_ROW, "Motion");
+  LiquidScreen::createLine(accelScreen, ARROW_COL, ZERO_ROW, "Accel");
+  LiquidScreen::createLine(accelScreen, ARROW_COL, ZERO_ROW, "Travel");
+  LiquidScreen::createLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax X");
+  LiquidScreen::createLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax Y");
+  LiquidScreen::createLine(accelScreen, ARROW_COL, ZERO_ROW, "Amax Z");
 
-  addLine(cardScreen, ARROW_COL, ZERO_ROW, "Main");
-  addLine(aboutScreen, ARROW_COL, ZERO_ROW, "Main");
+  LiquidScreen::createLine(cardScreen, ARROW_COL, ZERO_ROW, "Main");
+  LiquidScreen::createLine(aboutScreen, ARROW_COL, ZERO_ROW, "Main");
 
-  addFormattedLine(moveAxisScreen, AXIS_COL, 1, "Move %s"); // e.g "Move X"
-  addFormattedLine(moveAxisScreen, AXIS_COL, 2, "+%03d.%d"); // e.g "+000.0"
+  LiquidScreen::createFormattedLine(moveAxisScreen, AXIS_COL, 1, "Move %s"); // e.g "Move X"
+  LiquidScreen::createFormattedLine(moveAxisScreen, AXIS_COL, 2, "+%03d.%d"); // e.g "+000.0"
 
   viewport.addScreen(INFO, infoScreen);
   viewport.addScreen(MAIN, mainScreen);

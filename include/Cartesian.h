@@ -1,6 +1,3 @@
-#ifndef Cartesian_h
-#define Cartesian_h
-
 #include <Axis.h>
 
 class Cartesian
@@ -12,7 +9,7 @@ public:
         RELATIVE
     };
 
-    Cartesian(Axis *axes, uint8_t size, Positioning positioning);
+    Cartesian(Axis *axes, uint8_t size);
 
     Axis getAxis(uint8_t index);
 
@@ -37,5 +34,3 @@ private:
     float *_target;
     Positioning _positioning;
 };
-
-#endif

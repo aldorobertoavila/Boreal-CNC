@@ -1,7 +1,9 @@
 #include <LiquidCrystal_I2C.h>
 #include <LiquidScreen.h>
 
+#ifndef MAX_SCREENS
 #define MAX_SCREENS 20
+#endif
 
 class LiquidViewport
 {

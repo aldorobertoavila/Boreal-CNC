@@ -4,6 +4,21 @@ LiquidScreen::LiquidScreen()
 {
 }
 
+void LiquidScreen::createLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
+{
+    LiquidLine line = LiquidLine(col, row, text);
+
+    screen.addLine(line);
+}
+
+void LiquidScreen::createFormattedLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
+{
+    // LiquidFormattedLine line = LiquidFormattedLine(col, row, text);
+    LiquidLine line = LiquidLine(col, row, text);
+
+    screen.addLine(line);
+}
+
 void LiquidScreen::addLine(LiquidLine &line)
 {
     if (_lineCount < MAX_LINES)

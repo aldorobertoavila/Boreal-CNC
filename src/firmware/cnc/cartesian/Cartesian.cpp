@@ -1,13 +1,13 @@
 #include <Axis.h>
 #include <Cartesian.h>
 
-Cartesian::Cartesian(Axis *axes, uint8_t size, Positioning positioning) : _axes(axes), _size(size), _positioning(positioning)
+Cartesian::Cartesian(Axis *axes, uint8_t size, Positioning positioning)
 {
-    _acceleration = 0;
-    _axes = axes;
-    _positioning = positioning;
-    _size = size;
-    _target = {};
+    this->_acceleration = 0;
+    this->_axes = axes;
+    this->_positioning = positioning;
+    this->_size = size;
+    this->_target = {};
 }
 
 Axis Cartesian::getAxis(uint8_t index)

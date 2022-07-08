@@ -1,18 +1,10 @@
-#ifndef Axis_h
-#define Axis_h
-
-#include <AccelStepper.h>
+#include <A4988.h>
 
 class Axis
 {
 public:
-    Axis(AccelStepper *motors, uint8_t size = 1);
-
-    uint8_t getSize();
+    Axis(A4988 *drivers);
 
 private:
-    AccelStepper *_motors;
-    uint8_t _size;
+    A4988 *_drivers;
 };
-
-#endif

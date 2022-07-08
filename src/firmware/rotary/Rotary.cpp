@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include <Rotary.h>
 
-Rotary::Rotary(uint8_t dt, uint8_t clk, uint8_t sw) : _dt(dt), _clk(clk), _sw(sw)
+Rotary::Rotary(uint8_t dt, uint8_t clk, uint8_t sw)
 {
-  _dt = dt;
-  _clk = clk;
-  _sw = sw;
+  this->_dt = dt;
+  this->_clk = clk;
+  this->_sw = sw;
 }
 
 void Rotary::forcePosition(long position)
@@ -33,34 +33,22 @@ void Rotary::onRotationCCW(voidFunc onRotationCCW)
   _onRotationCCW = onRotationCCW;
 }
 
-void Rotary::setClickDebounceTime(unsigned long debounceTime)
-{
-  _clickDebounceTime = debounceTime;
-}
-
-void Rotary::setRotationDebounceTime(unsigned long debounceTime)
-{
-  _rotationDebounceTime = debounceTime;
-}
-
-void Rotary::setLowerBound(int lowerBound)
+void Rotary::setBounds(long lowerBound, long upperBound)
 {
   _lowerBound = lowerBound;
+  _upperBound = upperBound;
+}
+
+void Rotary::setDebounceTime(unsigned long clickDebounce, unsigned long rotationDebounce)
+{
+  _clickDebounceTime = clickDebounce;
+  _rotationDebounceTime = rotationDebounce;
 }
 
 void Rotary::setPosition(long position, bool callback)
 {
   _prevPosition = _position;
-  _position = position;
-
-  if (_position < _lowerBound)
-  {
-    _position = _lowerBound;
-  }
-  else if (_position >= _upperBound)
-  {
-    _position = _upperBound - 1;
-  }
+  _position = constrain(position, _lowerBound, _upperBound);
 
   if (_position != _prevPosition && callback)
   {
@@ -73,11 +61,6 @@ void Rotary::setPosition(long position, bool callback)
       _onRotationCCW();
     }
   }
-}
-
-void Rotary::setUpperBound(int upperBound)
-{
-  _upperBound = upperBound;
 }
 
 void Rotary::tick()

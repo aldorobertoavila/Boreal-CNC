@@ -1,20 +1,15 @@
 #include <LiquidViewport.h>
 
-LiquidLine::LiquidLine(uint8_t col, uint8_t row, char *text) : _col(col), _row(row), _text(text)
+LiquidLine::LiquidLine(uint8_t col, uint8_t row, char *text)
 {
-    _col = col;
-    _row = row;
-    _text = text;
+    this->_col = col;
+    this->_row = row;
+    this->_text = text;
 }
 
 uint8_t LiquidLine::getColumn()
 {
     return _col;
-}
-
-void LiquidLine::setFormat(FormatFunc format)
-{
-    _format = format;
 }
 
 uint8_t LiquidLine::getRow()

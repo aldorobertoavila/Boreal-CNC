@@ -3,7 +3,6 @@ typedef void (*voidFunc)();
 class Rotary
 {
 public:
-    Rotary();
 
     Rotary(uint8_t dt, uint8_t clk, uint8_t sw);
 
@@ -17,15 +16,11 @@ public:
 
     void onRotationCCW(voidFunc onRotationCCW);
 
-    void setClickDebounceTime(unsigned long debounceTime);
+    void setBounds(long lowerBound, long upperBound);
 
-    void setRotationDebounceTime(unsigned long debounceTime);
-
-    void setLowerBound(int lowerBound);
+    void setDebounceTime(unsigned long clickDebounce, unsigned long rotationDebounce);
 
     void setPosition(long position, bool callback);
-
-    void setUpperBound(int upperBound);
 
     void tick();
 
@@ -37,8 +32,8 @@ private:
     uint8_t _dt;
     uint8_t _clk;
     uint8_t _sw;
-    int _lowerBound = INT16_MIN;
-    int _upperBound = INT16_MAX;
+    int _lowerBound;
+    int _upperBound;
     voidFunc _onClicked;
     voidFunc _onRotationCW;
     voidFunc _onRotationCCW;

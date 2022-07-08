@@ -1,8 +1,8 @@
 #include <CNC.h>
 
-CNC::CNC(Cartesian cartesian) : _cartesian(cartesian)
+CNC::CNC(Cartesian &cartesian)
 {
-    _cartesian = cartesian;
+    this->_cartesian = cartesian;
 }
 
 void CNC::update()
