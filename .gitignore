@@ -2,6 +2,11 @@
 /build
 /data
 /lib
+
+# Proteus
+*.pdsbak
+*.workspace
+
 # Environment
 .pio
 .vscode
