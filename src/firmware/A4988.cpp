@@ -326,7 +326,7 @@ bool A4988::run()
 
 bool A4988::runSpeed()
 {
-    if(!_sleep || !_enable || !_stepInterval || distanceTo() < 0)
+    if(!_sleep || !_enable || !_stepInterval || distanceTo() == 0)
         return false;
 
     unsigned long currentTime = micros();
