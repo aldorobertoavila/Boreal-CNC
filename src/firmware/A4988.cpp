@@ -1,26 +1,61 @@
 #include <A4988.h>
 
-PinOutMotorInterface::PinOutMotorInterface(uint8_t enaPin, uint8_t dirPin, uint8_t stepPin, uint8_t ms1Pin, uint8_t ms2Pin, uint8_t ms3Pin)
+// Emerging from Reset delay (ms)
+#define RESET_DELAY 1
+
+// PWM per Step delay (us)
+#define STEP_DELAY 1
+
+// Emerging from Sleep delay (ms)
+#define SLEEP_DELAY 1
+
+// Parallel Data Outputs
+
+// Q0
+#define DIR_OUT 0
+// Q1
+#define STEP_OUT 1
+// Q2
+#define SLEEP_OUT 2
+// Q3
+#define RESET_OUT 3
+// Q4
+#define MS3_OUT 4
+// Q5
+#define MS2_OUT 5
+// Q6
+#define MS1_OUT 6
+// Q7
+#define ENABLE_OUT 7
+
+PinOutMotorInterface::PinOutMotorInterface(uint8_t enaPin, uint8_t dirPin, uint8_t resetPin, uint8_t stepPin, uint8_t sleepPin, uint8_t ms1Pin, uint8_t ms2Pin, uint8_t ms3Pin)
 {
     this->_enaPin = enaPin;
     this->_dirPin = dirPin;
+    this->_resetPin = resetPin;
+    this->_sleepPin = sleepPin;
     this->_stepPin = stepPin;
     this->_ms1Pin = ms1Pin;
     this->_ms2Pin = ms2Pin;
     this->_ms3Pin = ms3Pin;
+
+    setEnable(HIGH);
+    setSleep(HIGH);
 }
 
-void PinOutMotorInterface::enable()
+void PinOutMotorInterface::reset()
 {
-    digitalWrite(_enaPin, LOW);
+    digitalWrite(_resetPin, LOW);
+    delay(RESET_DELAY);
+    digitalWrite(_resetPin, HIGH);
 }
 
-void PinOutMotorInterface::disable()
+void PinOutMotorInterface::setEnable(bool enable)
 {
-    digitalWrite(_enaPin, HIGH);
+    digitalWrite(_enaPin, enable);
 }
 
-void PinOutMotorInterface::resolution(Resolution res)
+void PinOutMotorInterface::setResolution(Resolution res)
 {
     switch (res)
     {
@@ -54,93 +89,110 @@ void PinOutMotorInterface::resolution(Resolution res)
     }
 }
 
-void PinOutMotorInterface::step(Direction dir, unsigned long pulseWidth)
+void PinOutMotorInterface::setSleep(bool sleep)
+{
+    digitalWrite(_sleepPin, sleep);
+    delay(SLEEP_DELAY);
+}
+
+void PinOutMotorInterface::step(Direction dir)
 {
     digitalWrite(_dirPin, dir);
     digitalWrite(_stepPin, HIGH);
-    delayMicroseconds(pulseWidth);
+    delayMicroseconds(STEP_DELAY);
     digitalWrite(_stepPin, LOW);
 }
 
-ShiftRegisterMotorInterface::ShiftRegisterMotorInterface(uint8_t latchPin, uint8_t clockPin, uint8_t dataPin)
+ShiftRegisterMotorInterface::ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, long spiClk) : _spi(spi)
 {
-    pinMode(latchPin, OUTPUT);
-    pinMode(clockPin, OUTPUT);
-    pinMode(dataPin, OUTPUT);
+    this->_spiClk = spiClk;
+    this->_csPin = csPin;
+    this->_spi = spi;
 
-    this->_latchPin = latchPin;
-    this->_clockPin = clockPin;
-    this->_dataPin = dataPin;
-}
-
-void ShiftRegisterMotorInterface::enable()
-{
-    bitWrite(_buffer, 7, LOW);
+    bitWrite(_dataIn, ENABLE_OUT, LOW);
+    bitWrite(_dataIn, RESET_OUT, HIGH);
+    bitWrite(_dataIn, SLEEP_OUT, HIGH);
     updateShiftOut();
 }
 
-void ShiftRegisterMotorInterface::disable()
+void ShiftRegisterMotorInterface::reset()
 {
-    bitWrite(_buffer, 7, HIGH);
+    bitWrite(_dataIn, RESET_OUT, LOW);
+    updateShiftOut();
+    delay(RESET_DELAY);
+    bitWrite(_dataIn, RESET_OUT, HIGH);
     updateShiftOut();
 }
 
-void ShiftRegisterMotorInterface::resolution(Resolution res)
+void ShiftRegisterMotorInterface::setEnable(bool enable)
+{
+    bitWrite(_dataIn, ENABLE_OUT, enable);
+    updateShiftOut();
+}
+
+void ShiftRegisterMotorInterface::setResolution(Resolution res)
 {
     switch (res)
     {
     case FULL:
-        bitWrite(_buffer, 3, HIGH);
-        bitWrite(_buffer, 4, HIGH);
-        bitWrite(_buffer, 5, HIGH);
+        bitWrite(_dataIn, MS1_OUT, LOW);
+        bitWrite(_dataIn, MS2_OUT, LOW);
+        bitWrite(_dataIn, MS3_OUT, LOW);
+        updateShiftOut();
         break;
     case HALF:
-        bitWrite(_buffer, 3, HIGH);
-        bitWrite(_buffer, 4, LOW);
-        bitWrite(_buffer, 5, LOW);
+        bitWrite(_dataIn, MS1_OUT, HIGH);
+        bitWrite(_dataIn, MS2_OUT, LOW);
+        bitWrite(_dataIn, MS3_OUT, LOW);
+        updateShiftOut();
         break;
     case QUARTER:
-        bitWrite(_buffer, 3, LOW);
-        bitWrite(_buffer, 4, HIGH);
-        bitWrite(_buffer, 5, LOW);
+        bitWrite(_dataIn, MS1_OUT, LOW);
+        bitWrite(_dataIn, MS2_OUT, HIGH);
+        bitWrite(_dataIn, MS3_OUT, LOW);
+        updateShiftOut();
         break;
     case EIGHTH:
-        bitWrite(_buffer, 3, HIGH);
-        bitWrite(_buffer, 4, HIGH);
-        bitWrite(_buffer, 5, LOW);
+        bitWrite(_dataIn, MS1_OUT, HIGH);
+        bitWrite(_dataIn, MS2_OUT, HIGH);
+        bitWrite(_dataIn, MS3_OUT, LOW);
+        updateShiftOut();
         break;
     case SIXTEENTH:
-        bitWrite(_buffer, 3, HIGH);
-        bitWrite(_buffer, 4, HIGH);
-        bitWrite(_buffer, 5, HIGH);
+        bitWrite(_dataIn, MS1_OUT, HIGH);
+        bitWrite(_dataIn, MS2_OUT, HIGH);
+        bitWrite(_dataIn, MS3_OUT, HIGH);
+        updateShiftOut();
         break;
     default:
         break;
     }
-
-    updateShiftOut();
 }
 
-void ShiftRegisterMotorInterface::step(Direction dir, unsigned long pulseWidth)
+void ShiftRegisterMotorInterface::setSleep(bool sleep)
 {
-    bitWrite(_buffer, 6, dir);
-    bitWrite(_buffer, _axis, HIGH);
+    bitWrite(_dataIn, SLEEP_OUT, sleep);
     updateShiftOut();
-    delayMicroseconds(pulseWidth);
-    bitWrite(_buffer, _axis, LOW);
-    updateShiftOut();
+    delay(SLEEP_DELAY);
 }
 
-void ShiftRegisterMotorInterface::setAxis(Axis axis)
+void ShiftRegisterMotorInterface::step(Direction dir)
 {
-    _axis = axis;
+    bitWrite(_dataIn, DIR_OUT, dir);
+    bitWrite(_dataIn, STEP_OUT, HIGH);
+    updateShiftOut();
+    delayMicroseconds(STEP_DELAY);
+    bitWrite(_dataIn, STEP_OUT, LOW);
+    updateShiftOut();
 }
 
 void ShiftRegisterMotorInterface::updateShiftOut()
 {
-    digitalWrite(_latchPin, LOW);
-    shiftOut(_dataPin, _clockPin, LSBFIRST, _buffer);
-    digitalWrite(_latchPin, HIGH);
+    _spi.beginTransaction(SPISettings(_spiClk, MSBFIRST, SPI_MODE0));
+    digitalWrite(_csPin, LOW);
+    _spi.transfer(_dataIn);
+    digitalWrite(_csPin, HIGH);
+    _spi.endTransaction();
 }
 
 A4988::A4988(MotorInterface &motorInterface) : _motorInterface(motorInterface)
@@ -148,14 +200,17 @@ A4988::A4988(MotorInterface &motorInterface) : _motorInterface(motorInterface)
     this->_motorInterface = motorInterface;
     this->_maxSpeed = 1.0;
     this->_minStepInterval = 1.0;
+
+    this->_sleep = true;
+    this->_enable = true;
 }
 
 void A4988::computeSpeed()
 {
-    if (_acceleration > 0)
+    if(_acceleration > 0)
     {
         long deltaDistance = distanceTo();
-        long distance = (long)(_speed * _speed / (2.0 * _acceleration));
+        long distance = (long) (_speed * _speed / (2.0 * _acceleration));
 
         if (deltaDistance == 0 && distance < 0)
         {
@@ -167,22 +222,22 @@ void A4988::computeSpeed()
 
         if (deltaDistance > 0)
         {
-            if (_nSteps > 0 && distance >= deltaDistance || _direction == DIRECTION_CCW)
+            if (_nSteps > 0 && distance >= deltaDistance || _direction == COUNTERCLOCKWISE)
             {
                 _nSteps = -distance;
             }
-            else if (_nSteps < 0 && distance < deltaDistance && _direction == DIRECTION_CW)
+            else if (_nSteps < 0 && distance < deltaDistance && _direction == CLOCKWISE)
             {
                 _nSteps = -distance;
             }
         }
         else if (deltaDistance < 0)
         {
-            if (_nSteps > 0 && distance >= -deltaDistance || _direction == DIRECTION_CW)
+            if (_nSteps > 0 && distance >= -deltaDistance || _direction == CLOCKWISE)
             {
                 _nSteps = -distance;
             }
-            else if (_nSteps < 0 && distance < -deltaDistance && _direction == DIRECTION_CCW)
+            else if (_nSteps < 0 && distance < -deltaDistance && _direction == COUNTERCLOCKWISE)
             {
                 _nSteps = -distance;
             }
@@ -191,7 +246,7 @@ void A4988::computeSpeed()
         if (_nSteps == 0)
         {
             _accelStepInterval = _initialAccelInterval;
-            _direction = deltaDistance > 0 ? DIRECTION_CW : DIRECTION_CCW;
+            _direction = deltaDistance > 0 ? CLOCKWISE : COUNTERCLOCKWISE;
         }
         else
         {
@@ -203,24 +258,14 @@ void A4988::computeSpeed()
         _speed = 1e6 / _accelStepInterval;
         _stepInterval = _accelStepInterval;
 
-        if (_direction == DIRECTION_CCW)
+        if (_direction == COUNTERCLOCKWISE)
             _speed = -_speed;
     }
-}
-
-void A4988::disable()
-{
-    _motorInterface.disable();
 }
 
 long A4988::distanceTo()
 {
     return _targetPos - _currentPos;
-}
-
-void A4988::enable()
-{
-    _motorInterface.enable();
 }
 
 float A4988::getAcceleration()
@@ -262,9 +307,15 @@ void A4988::moveTo(long absolute)
     }
 }
 
+void A4988::reset()
+{
+    _motorInterface.reset();
+    setCurrentPosition(0);
+}
+
 bool A4988::run()
 {
-    if (runSpeed())
+    if(runSpeed())
     {
         computeSpeed();
         return true;
@@ -275,14 +326,14 @@ bool A4988::run()
 
 bool A4988::runSpeed()
 {
-    if (!_stepInterval || distanceTo() < 0)
+    if(!_sleep || !_enable || !_stepInterval || distanceTo() < 0)
         return false;
 
     unsigned long currentTime = micros();
 
-    if (currentTime - _lastStepTime >= _stepInterval)
+    if (currentTime - _prevStepTime >= _stepInterval)
     {
-        if (_direction == DIRECTION_CW)
+        if (_direction == CLOCKWISE)
         {
             _currentPos++;
         }
@@ -292,9 +343,9 @@ bool A4988::runSpeed()
         }
         step();
 
-        _lastStepTime = currentTime;
+        _prevStepTime = currentTime;
 
-        return true;
+        return true;   
     }
 
     return false;
@@ -302,30 +353,44 @@ bool A4988::runSpeed()
 
 void A4988::setAcceleration(float acceleration)
 {
-    if (acceleration < 0)
+    if(acceleration < 0)
         acceleration = -acceleration;
 
-    if (_acceleration != acceleration)
+    if(acceleration == 0)
+    {
+        _initialAccelInterval = 0;
+        _acceleration = 0;
+    }
+    else if(_acceleration != acceleration)
     {
         _initialAccelInterval = sqrt(2.0 / acceleration) * 1e6;
         _acceleration = acceleration;
     }
+
 }
 
 void A4988::setCurrentPosition(long position)
 {
     _currentPos = position;
     _targetPos = position;
+
+    _accelStepInterval = 0;
     _nSteps = 0;
     _speed = 0;
     _stepInterval = 0;
 }
 
+void A4988::setEnable(bool enable)
+{
+    _motorInterface.setEnable(enable);
+    _enable = enable;
+}
+
 void A4988::setMaxSpeed(float maxSpeed)
 {
-    if (maxSpeed < 0)
+    if(maxSpeed < 0)
         maxSpeed = -maxSpeed;
-
+	
     if (_maxSpeed != maxSpeed)
     {
         _maxSpeed = maxSpeed;
@@ -335,8 +400,15 @@ void A4988::setMaxSpeed(float maxSpeed)
 
 void A4988::setResolution(Resolution res)
 {
-    _motorInterface.resolution(res);
+    _motorInterface.setResolution(res);
     _resolution = res;
+}
+
+void A4988::setSleep(bool sleep)
+{
+    _motorInterface.setSleep(sleep);
+    _sleep = sleep;
+    delay(SLEEP_DELAY);
 }
 
 void A4988::setSpeed(float speed)
@@ -353,7 +425,7 @@ void A4988::setSpeed(float speed)
     else
     {
         _stepInterval = fabs(1e6 / speed);
-        _direction = speed > 0 ? DIRECTION_CW : DIRECTION_CCW;
+        _direction = speed > 0 ? CLOCKWISE : COUNTERCLOCKWISE;
     }
 
     _speed = speed;
@@ -361,5 +433,5 @@ void A4988::setSpeed(float speed)
 
 void A4988::step()
 {
-    _motorInterface.step(_direction, MIN_PULSE_WIDTH);
+    _motorInterface.step(_direction);
 }

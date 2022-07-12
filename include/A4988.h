@@ -1,18 +1,10 @@
 #include <Arduino.h>
-
-#define MIN_PULSE_WIDTH 1
-
-enum Axis
-{
-    X,
-    Y,
-    Z
-};
+#include <SPI.h>
 
 enum Direction
 {
-    DIRECTION_CCW,
-    DIRECTION_CW
+    COUNTERCLOCKWISE,
+    CLOCKWISE
 };
 
 enum Resolution
@@ -27,31 +19,38 @@ enum Resolution
 class MotorInterface
 {
 public:
-    virtual void enable();
 
-    virtual void disable();
+    virtual void reset();
 
-    virtual void resolution(Resolution res);
+    virtual void setEnable(bool enable);
 
-    virtual void step(Direction dir, unsigned long pulseWidth);
+    virtual void setResolution(Resolution res);
+
+    virtual void setSleep(bool sleep);
+
+    virtual void step(Direction dir);
 };
 
 class PinOutMotorInterface : public MotorInterface
 {
 public:
-    PinOutMotorInterface(uint8_t enaPin, uint8_t dirPin, uint8_t stepPin, uint8_t ms1Pin, uint8_t ms2Pin, uint8_t ms3Pin);
+    PinOutMotorInterface(uint8_t enaPin, uint8_t dirPin, uint8_t resetPin, uint8_t stepPin, uint8_t sleepPin, uint8_t ms1Pin, uint8_t ms2Pin, uint8_t ms3Pin);
 
-    void enable() override;
+    void reset() override;
 
-    void disable() override;
+    void setEnable(bool enable) override;
 
-    void resolution(Resolution res) override;
+    void setResolution(Resolution res) override;
 
-    void step(Direction dir, unsigned long pulseWidth) override;
+    void setSleep(bool sleep) override;
+
+    void step(Direction dir) override;
 
 private:
     uint8_t _enaPin;
     uint8_t _dirPin;
+    uint8_t _resetPin;
+    uint8_t _sleepPin;
     uint8_t _stepPin;
     uint8_t _ms1Pin;
     uint8_t _ms2Pin;
@@ -61,40 +60,36 @@ private:
 class ShiftRegisterMotorInterface : public MotorInterface
 {
 public:
-    ShiftRegisterMotorInterface(uint8_t latchPin, uint8_t clockPin, uint8_t dataPin);
+    ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, long spiClk = 25000000L);
 
-    void enable() override;
+    void reset() override;
 
-    void disable() override;
+    void setEnable(bool enable) override;
 
-    void resolution(Resolution res) override;
+    void setResolution(Resolution res) override;
 
-    void step(Direction dir, unsigned long pulseWidth) override;
+    void setSleep(bool sleep) override;
 
-    void setAxis(Axis axis);
+    void step(Direction dir) override;
 
     void updateShiftOut();
 
 private:
-    Axis _axis;
-    uint8_t _latchPin;
-    uint8_t _clockPin;
-    uint8_t _dataPin;
-    uint8_t _buffer;
+    long _spiClk;
+    uint8_t _csPin;
+    uint8_t _dataIn;
+    SPIClass &_spi;
 };
 
 class A4988
 {
 public:
+
     A4988(MotorInterface &motorInterface);
 
     void computeSpeed();
 
-    void disable();
-
     long distanceTo();
-
-    void enable();
 
     float getAcceleration();
 
@@ -110,6 +105,8 @@ public:
 
     void moveTo(long absolute);
 
+    void reset();
+
     bool run();
 
     bool runSpeed();
@@ -118,15 +115,21 @@ public:
 
     void setCurrentPosition(long position);
 
+    void setEnable(bool enable);
+
     void setMaxSpeed(float maxSpeed);
 
     void setResolution(Resolution res);
+
+    void setSleep(bool sleep);
 
     void setSpeed(float speed);
 
     void step();
 
 private:
+    bool _enable;
+    bool _sleep;
     Direction _direction;
     Resolution _resolution;
     MotorInterface &_motorInterface;
@@ -137,7 +140,7 @@ private:
     long _nSteps;
     long _currentPos;
     long _targetPos;
-    long _lastStepTime;
+    long _prevStepTime;
     float _maxSpeed;
     float _acceleration;
     float _speed;
