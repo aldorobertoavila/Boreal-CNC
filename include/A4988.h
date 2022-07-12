@@ -20,9 +20,9 @@ class MotorInterface
 {
 public:
 
-    virtual void reset();
-
     virtual void setEnable(bool enable);
+
+    virtual void setReset(bool reset);
 
     virtual void setResolution(Resolution res);
 
@@ -31,40 +31,14 @@ public:
     virtual void step(Direction dir);
 };
 
-class PinOutMotorInterface : public MotorInterface
-{
-public:
-    PinOutMotorInterface(uint8_t enaPin, uint8_t dirPin, uint8_t resetPin, uint8_t stepPin, uint8_t sleepPin, uint8_t ms1Pin, uint8_t ms2Pin, uint8_t ms3Pin);
-
-    void reset() override;
-
-    void setEnable(bool enable) override;
-
-    void setResolution(Resolution res) override;
-
-    void setSleep(bool sleep) override;
-
-    void step(Direction dir) override;
-
-private:
-    uint8_t _enaPin;
-    uint8_t _dirPin;
-    uint8_t _resetPin;
-    uint8_t _sleepPin;
-    uint8_t _stepPin;
-    uint8_t _ms1Pin;
-    uint8_t _ms2Pin;
-    uint8_t _ms3Pin;
-};
-
 class ShiftRegisterMotorInterface : public MotorInterface
 {
 public:
     ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, long spiClk = 25000000L);
 
-    void reset() override;
-
     void setEnable(bool enable) override;
+
+    void setReset(bool reset) override;
 
     void setResolution(Resolution res) override;
 
@@ -84,10 +58,11 @@ private:
 class A4988
 {
 public:
-
     A4988(MotorInterface &motorInterface);
 
-    void computeSpeed();
+    void disable();
+
+    void enable();
 
     long distanceTo();
 
@@ -98,6 +73,10 @@ public:
     float getMaxSpeed();
 
     float getSpeed();
+
+    bool isEnable();
+
+    bool isSleeping();
 
     long getTargetPosition();
 
@@ -115,15 +94,18 @@ public:
 
     void setCurrentPosition(long position);
 
-    void setEnable(bool enable);
-
     void setMaxSpeed(float maxSpeed);
 
     void setResolution(Resolution res);
 
-    void setSleep(bool sleep);
-
     void setSpeed(float speed);
+
+    void sleep();
+
+    void wakeUp();
+
+protected:
+    void computeSpeed();
 
     void step();
 
