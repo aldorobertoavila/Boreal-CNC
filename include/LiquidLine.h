@@ -30,7 +30,6 @@ protected:
     uint8_t _col;
     uint8_t _row;
     char *_text;
-    FormatFunc _format;
 };
 
 class LiquidFormattedLine : public LiquidLine

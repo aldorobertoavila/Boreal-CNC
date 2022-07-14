@@ -25,18 +25,7 @@ char *LiquidLine::getText()
 void LiquidLine::display(LCD &lcd)
 {
     lcd.setCursor(_col, _row);
-
-    if (_format)
-    {
-        char bytearray[BUFFER_SIZE];
-        Buffer buf = bytearray;
-        _format(buf, _text);
-        lcd.print(buf);
-    }
-    else
-    {
-        lcd.print(_text);
-    }
+    lcd.print(_text);
 }
 
 void LiquidLine::setColumn(uint8_t col)
