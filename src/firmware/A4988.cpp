@@ -4,7 +4,7 @@
 #define RESET_DELAY 1
 
 // PWM per Step delay (us)
-#define STEP_DELAY 1
+#define STEP_DELAY 10
 
 // Emerging from Sleep delay (ms)
 #define SLEEP_DELAY 1
@@ -129,18 +129,19 @@ A4988::A4988(MotorInterface &motorInterface) : _motorInterface(motorInterface)
 
 void A4988::computeSpeed()
 {
-    if (_acceleration > 0)
+    if(_acceleration > 0)
     {
         long deltaDistance = distanceTo();
-        long distance = (long)(_speed * _speed / (2.0 * _acceleration));
 
-        if (deltaDistance == 0 && distance < 0)
+        if (deltaDistance == 0)
         {
             _speed = 0;
             _stepInterval = 0;
             _nSteps = 0;
             return;
         }
+
+        long distance = (long) (_speed * _speed / (2.0 * _acceleration));
 
         if (deltaDistance > 0)
         {
@@ -150,7 +151,7 @@ void A4988::computeSpeed()
             }
             else if (_nSteps < 0 && distance < deltaDistance && _direction == CLOCKWISE)
             {
-                _nSteps = -distance;
+                _nSteps = -_nSteps;
             }
         }
         else if (deltaDistance < 0)
@@ -161,7 +162,7 @@ void A4988::computeSpeed()
             }
             else if (_nSteps < 0 && distance < -deltaDistance && _direction == COUNTERCLOCKWISE)
             {
-                _nSteps = -distance;
+                _nSteps = -_nSteps;
             }
         }
 
@@ -181,7 +182,7 @@ void A4988::computeSpeed()
         _stepInterval = _accelStepInterval;
 
         if (_direction == COUNTERCLOCKWISE)
-            _speed = -_speed;
+          _speed = -_speed;
     }
 }
 
@@ -261,7 +262,7 @@ void A4988::reset()
 
 bool A4988::run()
 {
-    if (runSpeed())
+    if(runSpeed())
     {
         computeSpeed();
         return true;
@@ -272,7 +273,7 @@ bool A4988::run()
 
 bool A4988::runSpeed()
 {
-    if (!_enable || _sleep || !_stepInterval || distanceTo() == 0)
+    if(!_enable || _sleep || !_stepInterval || distanceTo() == 0)
         return false;
 
     unsigned long currentTime = micros();
@@ -291,27 +292,31 @@ bool A4988::runSpeed()
 
         _prevStepTime = currentTime;
 
-        return true;
+        return true;   
     }
 
     return false;
 }
 
+
 void A4988::setAcceleration(float acceleration)
 {
-    if (acceleration < 0)
+    if(acceleration < 0)
         acceleration = -acceleration;
 
-    if (acceleration == 0)
+    if(acceleration == 0)
     {
         _initialAccelInterval = 0;
         _acceleration = 0;
     }
-    else if (_acceleration != acceleration)
+    else if(_acceleration != acceleration)
     {
-        _initialAccelInterval = sqrt(2.0 / acceleration) * 1e6;
+        _nSteps = _nSteps * (_acceleration / acceleration);
+        _initialAccelInterval = 0.676 * sqrt(2.0 / acceleration) * 1e6;
         _acceleration = acceleration;
+        computeSpeed();
     }
+
 }
 
 void A4988::setCurrentPosition(long position)
@@ -327,13 +332,19 @@ void A4988::setCurrentPosition(long position)
 
 void A4988::setMaxSpeed(float maxSpeed)
 {
-    if (maxSpeed < 0)
+    if(maxSpeed < 0)
         maxSpeed = -maxSpeed;
-
+  
     if (_maxSpeed != maxSpeed)
     {
         _maxSpeed = maxSpeed;
         _minStepInterval = 1e6 / maxSpeed;
+
+        if (_nSteps > 0)
+      {
+          _nSteps = (long)((_speed * _speed) / (2.0 * _acceleration));
+          computeSpeed();
+      }
     }
 }
 

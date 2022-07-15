@@ -10,6 +10,8 @@ public:
 
     long getPosition();
 
+    long getPrevPosition();
+
     void onClicked(voidFunc onClicked);
 
     void onRotationCW(voidFunc onRotationCW);

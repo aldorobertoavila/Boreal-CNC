@@ -3,6 +3,9 @@
 /data
 /lib
 
+# AutoCad
+*.bak
+
 # Proteus
 *.pdsbak
 *.workspace

@@ -14,22 +14,20 @@ ShiftRegisterMotorInterface SHIFT_REGISTER_Z(spi, CS_RS3_PIN);
 A4988 DRIVER_X(SHIFT_REGISTER_X);
 A4988 DRIVER_Y(SHIFT_REGISTER_Y);
 A4988 DRIVER_Z(SHIFT_REGISTER_Z);
+
+const unsigned int TARGET = 1000;
  
 void setup() 
 {
     Serial.begin(115200);
 
-    DRIVER_X.setMaxSpeed(250);
-    DRIVER_Y.setMaxSpeed(250);
-    DRIVER_Z.setMaxSpeed(250);
+    DRIVER_X.setMaxSpeed(300);
+    DRIVER_Y.setMaxSpeed(300);
+    DRIVER_Z.setMaxSpeed(300);
 
     DRIVER_X.setAcceleration(100);
     DRIVER_Y.setAcceleration(100);
     DRIVER_Z.setAcceleration(100);
-
-    DRIVER_X.moveTo(1000);
-    DRIVER_Y.moveTo(1000);
-    DRIVER_Z.moveTo(1000);
 
     spi.begin();
 
@@ -39,8 +37,24 @@ void setup()
 }
 
 void loop() 
-{
+{ 
     DRIVER_X.run();
     DRIVER_Y.run();
     DRIVER_Z.run();
+
+    if(DRIVER_X.getCurrentPosition() == TARGET)
+    {
+      DRIVER_X.setSpeed(-200);
+      DRIVER_X.moveTo(0);
+
+      delay(1000);
+    }
+
+    if(DRIVER_X.getCurrentPosition() == 0)
+    {
+      DRIVER_X.setSpeed(200);
+      DRIVER_X.moveTo(TARGET);
+
+      delay(1000);
+    }
 }

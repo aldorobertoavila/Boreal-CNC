@@ -34,7 +34,7 @@ public:
 class ShiftRegisterMotorInterface : public MotorInterface
 {
 public:
-    ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, long spiClk = 25000000L);
+    ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, long spiClk = 20000000L);
 
     void setEnable(bool enable) override;
 
@@ -58,6 +58,7 @@ private:
 class A4988
 {
 public:
+
     A4988(MotorInterface &motorInterface);
 
     void disable();
@@ -105,6 +106,7 @@ public:
     void wakeUp();
 
 protected:
+
     void computeSpeed();
 
     void step();
