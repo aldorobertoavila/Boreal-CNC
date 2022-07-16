@@ -1,11 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
-
-enum Direction
-{
-    COUNTERCLOCKWISE,
-    CLOCKWISE
-};
+#include <Direction.h>
 
 enum Resolution
 {

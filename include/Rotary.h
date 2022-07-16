@@ -1,28 +1,32 @@
-typedef void (*voidFunc)();
+#include <Arduino.h>
+#include <Direction.h>
+
+typedef void (*onClicked)();
+typedef void (*onRotation)(Direction);
 
 class Rotary
 {
 public:
 
-    Rotary(uint8_t dt, uint8_t clk, uint8_t sw);
-
-    void forcePosition(long position);
+    Rotary(uint8_t clkPin, uint8_t dtPin, uint8_t swPin);
 
     long getPosition();
 
     long getPrevPosition();
 
-    void onClicked(voidFunc onClicked);
+    void setBoundaries(long lowerBound, long upperBound);
 
-    void onRotationCW(voidFunc onRotationCW);
+    void setClickDebounceTime(unsigned long debounceTime);
 
-    void onRotationCCW(voidFunc onRotationCCW);
+    void setRotationDebounceTime(unsigned long debounceTime);
 
-    void setBounds(long lowerBound, long upperBound);
+    void setDefaultDirection(Direction direction);
 
-    void setDebounceTime(unsigned long clickDebounce, unsigned long rotationDebounce);
+    void setPosition(long position);
 
-    void setPosition(long position, bool callback);
+    void setOnClicked(onClicked callback);
+
+    void setOnRotation(onRotation callback);
 
     void tick();
 
@@ -31,12 +35,12 @@ private:
     long _prevPosition;
     unsigned long _clickDebounceTime;
     unsigned long _rotationDebounceTime;
-    uint8_t _dt;
-    uint8_t _clk;
-    uint8_t _sw;
+    uint8_t _dtPin;
+    uint8_t _clkPin;
+    uint8_t _swPin;
     int _lowerBound;
     int _upperBound;
-    voidFunc _onClicked;
-    voidFunc _onRotationCW;
-    voidFunc _onRotationCCW;
+    Direction _defaultDirection;
+    onClicked _onClicked;
+    onRotation _onRotation;
 };

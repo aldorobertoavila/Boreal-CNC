@@ -1,16 +1,23 @@
-#include <Arduino.h>
 #include <Rotary.h>
 
-Rotary::Rotary(uint8_t dt, uint8_t clk, uint8_t sw)
+Rotary::Rotary(uint8_t clkPin, uint8_t dtPin, uint8_t swPin)
 {
-  this->_dt = dt;
-  this->_clk = clk;
-  this->_sw = sw;
+  this->_clkPin = clkPin;
+  this->_dtPin = dtPin;
+  this->_swPin = swPin;
+
+  this->_defaultDirection = Direction::CLOCKWISE;
+  this->_lowerBound = INT16_MIN;
+  this->_upperBound = INT16_MAX;
+
+  pinMode(_clkPin, INPUT);
+  pinMode(_dtPin, INPUT);
+  pinMode(_swPin, INPUT_PULLUP);
 }
 
-void Rotary::forcePosition(long position)
+long Rotary::getPrevPosition()
 {
-  setPosition(position, false);
+  return _prevPosition;
 }
 
 long Rotary::getPosition()
@@ -18,82 +25,96 @@ long Rotary::getPosition()
   return _position;
 }
 
-void Rotary::onClicked(voidFunc onClicked)
-{
-  _onClicked = onClicked;
-}
-
-void Rotary::onRotationCW(voidFunc onRotationCW)
-{
-  _onRotationCW = onRotationCW;
-}
-
-void Rotary::onRotationCCW(voidFunc onRotationCCW)
-{
-  _onRotationCCW = onRotationCCW;
-}
-
-void Rotary::setBounds(long lowerBound, long upperBound)
+void Rotary::setBoundaries(long lowerBound, long upperBound)
 {
   _lowerBound = lowerBound;
   _upperBound = upperBound;
 }
 
-void Rotary::setDebounceTime(unsigned long clickDebounce, unsigned long rotationDebounce)
+void Rotary::setClickDebounceTime(unsigned long debounceTime)
 {
-  _clickDebounceTime = clickDebounce;
-  _rotationDebounceTime = rotationDebounce;
+  _clickDebounceTime = debounceTime;
 }
 
-void Rotary::setPosition(long position, bool callback)
+void Rotary::setOnClicked(onClicked callback)
+{
+  _onClicked = callback;
+}
+
+void Rotary::setOnRotation(onRotation callback)
+{
+  _onRotation = callback;
+}
+
+void Rotary::setDefaultDirection(Direction direction)
+{
+  _defaultDirection = direction;
+}
+
+void Rotary::setRotationDebounceTime(unsigned long debounceTime)
+{
+  _rotationDebounceTime = debounceTime;
+}
+
+void Rotary::setPosition(long position)
 {
   _prevPosition = _position;
   _position = constrain(position, _lowerBound, _upperBound);
-
-  if (_position != _prevPosition && callback)
-  {
-    if (_position > _prevPosition && _onRotationCW)
-    {
-      _onRotationCW();
-    }
-    else if (_position < _prevPosition && _onRotationCCW)
-    {
-      _onRotationCCW();
-    }
-  }
 }
 
 void Rotary::tick()
 {
-  static unsigned long prevClickMillis = 0;
-  static unsigned long prevRotationMillis = 0;
+  static unsigned long lastClickTime = 0;
+  static unsigned long lastRotationTime = 0;
+
   unsigned long currentMillis = millis();
 
-  if (digitalRead(_dt) == LOW)
+  if (currentMillis - lastRotationTime > _rotationDebounceTime)
   {
-    if (currentMillis - prevRotationMillis > _rotationDebounceTime)
+    static bool previousStateClk = digitalRead(_clkPin);
+    bool currentStateClk = digitalRead(_clkPin);
+
+    if (currentStateClk != previousStateClk)
     {
-      if (digitalRead(_clk))
+      if (digitalRead(_dtPin) != currentStateClk)
       {
-        setPosition(_position + 1, true);
+        if (_defaultDirection == Direction::CLOCKWISE)
+        {
+          setPosition(_position - 1);
+        }
+        else
+        {
+          setPosition(_position + 1);
+        }
+
+        _onRotation(Direction::COUNTERCLOCKWISE);
       }
       else
       {
-        setPosition(_position - 1, true);
-      }
-    }
+        if (_defaultDirection == Direction::CLOCKWISE)
+        {
+          setPosition(_position + 1);
+        }
+        else
+        {
+          setPosition(_position - 1);
+        }
 
-    prevRotationMillis = currentMillis;
+        _onRotation(Direction::CLOCKWISE);
+      }
+      previousStateClk = currentStateClk;
+      lastRotationTime = currentMillis;
+    }
   }
 
-  if (digitalRead(_sw) == LOW)
+  if (!digitalRead(_swPin))
   {
-    if (currentMillis - prevClickMillis > _clickDebounceTime)
+    if (currentMillis - lastClickTime > _clickDebounceTime)
     {
       if (_onClicked)
       {
         _onClicked();
-        prevClickMillis = currentMillis;
+        lastClickTime = currentMillis;
       }
     }
   }
