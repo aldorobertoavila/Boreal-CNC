@@ -1,85 +1,108 @@
 #include <SD.h>
 
-const String EXT[] = { "ino" };
+#define MAX_FILES_SIZE 20
 
-const uint8_t EXT_SIZE = 1;
-const uint8_t FILES_SIZE = 2;
+char INTERNAL_FILE_EXT = '~';
+String GCODE_FILE_EXT = ".txt";
+String SYSTEM_VOLUME = "System Volume Information";
 
-String paths[FILES_SIZE];
+String filePaths[MAX_FILES_SIZE];
 
-bool isFileExtension(String filename)
+bool isGcodeFile(String filename)
 {
   String ext = filename.substring(filename.indexOf("."));
-
   ext.toLowerCase();
-
-  for(uint8_t i = 0; i < EXT_SIZE; i++)
-  {
-    if(ext.indexOf(EXT[i]) > 0) return true;
-  }
-
-  return false;
+  return ext == GCODE_FILE_EXT;
 }
 
-uint8_t getFiles(File dir, String paths[], uint8_t length) 
+bool isHiddenFile(String filename)
 {
-  uint8_t i = 0;
-  
-  while (i < length) {
-    File entry =  dir.openNextFile();
+  return filename.indexOf(INTERNAL_FILE_EXT) > 0 || filename == SYSTEM_VOLUME;
+}
 
-    if(!entry) break;
+uint8_t getFiles(File &root, String paths[], uint8_t maxFilePaths)
+{
+  File file;
+  uint8_t i;
+  String path;
 
-    String path = entry.name();
+  while (i < maxFilePaths)
+  {
+    file = root.openNextFile();
 
-    if(path.indexOf("~") > 0) continue;
+    if(!file) break;
 
-    if(isFileExtension(path))
+    path = file.name();
+    
+    if(isHiddenFile(path))
     {
-      paths[i] = path;
-      /*
-      if(entry.isDirectory()) 
-      {
-        paths[i] = filename + "/";
-      }
-      else
-      {
-        paths[i] = filename;
-      }
-      */
-
-      i++;
+      file.close();
+      continue;
     }
 
-    entry.close();
+    if (file.isDirectory())
+    {
+      paths[i] = path + "/";
+      i++;
+    }
+    else
+    {
+      if(isGcodeFile(path))
+      {
+        paths[i] = path;
+        i++;
+      }
+    }
+
+    file.close();
   }
 
   return i;
 }
 
-void setup() {
-  Serial.begin(115200);  
-  
+void setup()
+{
+  Serial.begin(115200);
+
   while (!Serial);
 
-  Serial.print("SD card initialization ");
+  Serial.print("SD ");
 
-  if (!SD.begin(SS)) {
-    Serial.println("failed!");
-    while (true);
+  if (!SD.begin(SS))
+  {
+    Serial.println("failed to mount!");
+    return;
   }
-
-  Serial.println("finished!");
+  Serial.println("mount!");
 
   File root = SD.open("/");
-  int length = getFiles(root, paths, FILES_SIZE);
-  
-  for(uint8_t i = 0; i < length; i++) 
+  uint8_t n = getFiles(root, filePaths, MAX_FILES_SIZE);
+
+  File file;
+  String path;
+
+  for(uint8_t i = 0; i < n; i++)
   {
-    Serial.println(paths[i]);
+    path = filePaths[i];
+    
+    Serial.println(path);
+
+    file = SD.open("/" + path);
+    
+    if(file && !file.isDirectory())
+    {
+      while(file.available()){
+          unsigned long start = micros();
+          Serial.println(file.readStringUntil('\n'));
+          Serial.println(micros() - start);
+      }
+    }
+  
+    file.close();
   }
 }
 
-void loop() {
-
+void loop()
+{
+  delay(1);
 }

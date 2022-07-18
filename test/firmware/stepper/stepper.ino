@@ -15,6 +15,7 @@ A4988 DRIVER_X(SHIFT_REGISTER_X);
 A4988 DRIVER_Y(SHIFT_REGISTER_Y);
 A4988 DRIVER_Z(SHIFT_REGISTER_Z);
 
+const float INITIAL_SPEED = 200;
 const unsigned int TARGET = 1000;
  
 void setup() 
@@ -42,18 +43,30 @@ void loop()
     DRIVER_Y.run();
     DRIVER_Z.run();
 
-    if(DRIVER_X.getCurrentPosition() == TARGET)
+    if(DRIVER_X.getCurrentPosition() == TARGET && DRIVER_Y.getCurrentPosition() == TARGET && DRIVER_Y.getCurrentPosition() == TARGET)
     {
-      DRIVER_X.setSpeed(-200);
+      DRIVER_X.setSpeed(-INITIAL_SPEED);
       DRIVER_X.moveTo(0);
+
+      DRIVER_Y.setSpeed(-INITIAL_SPEED);
+      DRIVER_Y.moveTo(0);
+
+      DRIVER_Z.setSpeed(-INITIAL_SPEED);
+      DRIVER_Z.moveTo(0);
 
       delay(1000);
     }
 
     if(DRIVER_X.getCurrentPosition() == 0)
     {
-      DRIVER_X.setSpeed(200);
+      DRIVER_X.setSpeed(INITIAL_SPEED);
       DRIVER_X.moveTo(TARGET);
+
+      DRIVER_Y.setSpeed(INITIAL_SPEED);
+      DRIVER_Y.moveTo(TARGET);
+
+      DRIVER_Z.setSpeed(INITIAL_SPEED);
+      DRIVER_Z.moveTo(TARGET);
 
       delay(1000);
     }
