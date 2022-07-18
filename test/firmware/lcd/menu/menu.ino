@@ -9,8 +9,8 @@
 #define EN_SW_PIN 3
 #define EN_CLK_PIN 4
 
-#define EN_CLICK_DEBOUNCE 500
-#define EN_ROT_DEBOUNCE 100
+#define EN_CLICK_DEBOUNCE 250
+#define EN_ROT_DEBOUNCE 5
 
 #define LCD_ADDR 0x27
 #define LCD_COLS 20
@@ -167,7 +167,7 @@ void onRotationCCW()
     viewport.display(false);
     break;
   case MOVE_AXIS:
-    // cnc.move(currentAxis, Direction::POSITIVE, units);
+    // cnc.move(currentAxis, Rotation::POSITIVE, units);
     millimeters += currentUnit;
     viewport.display(true);
     break;
@@ -195,11 +195,26 @@ void onRotationCW()
     viewport.display(false);
     break;
   case MOVE_AXIS:
-    // cnc.move(currentAxis, Direction::NEGATIVE, units);
+    // cnc.move(currentAxis, Rotation::NEGATIVE, units);
     millimeters -= currentUnit;
     if (millimeters < 0)
       millimeters = 0;
     viewport.display(true);
+    break;
+  default:
+    break;
+  }
+}
+
+void onRotation(Rotation direction)
+{
+  switch (direction)
+  {
+  case COUNTERCLOCKWISE:
+    onRotationCCW();
+    break;
+  case CLOCKWISE:
+    onRotationCW();
     break;
   default:
     break;
@@ -518,8 +533,8 @@ void setScreen(LiquidScreen *screen, uint8_t screenId, bool forcePosition)
   uint8_t lineIndex = viewport.getCurrentLineIndex(screenId);
   uint8_t lineCount = screen->getLineCount();
 
-  rotary.setBounds(0, lineCount);
-  rotary.forcePosition(forcePosition ? lineIndex : 0);
+  rotary.setBoundaries(0, lineCount);
+  rotary.setPosition(forcePosition ? lineIndex : 0);
 
   viewport.setCurrentScreen(screenId);
   viewport.display(true);
@@ -542,7 +557,7 @@ void setMoveAxisScreen(Axis axis, uint8_t unit)
   currentAxis = axis;
   currentUnit = unit;
 
-  rotary.setBounds(-100, 1);
+  rotary.setBoundaries(-100, 1);
 
   viewport.setCurrentScreen(MOVE_AXIS);
   viewport.display(true);
@@ -556,11 +571,11 @@ void setup()
   pinMode(EN_DT_PIN, INPUT);
   pinMode(EN_SW_PIN, INPUT_PULLUP);
 
-  rotary.onClicked(onClicked);
-  rotary.onRotationCCW(onRotationCCW);
-  rotary.onRotationCW(onRotationCW);
+  rotary.setOnClicked(onClicked);
+  rotary.setOnRotation(onRotation);
 
-  rotary.setDebounceTime(EN_CLICK_DEBOUNCE, EN_ROT_DEBOUNCE);
+  rotary.setClickDebounceTime(EN_CLICK_DEBOUNCE);
+  rotary.setRotationDebounceTime(EN_ROT_DEBOUNCE);
 
   lcd.init();
   Wire.setClock(400000);

@@ -6,7 +6,7 @@ Rotary::Rotary(uint8_t clkPin, uint8_t dtPin, uint8_t swPin)
   this->_dtPin = dtPin;
   this->_swPin = swPin;
 
-  this->_defaultDirection = Direction::CLOCKWISE;
+  this->_defaultDirection = Rotation::CLOCKWISE;
   this->_lowerBound = INT16_MIN;
   this->_upperBound = INT16_MAX;
 
@@ -46,7 +46,7 @@ void Rotary::setOnRotation(onRotation callback)
   _onRotation = callback;
 }
 
-void Rotary::setDefaultDirection(Direction direction)
+void Rotary::setDefaultDirection(Rotation direction)
 {
   _defaultDirection = direction;
 }
@@ -78,7 +78,7 @@ void Rotary::tick()
     {
       if (digitalRead(_dtPin) != currentStateClk)
       {
-        if (_defaultDirection == Direction::CLOCKWISE)
+        if (_defaultDirection == Rotation::CLOCKWISE)
         {
           setPosition(_position - 1);
         }
@@ -87,11 +87,11 @@ void Rotary::tick()
           setPosition(_position + 1);
         }
 
-        _onRotation(Direction::COUNTERCLOCKWISE);
+        _onRotation(Rotation::COUNTERCLOCKWISE);
       }
       else
       {
-        if (_defaultDirection == Direction::CLOCKWISE)
+        if (_defaultDirection == Rotation::CLOCKWISE)
         {
           setPosition(_position + 1);
         }
@@ -100,7 +100,7 @@ void Rotary::tick()
           setPosition(_position - 1);
         }
 
-        _onRotation(Direction::CLOCKWISE);
+        _onRotation(Rotation::CLOCKWISE);
       }
       previousStateClk = currentStateClk;
       lastRotationTime = currentMillis;

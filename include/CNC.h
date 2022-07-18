@@ -1,0 +1,5 @@
+class CNC
+{
+public:
+    CNC();
+};

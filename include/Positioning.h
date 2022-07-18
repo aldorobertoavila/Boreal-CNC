@@ -1,0 +1,5 @@
+enum Positioning
+{
+    ABSOLUTE,
+    RELATIVE
+};

@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include <Direction.h>
+#include <Rotation.h>
 
 typedef void (*onClicked)();
-typedef void (*onRotation)(Direction);
+typedef void (*onRotation)(Rotation);
 
 class Rotary
 {
@@ -20,7 +20,7 @@ public:
 
     void setRotationDebounceTime(unsigned long debounceTime);
 
-    void setDefaultDirection(Direction direction);
+    void setDefaultDirection(Rotation direction);
 
     void setPosition(long position);
 
@@ -40,7 +40,7 @@ private:
     uint8_t _swPin;
     int _lowerBound;
     int _upperBound;
-    Direction _defaultDirection;
+    Rotation _defaultDirection;
     onClicked _onClicked;
     onRotation _onRotation;
 };

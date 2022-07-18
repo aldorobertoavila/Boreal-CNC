@@ -98,9 +98,9 @@ void ShiftRegisterMotorInterface::setSleep(bool sleep)
     delay(SLEEP_DELAY);
 }
 
-void ShiftRegisterMotorInterface::step(Direction dir)
+void ShiftRegisterMotorInterface::step(Rotation rot)
 {
-    bitWrite(_dataIn, DIR_OUT, dir);
+    bitWrite(_dataIn, DIR_OUT, rot);
     bitWrite(_dataIn, STEP_OUT, HIGH);
     updateShiftOut();
     delayMicroseconds(STEP_DELAY);

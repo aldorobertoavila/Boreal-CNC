@@ -11,13 +11,13 @@ void clickCallback()
     Serial.println("Click!");
 }
 
-void rotateCallback(Direction direction)
+void rotateCallback(Rotation direction)
 {
     Serial.print("Position: ");
     Serial.print(rotary.getPosition());
-    Serial.print(", Direction: ");
+    Serial.print(", Rotation: ");
   
-    if(direction == Direction::CLOCKWISE)
+    if(direction == Rotation::CLOCKWISE)
     {
       Serial.println("Clockwise");
     }

@@ -1,15 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <Direction.h>
-
-enum Resolution
-{
-    FULL,
-    HALF,
-    QUARTER,
-    EIGHTH,
-    SIXTEENTH
-};
+#include <Resolution.h>
+#include <Rotation.h>
 
 class MotorInterface
 {
@@ -23,7 +15,7 @@ public:
 
     virtual void setSleep(bool sleep);
 
-    virtual void step(Direction dir);
+    virtual void step(Rotation rot);
 };
 
 class ShiftRegisterMotorInterface : public MotorInterface
@@ -39,7 +31,7 @@ public:
 
     void setSleep(bool sleep) override;
 
-    void step(Direction dir) override;
+    void step(Rotation rot) override;
 
     void updateShiftOut();
 
@@ -109,7 +101,7 @@ protected:
 private:
     bool _enable;
     bool _sleep;
-    Direction _direction;
+    Rotation _direction;
     Resolution _resolution;
     MotorInterface &_motorInterface;
     unsigned long _accelStepInterval;

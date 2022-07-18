@@ -1,4 +1,4 @@
-enum Direction
+enum Rotation
 {
     COUNTERCLOCKWISE,
     CLOCKWISE
