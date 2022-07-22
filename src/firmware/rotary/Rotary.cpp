@@ -64,8 +64,8 @@ void Rotary::setPosition(long position)
 
 void Rotary::tick()
 {
-  static unsigned long lastClickTime = 0;
-  static unsigned long lastRotationTime = 0;
+  static unsigned long lastClickTime;
+  static unsigned long lastRotationTime;
 
   unsigned long currentMillis = millis();
 
