@@ -28,9 +28,10 @@
 // Q7
 #define ENABLE_OUT 7
 
-ShiftRegisterMotorInterface::ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, long spiClk) : _spi(spi)
+ShiftRegisterMotorInterface::ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, uint8_t bitOrder, long spiClk) : _spi(spi)
 {
     this->_spiClk = spiClk;
+    this->_bitOrder = bitOrder;
     this->_csPin = csPin;
     this->_spi = spi;
 
@@ -110,7 +111,7 @@ void ShiftRegisterMotorInterface::step(Rotation rot)
 
 void ShiftRegisterMotorInterface::updateShiftOut()
 {
-    _spi.beginTransaction(SPISettings(_spiClk, MSBFIRST, SPI_MODE0));
+    _spi.beginTransaction(SPISettings(_spiClk, _bitOrder, SPI_MODE0));
     digitalWrite(_csPin, LOW);
     _spi.transfer(_dataIn);
     digitalWrite(_csPin, HIGH);
@@ -145,22 +146,22 @@ void A4988::computeSpeed()
 
         if (deltaDistance > 0)
         {
-            if (_nSteps > 0 && distance >= deltaDistance || _direction == COUNTERCLOCKWISE)
+            if (_nSteps > 0 && distance >= deltaDistance || _rotation == COUNTERCLOCKWISE)
             {
                 _nSteps = -distance;
             }
-            else if (_nSteps < 0 && distance < deltaDistance && _direction == CLOCKWISE)
+            else if (_nSteps < 0 && distance < deltaDistance && _rotation == CLOCKWISE)
             {
                 _nSteps = -_nSteps;
             }
         }
         else if (deltaDistance < 0)
         {
-            if (_nSteps > 0 && distance >= -deltaDistance || _direction == CLOCKWISE)
+            if (_nSteps > 0 && distance >= -deltaDistance || _rotation == CLOCKWISE)
             {
                 _nSteps = -distance;
             }
-            else if (_nSteps < 0 && distance < -deltaDistance && _direction == COUNTERCLOCKWISE)
+            else if (_nSteps < 0 && distance < -deltaDistance && _rotation == COUNTERCLOCKWISE)
             {
                 _nSteps = -_nSteps;
             }
@@ -169,7 +170,7 @@ void A4988::computeSpeed()
         if (_nSteps == 0)
         {
             _accelStepInterval = _initialAccelInterval;
-            _direction = deltaDistance > 0 ? CLOCKWISE : COUNTERCLOCKWISE;
+            _rotation = deltaDistance > 0 ? CLOCKWISE : COUNTERCLOCKWISE;
         }
         else
         {
@@ -181,7 +182,7 @@ void A4988::computeSpeed()
         _speed = 1e6 / _accelStepInterval;
         _stepInterval = _accelStepInterval;
 
-        if (_direction == COUNTERCLOCKWISE)
+        if (_rotation == COUNTERCLOCKWISE)
           _speed = -_speed;
     }
 }
@@ -280,7 +281,7 @@ bool A4988::runSpeed()
 
     if (currentTime - _prevStepTime >= _stepInterval)
     {
-        if (_direction == CLOCKWISE)
+        if (_rotation == CLOCKWISE)
         {
             _currentPos++;
         }
@@ -368,7 +369,7 @@ void A4988::setSpeed(float speed)
     else
     {
         _stepInterval = fabs(1e6 / speed);
-        _direction = speed > 0 ? CLOCKWISE : COUNTERCLOCKWISE;
+        _rotation = speed > 0 ? CLOCKWISE : COUNTERCLOCKWISE;
     }
 
     _speed = speed;
@@ -376,7 +377,7 @@ void A4988::setSpeed(float speed)
 
 void A4988::step()
 {
-    _motorInterface.step(_direction);
+    _motorInterface.step(_rotation);
 }
 
 void A4988::sleep()

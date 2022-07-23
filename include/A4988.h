@@ -15,13 +15,13 @@ public:
 
     virtual void setSleep(bool sleep);
 
-    virtual void step(Rotation rot);
+    virtual void step(Rotation dir);
 };
 
 class ShiftRegisterMotorInterface : public MotorInterface
 {
 public:
-    ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, long spiClk = 20000000L);
+    ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, uint8_t bitOrder, long spiClk = 20000000L);
 
     void setEnable(bool enable) override;
 
@@ -33,10 +33,13 @@ public:
 
     void step(Rotation rot) override;
 
+protected:
+    
     void updateShiftOut();
 
 private:
     long _spiClk;
+    uint8_t _bitOrder;
     uint8_t _csPin;
     uint8_t _dataIn;
     SPIClass &_spi;
@@ -101,7 +104,7 @@ protected:
 private:
     bool _enable;
     bool _sleep;
-    Rotation _direction;
+    Rotation _rotation;
     Resolution _resolution;
     MotorInterface &_motorInterface;
     unsigned long _accelStepInterval;
