@@ -7,8 +7,13 @@
 *.bak
 
 # Proteus
-*.pdsbak
-*.workspace
+src/schematic/*.DO
+src/schematic/*.EDF
+src/schematic/*.log
+src/schematic/*.pdsbak
+src/schematic/*.rte
+src/schematic/*.sts
+src/schematic/*.workspace
 
 # Environment
 .pio
