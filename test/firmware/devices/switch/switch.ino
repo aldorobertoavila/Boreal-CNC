@@ -14,6 +14,10 @@ void setup() {
   pinMode(SW_X_PIN, INPUT);
   pinMode(SW_Y_PIN, INPUT);
   pinMode(SW_Z_PIN, INPUT);
+
+  SW_X.setDebounceTime(10);
+  SW_Y.setDebounceTime(10);
+  SW_Z.setDebounceTime(10);
 }
 
 void loop() {
@@ -36,17 +40,17 @@ void loop() {
     Serial.println("Limit Switch Z is pressed");
   }
 
-  if(SW_X.isReleased())
+  if(SW_X.wasReleased())
   {
     Serial.println("Limit Switch X is released");
   }
 
-  if(SW_Y.isReleased())
+  if(SW_Y.wasReleased())
   {
     Serial.println("Limit Switch Y is released");
   }
 
-  if(SW_Z.isReleased())
+  if(SW_Z.wasReleased())
   {
     Serial.println("Limit Switch Z is released");
   }
