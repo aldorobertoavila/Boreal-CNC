@@ -1,7 +1,7 @@
-#include <A4988.h>
 #include <Axis.h>
 #include <LimitSwitch.h>
 #include <Positioning.h>
+#include <StepperMotor.h>
 #include <Unit.h>
 
 #define AXES 3
@@ -9,17 +9,17 @@
 class Cartesian
 {
 public:
-    Cartesian(Unit &unit);
+    Cartesian();
 
     float getDimensions(Axis axis);
-
-    A4988 *getDriver(Axis axis);
 
     float getHomeOffset(Axis axis);
 
     LimitSwitch *getLimitSwitch(Axis axis);
 
     Positioning getPositioning();
+
+    StepperMotor *getStepperMotor(Axis axis);
 
     Unit getUnit();
 
@@ -31,22 +31,25 @@ public:
 
     void setDimensions(Axis axis, float u);
 
-    void setDriver(Axis axis, A4988 &driver);
-
     void setHomeOffset(Axis axis, float u);
 
     void setLimitSwitch(Axis axis, LimitSwitch &sw);
 
     void setPositioning(Positioning positioning);
 
-    void setUnit(Unit &unit);
+    void setStepperMotor(Axis axis, StepperMotor &stepper);
+
+    void setUnit(Unit unit);
+
+protected:
+    long toSteps(Axis axis, float u);
 
 private:
-    A4988 *_drivers[AXES];
+    StepperMotor *_steppers[AXES];
     LimitSwitch *_switches[AXES];
     Positioning _positioning;
+    Unit _unit;
     float _dimensions[AXES];
     float _homeOffset[AXES];
     uint8_t _stepsPerMillimeter[AXES];
-    Unit &_unit;
 };

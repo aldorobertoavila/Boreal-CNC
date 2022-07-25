@@ -19,7 +19,7 @@ void AutohomeCommand::start()
     _cartesian.moveTo(-x, -y, -z);
 }
 
-Status AutohomeCommand::status()
+CommandStatus AutohomeCommand::status()
 {
     LimitSwitch *x = _cartesian.getLimitSwitch(Axis::X);
     LimitSwitch *y = _cartesian.getLimitSwitch(Axis::Y);

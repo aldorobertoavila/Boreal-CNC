@@ -1,124 +1,6 @@
-#include <A4988.h>
+#include <StepperMotor.h>
 
-// Emerging from Reset delay (ms)
-#define RESET_DELAY 1
-
-// PWM per Step delay (us)
-#define STEP_DELAY 10
-
-// Emerging from Sleep delay (ms)
-#define SLEEP_DELAY 1
-
-// Parallel Data Outputs
-
-// Q0
-#define DIR_OUT 0
-// Q1
-#define STEP_OUT 1
-// Q2
-#define SLEEP_OUT 2
-// Q3
-#define RESET_OUT 3
-// Q4
-#define MS3_OUT 4
-// Q5
-#define MS2_OUT 5
-// Q6
-#define MS1_OUT 6
-// Q7
-#define ENABLE_OUT 7
-
-ShiftRegisterMotorInterface::ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, uint8_t bitOrder, long spiClk) : _spi(spi)
-{
-    this->_spiClk = spiClk;
-    this->_bitOrder = bitOrder;
-    this->_csPin = csPin;
-    this->_spi = spi;
-
-    bitWrite(_dataIn, ENABLE_OUT, LOW);
-    bitWrite(_dataIn, RESET_OUT, HIGH);
-    bitWrite(_dataIn, SLEEP_OUT, HIGH);
-    updateShiftOut();
-}
-
-void ShiftRegisterMotorInterface::setEnable(bool enable)
-{
-    bitWrite(_dataIn, ENABLE_OUT, enable);
-    updateShiftOut();
-}
-
-void ShiftRegisterMotorInterface::setReset(bool reset)
-{
-    bitWrite(_dataIn, RESET_OUT, reset);
-    updateShiftOut();
-}
-
-void ShiftRegisterMotorInterface::setResolution(Resolution res)
-{
-    switch (res)
-    {
-    case FULL:
-        bitWrite(_dataIn, MS1_OUT, LOW);
-        bitWrite(_dataIn, MS2_OUT, LOW);
-        bitWrite(_dataIn, MS3_OUT, LOW);
-        updateShiftOut();
-        break;
-    case HALF:
-        bitWrite(_dataIn, MS1_OUT, HIGH);
-        bitWrite(_dataIn, MS2_OUT, LOW);
-        bitWrite(_dataIn, MS3_OUT, LOW);
-        updateShiftOut();
-        break;
-    case QUARTER:
-        bitWrite(_dataIn, MS1_OUT, LOW);
-        bitWrite(_dataIn, MS2_OUT, HIGH);
-        bitWrite(_dataIn, MS3_OUT, LOW);
-        updateShiftOut();
-        break;
-    case EIGHTH:
-        bitWrite(_dataIn, MS1_OUT, HIGH);
-        bitWrite(_dataIn, MS2_OUT, HIGH);
-        bitWrite(_dataIn, MS3_OUT, LOW);
-        updateShiftOut();
-        break;
-    case SIXTEENTH:
-        bitWrite(_dataIn, MS1_OUT, HIGH);
-        bitWrite(_dataIn, MS2_OUT, HIGH);
-        bitWrite(_dataIn, MS3_OUT, HIGH);
-        updateShiftOut();
-        break;
-    default:
-        break;
-    }
-}
-
-void ShiftRegisterMotorInterface::setSleep(bool sleep)
-{
-    bitWrite(_dataIn, SLEEP_OUT, sleep);
-    updateShiftOut();
-    delay(SLEEP_DELAY);
-}
-
-void ShiftRegisterMotorInterface::step(Rotation rot)
-{
-    bitWrite(_dataIn, DIR_OUT, rot);
-    bitWrite(_dataIn, STEP_OUT, HIGH);
-    updateShiftOut();
-    delayMicroseconds(STEP_DELAY);
-    bitWrite(_dataIn, STEP_OUT, LOW);
-    updateShiftOut();
-}
-
-void ShiftRegisterMotorInterface::updateShiftOut()
-{
-    _spi.beginTransaction(SPISettings(_spiClk, _bitOrder, SPI_MODE0));
-    digitalWrite(_csPin, LOW);
-    _spi.transfer(_dataIn);
-    digitalWrite(_csPin, HIGH);
-    _spi.endTransaction();
-}
-
-A4988::A4988(MotorInterface &motorInterface) : _motorInterface(motorInterface)
+StepperMotor::StepperMotor(MotorInterface &motorInterface) : _motorInterface(motorInterface)
 {
     this->_motorInterface = motorInterface;
     this->_maxSpeed = 1.0;
@@ -128,7 +10,7 @@ A4988::A4988(MotorInterface &motorInterface) : _motorInterface(motorInterface)
     wakeUp();
 }
 
-void A4988::computeSpeed()
+void StepperMotor::computeSpeed()
 {
     if(_acceleration > 0)
     {
@@ -187,64 +69,64 @@ void A4988::computeSpeed()
     }
 }
 
-void A4988::disable()
+void StepperMotor::disable()
 {
     _motorInterface.setEnable(HIGH);
     _enable = false;
 }
 
-void A4988::enable()
+void StepperMotor::enable()
 {
     _motorInterface.setEnable(LOW);
     _enable = true;
 }
 
-long A4988::distanceTo()
+long StepperMotor::distanceTo()
 {
     return _targetPos - _currentPos;
 }
 
-bool A4988::isEnable()
+bool StepperMotor::isEnable()
 {
     return _enable;
 }
 
-bool A4988::isSleeping()
+bool StepperMotor::isSleeping()
 {
     return _sleep;
 }
 
-float A4988::getAcceleration()
+float StepperMotor::getAcceleration()
 {
     return _acceleration;
 }
 
-long A4988::getCurrentPosition()
+long StepperMotor::getCurrentPosition()
 {
     return _currentPos;
 }
 
-float A4988::getMaxSpeed()
+float StepperMotor::getMaxSpeed()
 {
     return _maxSpeed;
 }
 
-float A4988::getSpeed()
+float StepperMotor::getSpeed()
 {
     return _speed;
 }
 
-long A4988::getTargetPosition()
+long StepperMotor::getTargetPosition()
 {
     return _targetPos;
 }
 
-void A4988::move(long relative)
+void StepperMotor::move(long relative)
 {
     moveTo(_currentPos + relative);
 }
 
-void A4988::moveTo(long absolute)
+void StepperMotor::moveTo(long absolute)
 {
     if (_targetPos != absolute)
     {
@@ -253,7 +135,7 @@ void A4988::moveTo(long absolute)
     }
 }
 
-void A4988::reset()
+void StepperMotor::reset()
 {
     _motorInterface.setReset(LOW);
     delay(RESET_DELAY);
@@ -261,7 +143,7 @@ void A4988::reset()
     setCurrentPosition(0);
 }
 
-bool A4988::run()
+bool StepperMotor::run()
 {
     if(runSpeed())
     {
@@ -272,7 +154,7 @@ bool A4988::run()
     return false;
 }
 
-bool A4988::runSpeed()
+bool StepperMotor::runSpeed()
 {
     if(!_enable || _sleep || !_stepInterval || distanceTo() == 0)
         return false;
@@ -300,7 +182,7 @@ bool A4988::runSpeed()
 }
 
 
-void A4988::setAcceleration(float acceleration)
+void StepperMotor::setAcceleration(float acceleration)
 {
     if(acceleration < 0)
         acceleration = -acceleration;
@@ -320,7 +202,7 @@ void A4988::setAcceleration(float acceleration)
 
 }
 
-void A4988::setCurrentPosition(long position)
+void StepperMotor::setCurrentPosition(long position)
 {
     _currentPos = position;
     _targetPos = position;
@@ -331,7 +213,7 @@ void A4988::setCurrentPosition(long position)
     _stepInterval = 0;
 }
 
-void A4988::setMaxSpeed(float maxSpeed)
+void StepperMotor::setMaxSpeed(float maxSpeed)
 {
     if(maxSpeed < 0)
         maxSpeed = -maxSpeed;
@@ -349,13 +231,13 @@ void A4988::setMaxSpeed(float maxSpeed)
     }
 }
 
-void A4988::setResolution(Resolution res)
+void StepperMotor::setResolution(Resolution res)
 {
     _motorInterface.setResolution(res);
     _resolution = res;
 }
 
-void A4988::setSpeed(float speed)
+void StepperMotor::setSpeed(float speed)
 {
     if (speed == _speed)
         return;
@@ -375,12 +257,13 @@ void A4988::setSpeed(float speed)
     _speed = speed;
 }
 
-void A4988::step()
+void StepperMotor::step()
 {
-    _motorInterface.step(_rotation);
+    _motorInterface.setRotation(_rotation);
+    _motorInterface.step();
 }
 
-void A4988::sleep()
+void StepperMotor::sleep()
 {
     _motorInterface.setSleep(LOW);
     _sleep = true;
@@ -388,7 +271,7 @@ void A4988::sleep()
     delay(SLEEP_DELAY);
 }
 
-void A4988::wakeUp()
+void StepperMotor::wakeUp()
 {
     _motorInterface.setSleep(HIGH);
     _sleep = false;

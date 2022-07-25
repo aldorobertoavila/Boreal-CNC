@@ -1,55 +1,10 @@
 #include <Arduino.h>
-#include <SPI.h>
-#include <Resolution.h>
-#include <Rotation.h>
+#include <MotorInterface.h>
 
-class MotorInterface
+class StepperMotor
 {
 public:
-
-    virtual void setEnable(bool enable);
-
-    virtual void setReset(bool reset);
-
-    virtual void setResolution(Resolution res);
-
-    virtual void setSleep(bool sleep);
-
-    virtual void step(Rotation dir);
-};
-
-class ShiftRegisterMotorInterface : public MotorInterface
-{
-public:
-    ShiftRegisterMotorInterface(SPIClass &spi, uint8_t csPin, uint8_t bitOrder, long spiClk = 20000000L);
-
-    void setEnable(bool enable) override;
-
-    void setReset(bool reset) override;
-
-    void setResolution(Resolution res) override;
-
-    void setSleep(bool sleep) override;
-
-    void step(Rotation rot) override;
-
-protected:
-    
-    void updateShiftOut();
-
-private:
-    long _spiClk;
-    uint8_t _bitOrder;
-    uint8_t _csPin;
-    uint8_t _dataIn;
-    SPIClass &_spi;
-};
-
-class A4988
-{
-public:
-
-    A4988(MotorInterface &motorInterface);
+    StepperMotor(MotorInterface &motorInterface);
 
     void disable();
 
@@ -96,7 +51,6 @@ public:
     void wakeUp();
 
 protected:
-
     void computeSpeed();
 
     void step();

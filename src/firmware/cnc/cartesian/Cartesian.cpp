@@ -1,6 +1,6 @@
 #include <Cartesian.h>
 
-Cartesian::Cartesian(Unit &unit) : _unit(unit)
+Cartesian::Cartesian()
 {
 
 }
@@ -8,11 +8,6 @@ Cartesian::Cartesian(Unit &unit) : _unit(unit)
 float Cartesian::getDimensions(Axis axis)
 {
     return _dimensions[axis];
-}
-
-A4988 *Cartesian::getDriver(Axis axis)
-{
-    return _drivers[axis];
 }
 
 float Cartesian::getHomeOffset(Axis axis)
@@ -30,6 +25,11 @@ Positioning Cartesian::getPositioning()
     return _positioning;
 }
 
+StepperMotor *Cartesian::getStepperMotor(Axis axis)
+{
+    return _steppers[axis];
+}
+
 Unit Cartesian::getUnit()
 {
     return _unit;
@@ -37,19 +37,19 @@ Unit Cartesian::getUnit()
 
 void Cartesian::moveTo(Axis axis, float u)
 {
-    A4988 *driver = _drivers[axis];
+    StepperMotor *stepper = _steppers[axis];
 
-    if(driver)
+    if(stepper)
     {
-        uint16_t steps = _unit.toSteps(u, _stepsPerMillimeter[axis]);
+        long steps = toSteps(axis, u);
 
         if(_positioning == ABSOLUTE)
         {
-            driver->moveTo(steps);
+            stepper->moveTo(steps);
         }
         else
         {
-            driver->move(steps);
+            stepper->move(steps);
         }
     }
 }
@@ -67,12 +67,12 @@ void Cartesian::run()
     {
         Axis axis = static_cast<Axis>(i);
 
-        A4988 *driver = getDriver(axis);
+        StepperMotor *stepper = getStepperMotor(axis);
         LimitSwitch *sw = getLimitSwitch(axis);
 
-        if(driver && sw)
+        if(stepper && sw)
         {
-            driver->run();
+            stepper->run();
             sw->tick();
         }
     }
@@ -81,11 +81,6 @@ void Cartesian::run()
 void Cartesian::setDimensions(Axis axis, float u)
 {
     _dimensions[axis] = u;
-}
-
-void Cartesian::setDriver(Axis axis, A4988 &driver)
-{
-    _drivers[axis] = &driver;
 }
 
 void Cartesian::setHomeOffset(Axis axis, float u)
@@ -103,7 +98,29 @@ void Cartesian::setPositioning(Positioning positioning)
     _positioning = positioning;
 }
 
-void Cartesian::setUnit(Unit &unit)
+void Cartesian::setStepperMotor(Axis axis, StepperMotor &stepper)
+{
+    _steppers[axis] = &stepper;
+}
+
+void Cartesian::setUnit(Unit unit)
 {
     _unit = unit;
+}
+
+long Cartesian::toSteps(Axis axis, float u)
+{
+    uint8_t steps = _stepsPerMillimeter[axis];
+
+    switch (_unit)
+    {
+    case MILLIMETER:
+        return u * steps;
+    case INCH:
+        return 25.4 * u * steps;
+    case CENTIMETER:
+        return 10 * u * steps; 
+    default:
+        return 0;
+    }
 }

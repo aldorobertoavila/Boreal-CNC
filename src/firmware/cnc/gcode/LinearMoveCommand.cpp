@@ -18,11 +18,11 @@ void LinearMoveCommand::start()
     _cartesian.moveTo(_x, _y, _z);
 }
 
-Status LinearMoveCommand::status()
+CommandStatus LinearMoveCommand::status()
 {
-    A4988 *x = _cartesian.getDriver(Axis::X);
-    A4988 *y = _cartesian.getDriver(Axis::Y);
-    A4988 *z = _cartesian.getDriver(Axis::Z);
+    StepperMotor *x = _cartesian.getStepperMotor(Axis::X);
+    StepperMotor *y = _cartesian.getStepperMotor(Axis::Y);
+    StepperMotor *z = _cartesian.getStepperMotor(Axis::Z);
 
     if(!x || !y || !z)
     {

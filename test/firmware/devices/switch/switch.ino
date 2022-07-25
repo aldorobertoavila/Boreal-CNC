@@ -25,17 +25,17 @@ void loop() {
   SW_Y.tick();
   SW_Z.tick();
 
-  if(SW_X.isPressed())
+  if(SW_X.wasPressed())
   {
     Serial.println("Limit Switch X is pressed");
   }
 
-  if(SW_Y.isPressed())
+  if(SW_Y.wasPressed())
   {
     Serial.println("Limit Switch Y is pressed");
   }
 
-  if(SW_Z.isPressed())
+  if(SW_Z.wasPressed())
   {
     Serial.println("Limit Switch Z is pressed");
   }

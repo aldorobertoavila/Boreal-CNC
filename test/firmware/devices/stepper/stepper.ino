@@ -1,19 +1,23 @@
-#include <A4988.h>
+#include <StepperMotor.h>
 #include <SPI.h>
 
 #define CS_RS1_PIN 27
 #define CS_RS2_PIN 26
 #define CS_RS3_PIN 25
+#define CS_RS4_PIN 33
 
 SPIClass spi(VSPI);
 
-ShiftRegisterMotorInterface SHIFT_REGISTER_X(spi, CS_RS1_PIN, MSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_Y(spi, CS_RS2_PIN, MSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_Z(spi, CS_RS3_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_X1(spi, CS_RS1_PIN, LSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_X2(spi, CS_RS2_PIN, LSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_Y(spi, CS_RS3_PIN, LSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_Z(spi, CS_RS4_PIN, LSBFIRST);
 
-A4988 DRIVER_X(SHIFT_REGISTER_X);
-A4988 DRIVER_Y(SHIFT_REGISTER_Y);
-A4988 DRIVER_Z(SHIFT_REGISTER_Z);
+BilateralMotorInterface BILATERAL_X(SHIFT_REGISTER_X1, SHIFT_REGISTER_X2);
+
+StepperMotor DRIVER_X(BILATERAL_X);
+StepperMotor DRIVER_Y(SHIFT_REGISTER_Y);
+StepperMotor DRIVER_Z(SHIFT_REGISTER_Z);
 
 const float INITIAL_SPEED = 200;
 const unsigned int TARGET = 1000;
@@ -35,6 +39,7 @@ void setup()
   pinMode(CS_RS1_PIN, OUTPUT);
   pinMode(CS_RS2_PIN, OUTPUT);
   pinMode(CS_RS3_PIN, OUTPUT);
+  pinMode(CS_RS4_PIN, OUTPUT);
 }
 
 void loop()

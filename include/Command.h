@@ -1,6 +1,6 @@
 #include <Cartesian.h>
 
-enum Status
+enum CommandStatus
 {
     COMPLETED,
     CONTINUE,
@@ -16,7 +16,7 @@ public:
 
     virtual void start();
 
-    virtual Status status();
+    virtual CommandStatus status();
 
 };
 
@@ -29,7 +29,7 @@ public:
 
     void start() override;
 
-    Status status() override;
+    CommandStatus status() override;
 
 private:
     Cartesian &_cartesian;
@@ -47,7 +47,7 @@ public:
 
     void start() override;
 
-    Status status() override;
+    CommandStatus status() override;
 
 private:
     Cartesian &_cartesian;
