@@ -17,7 +17,6 @@ public:
     virtual void start();
 
     virtual CommandStatus status();
-
 };
 
 class LinearMoveCommand : public Command
@@ -38,6 +37,14 @@ private:
     float _z;
 };
 
+    enum AutohomeState
+    {
+        PRESS,
+        RELEASE,
+        RETURN
+    };
+
+
 class AutohomeCommand : public Command
 {
 public:
@@ -51,4 +58,7 @@ public:
 
 private:
     Cartesian &_cartesian;
+    Axis _currentAxis;
+    AutohomeState _currentState;
+    CommandStatus _currentStatus;
 };

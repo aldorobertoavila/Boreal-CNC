@@ -7,33 +7,76 @@ AutohomeCommand::AutohomeCommand(Cartesian &cartesian) : _cartesian(cartesian)
 
 void AutohomeCommand::execute()
 {
-    _cartesian.run();
+    StepperMotor *stepper = _cartesian.getStepperMotor(_currentAxis);
+    LimitSwitch *sw = _cartesian.getLimitSwitch(_currentAxis);
+
+    if (!stepper || !sw)
+    {
+        _currentStatus = CommandStatus::ERROR;
+        return;
+    }
+
+    float dimensions = _cartesian.getDimensions(_currentAxis);
+
+    switch (_currentState)
+    {
+    case PRESS:
+        _cartesian.run();
+
+        if (sw->wasPressed() || sw->isPressed())
+        {
+            _cartesian.moveTo(_currentAxis, dimensions);
+            _currentState = AutohomeState::RELEASE;
+        }
+
+        break;
+
+    case RELEASE:
+        _cartesian.run();
+
+        if (sw->wasReleased())
+        {
+            _cartesian.moveTo(_currentAxis, -dimensions);
+            _currentState = AutohomeState::RETURN;
+        }
+
+        break;
+
+    case RETURN:
+        _cartesian.run();
+
+        if (sw->wasPressed() || sw->isPressed())
+        {
+            if (_currentAxis == Axis::Z)
+            {
+                _currentStatus = CommandStatus::COMPLETED;
+                stepper->setCurrentPosition(0);
+                return;
+            }
+
+            _cartesian.moveTo(_currentAxis++, -dimensions);
+            _currentState = AutohomeState::RELEASE;
+        }
+
+        break;
+
+    default:
+        break;
+    }
 }
 
 void AutohomeCommand::start()
 {
-    float x = _cartesian.getDimensions(Axis::X);
-    float y = _cartesian.getDimensions(Axis::Y);
-    float z = _cartesian.getDimensions(Axis::Z);
+    _currentAxis = Axis::X;
+    _currentState = AutohomeState::PRESS;
+    _currentStatus = CommandStatus::CONTINUE;
 
-    _cartesian.moveTo(-x, -y, -z);
+    float dimensions = _cartesian.getDimensions(_currentAxis);
+
+    _cartesian.moveTo(_currentAxis, -dimensions);
 }
 
 CommandStatus AutohomeCommand::status()
 {
-    LimitSwitch *x = _cartesian.getLimitSwitch(Axis::X);
-    LimitSwitch *y = _cartesian.getLimitSwitch(Axis::Y);
-    LimitSwitch *z = _cartesian.getLimitSwitch(Axis::Z);
-
-    if(!x || !y || !z)
-    {
-        return ERROR;
-    }
-
-    if(x->isPressed() && y->isPressed() && z->isPressed())
-    {
-        return COMPLETED;
-    }
-
-    return CONTINUE;
+    return _currentStatus;
 }
