@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Axis.h>
 #include <LimitSwitch.h>
 #include <Positioning.h>
@@ -20,7 +22,7 @@ public:
 
     Positioning getPositioning();
 
-    Resolution Cartesian::getResolution(Axis axis);
+    Resolution getResolution(Axis axis);
 
     StepperMotor *getStepperMotor(Axis axis);
 
@@ -44,7 +46,7 @@ public:
 
     void setPositioning(Positioning positioning);
 
-    void Cartesian::setResolution(Axis axis, Resolution res);
+    void setResolution(Axis axis, Resolution res);
 
     void setStepperMotor(Axis axis, StepperMotor &stepper);
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Cartesian.h>
 
 enum CommandStatus
@@ -10,8 +12,6 @@ enum CommandStatus
 class Command
 {
 public:
-    Command();
-
     virtual void execute();
 
     virtual void start();

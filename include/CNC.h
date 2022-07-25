@@ -1,5 +1,0 @@
-class CNC
-{
-public:
-    CNC();
-};

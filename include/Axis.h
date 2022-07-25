@@ -1,3 +1,5 @@
+#pragma once
+
 enum Axis
 {
     X,
@@ -5,21 +7,14 @@ enum Axis
     Z
 };
 
-Axis &operator++(Axis &c)
+inline Axis operator++(Axis &axis, int)
 {
-    using IntType = typename std::underlying_type<Axis>::type;
-    c = static_cast<Axis>(static_cast<IntType>(c) + 1);
+    Axis currentAxis = axis;
 
-    if (c == Axis::Z)
-        c = static_cast<Axis>(0);
+    if (Axis::Z < axis + 1)
+        axis = Axis::X;
+    else
+        axis = static_cast<Axis>(axis + 1);
 
-    return c;
-}
-
-Axis operator++(Axis &c, int)
-{
-    Axis result = c;
-    ++c;
-    
-    return result;
+    return currentAxis;
 }
