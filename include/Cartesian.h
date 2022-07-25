@@ -1,6 +1,7 @@
 #include <Axis.h>
 #include <LimitSwitch.h>
 #include <Positioning.h>
+#include <Resolution.h>
 #include <StepperMotor.h>
 #include <Unit.h>
 
@@ -11,7 +12,7 @@ class Cartesian
 public:
     Cartesian();
 
-    float getDimensions(Axis axis);
+    float getDimension(Axis axis);
 
     float getHomeOffset(Axis axis);
 
@@ -19,7 +20,11 @@ public:
 
     Positioning getPositioning();
 
+    Resolution Cartesian::getResolution(Axis axis);
+
     StepperMotor *getStepperMotor(Axis axis);
+
+    uint8_t getStepsPerMillimeter(Axis axis);
 
     Unit getUnit();
 
@@ -27,9 +32,11 @@ public:
 
     void moveTo(Axis axis, float u);
 
+    void moveTo(Axis axis, Unit unit, float u);
+
     void moveTo(float x, float y, float z);
 
-    void setDimensions(Axis axis, float u);
+    void setDimension(Axis axis, float u);
 
     void setHomeOffset(Axis axis, float u);
 
@@ -37,16 +44,21 @@ public:
 
     void setPositioning(Positioning positioning);
 
+    void Cartesian::setResolution(Axis axis, Resolution res);
+
     void setStepperMotor(Axis axis, StepperMotor &stepper);
+
+    void setStepsPerMillimeter(Axis axis, uint8_t steps);
 
     void setUnit(Unit unit);
 
 protected:
-    long toSteps(Axis axis, float u);
+    long toSteps(Axis axis, Unit unit, float u);
 
 private:
     StepperMotor *_steppers[AXES];
     LimitSwitch *_switches[AXES];
+    Resolution _resolutions[AXES];
     Positioning _positioning;
     Unit _unit;
     float _dimensions[AXES];

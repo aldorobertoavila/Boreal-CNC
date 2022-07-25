@@ -5,7 +5,7 @@ Cartesian::Cartesian()
 
 }
 
-float Cartesian::getDimensions(Axis axis)
+float Cartesian::getDimension(Axis axis)
 {
     return _dimensions[axis];
 }
@@ -25,9 +25,19 @@ Positioning Cartesian::getPositioning()
     return _positioning;
 }
 
+Resolution Cartesian::getResolution(Axis axis)
+{
+    return _resolutions[axis];
+}
+
 StepperMotor *Cartesian::getStepperMotor(Axis axis)
 {
     return _steppers[axis];
+}
+
+uint8_t Cartesian::getStepsPerMillimeter(Axis axis)
+{
+    return _stepsPerMillimeter[axis];
 }
 
 Unit Cartesian::getUnit()
@@ -37,11 +47,16 @@ Unit Cartesian::getUnit()
 
 void Cartesian::moveTo(Axis axis, float u)
 {
+    moveTo(axis, _unit, u);
+}
+
+void Cartesian::moveTo(Axis axis, Unit unit, float u)
+{
     StepperMotor *stepper = _steppers[axis];
 
     if(stepper)
     {
-        long steps = toSteps(axis, u);
+        long steps = toSteps(axis, unit, u);
 
         if(_positioning == ABSOLUTE)
         {
@@ -51,6 +66,8 @@ void Cartesian::moveTo(Axis axis, float u)
         {
             stepper->move(steps);
         }
+
+        stepper->setResolution(_resolutions[axis]);
     }
 }
 
@@ -78,7 +95,7 @@ void Cartesian::run()
     }
 }
 
-void Cartesian::setDimensions(Axis axis, float u)
+void Cartesian::setDimension(Axis axis, float u)
 {
     _dimensions[axis] = u;
 }
@@ -93,6 +110,11 @@ void Cartesian::setLimitSwitch(Axis axis, LimitSwitch &sw)
     _switches[axis] = &sw;
 }
 
+void Cartesian::setResolution(Axis axis, Resolution res)
+{
+    _resolutions[axis] = res;
+}
+
 void Cartesian::setPositioning(Positioning positioning)
 {
     _positioning = positioning;
@@ -103,16 +125,21 @@ void Cartesian::setStepperMotor(Axis axis, StepperMotor &stepper)
     _steppers[axis] = &stepper;
 }
 
+void Cartesian::setStepsPerMillimeter(Axis axis, uint8_t steps)
+{
+    _stepsPerMillimeter[axis] = steps;
+}
+
 void Cartesian::setUnit(Unit unit)
 {
     _unit = unit;
 }
 
-long Cartesian::toSteps(Axis axis, float u)
+long Cartesian::toSteps(Axis axis, Unit unit, float u)
 {
     uint8_t steps = _stepsPerMillimeter[axis];
 
-    switch (_unit)
+    switch (unit)
     {
     case MILLIMETER:
         return u * steps;

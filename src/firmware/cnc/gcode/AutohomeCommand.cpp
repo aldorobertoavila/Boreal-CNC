@@ -16,7 +16,7 @@ void AutohomeCommand::execute()
         return;
     }
 
-    float dimensions = _cartesian.getDimensions(_currentAxis);
+    float dimension = _cartesian.getDimension(_currentAxis);
 
     switch (_currentState)
     {
@@ -25,8 +25,12 @@ void AutohomeCommand::execute()
 
         if (sw->wasPressed() || sw->isPressed())
         {
-            _cartesian.moveTo(_currentAxis, dimensions);
+            stepper->setCurrentPosition(0);
+
+            _cartesian.moveTo(_currentAxis++, Unit::MILLIMETER, -dimension);
             _currentState = AutohomeState::RELEASE;
+
+            stepper->pause(1000);
         }
 
         break;
@@ -36,8 +40,10 @@ void AutohomeCommand::execute()
 
         if (sw->wasReleased())
         {
-            _cartesian.moveTo(_currentAxis, -dimensions);
+            _cartesian.moveTo(_currentAxis++, Unit::MILLIMETER, -dimension);
             _currentState = AutohomeState::RETURN;
+
+            stepper->pause(1000);
         }
 
         break;
@@ -47,15 +53,16 @@ void AutohomeCommand::execute()
 
         if (sw->wasPressed() || sw->isPressed())
         {
+            stepper->setCurrentPosition(0);
+
             if (_currentAxis == Axis::Z)
             {
                 _currentStatus = CommandStatus::COMPLETED;
-                stepper->setCurrentPosition(0);
                 return;
             }
 
-            _cartesian.moveTo(_currentAxis++, -dimensions);
-            _currentState = AutohomeState::RELEASE;
+            _cartesian.moveTo(_currentAxis++, Unit::MILLIMETER, -dimension);
+            _currentState = AutohomeState::PRESS;
         }
 
         break;
@@ -67,13 +74,13 @@ void AutohomeCommand::execute()
 
 void AutohomeCommand::start()
 {
+    float dimension = _cartesian.getDimension(_currentAxis);
+
+    _cartesian.moveTo(_currentAxis, -dimension);
+
     _currentAxis = Axis::X;
     _currentState = AutohomeState::PRESS;
     _currentStatus = CommandStatus::CONTINUE;
-
-    float dimensions = _cartesian.getDimensions(_currentAxis);
-
-    _cartesian.moveTo(_currentAxis, -dimensions);
 }
 
 CommandStatus AutohomeCommand::status()

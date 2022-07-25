@@ -68,6 +68,18 @@ void setup()
     CARTESIAN.setLimitSwitch(Axis::Y, SW_Y);
     CARTESIAN.setLimitSwitch(Axis::Z, SW_Z);
 
+    CARTESIAN.setResolution(Axis::X, Resolution::FULL);
+    CARTESIAN.setResolution(Axis::Y, Resolution::FULL);
+    CARTESIAN.setResolution(Axis::Z, Resolution::FULL);
+
+    CARTESIAN.setStepsPerMillimeter(Axis::X, 5);
+    CARTESIAN.setStepsPerMillimeter(Axis::Y, 5);
+    CARTESIAN.setStepsPerMillimeter(Axis::Z, 5);
+
+    CARTESIAN.setDimension(Axis::X, 400);
+    CARTESIAN.setDimension(Axis::Y, 420);
+    CARTESIAN.setDimension(Axis::Z, 95);
+
     AUTOHOME.start();
 }
 

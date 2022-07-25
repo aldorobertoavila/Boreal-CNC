@@ -12,7 +12,7 @@ StepperMotor::StepperMotor(MotorInterface &motorInterface) : _motorInterface(mot
 
 void StepperMotor::computeSpeed()
 {
-    if(_acceleration > 0)
+    if (_acceleration > 0)
     {
         long deltaDistance = distanceTo();
 
@@ -24,7 +24,7 @@ void StepperMotor::computeSpeed()
             return;
         }
 
-        long distance = (long) (_speed * _speed / (2.0 * _acceleration));
+        long distance = (long)(_speed * _speed / (2.0 * _acceleration));
 
         if (deltaDistance > 0)
         {
@@ -65,7 +65,7 @@ void StepperMotor::computeSpeed()
         _stepInterval = _accelStepInterval;
 
         if (_rotation == COUNTERCLOCKWISE)
-          _speed = -_speed;
+            _speed = -_speed;
     }
 }
 
@@ -135,6 +135,12 @@ void StepperMotor::moveTo(long absolute)
     }
 }
 
+void StepperMotor::pause(unsigned long ms)
+{
+    _pauseInterval = ms;
+    _pauseStartTime = millis();
+}
+
 void StepperMotor::reset()
 {
     _motorInterface.setReset(LOW);
@@ -145,7 +151,7 @@ void StepperMotor::reset()
 
 bool StepperMotor::run()
 {
-    if(runSpeed())
+    if (runSpeed())
     {
         computeSpeed();
         return true;
@@ -156,12 +162,30 @@ bool StepperMotor::run()
 
 bool StepperMotor::runSpeed()
 {
-    if(!_enable || _sleep || !_stepInterval || distanceTo() == 0)
+
+    if (!_enable || _sleep || !_stepInterval || distanceTo() == 0)
+    {
         return false;
+    }
 
-    unsigned long currentTime = micros();
+    if (_pauseInterval > 0)
+    {
+        unsigned long currentMillis = millis();
 
-    if (currentTime - _prevStepTime >= _stepInterval)
+        if (currentMillis - _pauseStartTime <= _pauseInterval)
+        {
+            return false;
+        }
+        else
+        {
+            _pauseInterval = 0;
+            _pauseStartTime = 0;
+        }
+    }
+
+    unsigned long currentMicros = micros();
+
+    if (currentMicros - _prevStepTime >= _stepInterval)
     {
         if (_rotation == CLOCKWISE)
         {
@@ -173,33 +197,31 @@ bool StepperMotor::runSpeed()
         }
         step();
 
-        _prevStepTime = currentTime;
+        _prevStepTime = currentMicros;
 
-        return true;   
+        return true;
     }
 
     return false;
 }
 
-
 void StepperMotor::setAcceleration(float acceleration)
 {
-    if(acceleration < 0)
+    if (acceleration < 0)
         acceleration = -acceleration;
 
-    if(acceleration == 0)
+    if (acceleration == 0)
     {
         _initialAccelInterval = 0;
         _acceleration = 0;
     }
-    else if(_acceleration != acceleration)
+    else if (_acceleration != acceleration)
     {
         _nSteps = _nSteps * (_acceleration / acceleration);
         _initialAccelInterval = 0.676 * sqrt(2.0 / acceleration) * 1e6;
         _acceleration = acceleration;
         computeSpeed();
     }
-
 }
 
 void StepperMotor::setCurrentPosition(long position)
@@ -215,19 +237,19 @@ void StepperMotor::setCurrentPosition(long position)
 
 void StepperMotor::setMaxSpeed(float maxSpeed)
 {
-    if(maxSpeed < 0)
+    if (maxSpeed < 0)
         maxSpeed = -maxSpeed;
-  
+
     if (_maxSpeed != maxSpeed)
     {
         _maxSpeed = maxSpeed;
         _minStepInterval = 1e6 / maxSpeed;
 
         if (_nSteps > 0)
-      {
-          _nSteps = (long)((_speed * _speed) / (2.0 * _acceleration));
-          computeSpeed();
-      }
+        {
+            _nSteps = (long)((_speed * _speed) / (2.0 * _acceleration));
+            computeSpeed();
+        }
     }
 }
 

@@ -30,6 +30,8 @@ public:
 
     void moveTo(long absolute);
 
+    void pause(unsigned long ms);
+
     void reset();
 
     bool run();
@@ -64,6 +66,8 @@ private:
     unsigned long _accelStepInterval;
     unsigned long _initialAccelInterval;
     unsigned long _minStepInterval;
+    unsigned long _pauseInterval;
+    unsigned long _pauseStartTime;
     unsigned long _stepInterval;
     long _nSteps;
     long _currentPos;
