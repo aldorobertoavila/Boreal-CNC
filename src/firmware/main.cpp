@@ -84,9 +84,8 @@ void loop()
 {
     CommandStatus status = AUTOHOME.status();
 
-    if(status == CommandStatus::CONTINUE)
+    if (status == CommandStatus::CONTINUE)
     {
         AUTOHOME.execute();
     }
-
 }
