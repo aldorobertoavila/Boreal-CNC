@@ -5,6 +5,10 @@
 #include <StepperMotor.h>
 #include <SPI.h>
 
+#include <queue>
+
+using namespace std;
+
 #define SW_X_PIN 36
 #define SW_Y_PIN 39
 #define SW_Z_PIN 34
@@ -33,7 +37,8 @@ LimitSwitch SW_Z(SW_Z_PIN);
 
 Cartesian CARTESIAN;
 
-Command *cmd;
+queue<Command> cmdQueue;
+Command* cmd;
 
 void setup()
 {
@@ -80,19 +85,24 @@ void setup()
 
     AutohomeCommand autohome(CARTESIAN);
 
-    cmd = &autohome;
-    cmd->start();
+    cmdQueue.push(autohome);
 }
 
 void loop()
 {
+    if(!cmd && !cmdQueue.empty())
+    {
+        cmd = &cmdQueue.front();
+        cmd->start();
+    }
+
     if (cmd)
     {
         cmd->execute();
 
         CommandStatus status = cmd->status();
 
-        if (status == CommandStatus::COMPLETED)
+        if (status == CommandStatus::COMPLETED || status == CommandStatus::ERROR)
         {
             cmd = nullptr;
         }
