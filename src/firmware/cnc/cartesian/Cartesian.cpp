@@ -117,14 +117,19 @@ void Cartesian::setLimitSwitch(Axis axis, LimitSwitch &sw)
     _switches[axis] = &sw;
 }
 
-void Cartesian::setResolution(Axis axis, Resolution res)
+void Cartesian::setMinStepsPerMillimeter(Axis axis, uint8_t steps)
 {
-    _resolutions[axis] = res;
+    _minStepsPerMillimeter[axis] = steps;
 }
 
 void Cartesian::setPositioning(Positioning positioning)
 {
     _positioning = positioning;
+}
+
+void Cartesian::setResolution(Axis axis, Resolution res)
+{
+    _resolutions[axis] = res;
 }
 
 void Cartesian::setStepperMotor(Axis axis, StepperMotor &stepper)
@@ -134,6 +139,7 @@ void Cartesian::setStepperMotor(Axis axis, StepperMotor &stepper)
 
 void Cartesian::setStepsPerMillimeter(Axis axis, uint8_t steps)
 {
+    _resolutions[axis] = toResolution(steps / _minStepsPerMillimeter[axis]);
     _stepsPerMillimeter[axis] = steps;
 }
 
@@ -157,4 +163,14 @@ long Cartesian::toSteps(Axis axis, Unit unit, float u)
     default:
         return 0;
     }
+}
+
+Resolution Cartesian::toResolution(float factor)
+{
+    if(factor <= 1) return FULL;
+    if(factor <= 2) return HALF;
+    if(factor <= 4) return QUARTER;
+    if(factor <= 8) return EIGHTH;
+
+    return Resolution::SIXTEENTH;
 }

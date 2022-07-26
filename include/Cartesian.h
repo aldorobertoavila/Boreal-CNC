@@ -8,8 +8,6 @@
 #include <StepperMotor.h>
 #include <Unit.h>
 
-#define AXES 3
-
 class Cartesian
 {
 public:
@@ -45,6 +43,8 @@ public:
 
     void setHomeOffset(Axis axis, float u);
 
+    void setMinStepsPerMillimeter(Axis axis, uint8_t steps);
+
     void setLimitSwitch(Axis axis, LimitSwitch &sw);
 
     void setPositioning(Positioning positioning);
@@ -58,6 +58,8 @@ public:
     void setUnit(Unit unit);
 
 protected:
+    Resolution toResolution(float factor);
+
     long toSteps(Axis axis, Unit unit, float u);
 
 private:
@@ -68,5 +70,6 @@ private:
     Unit _unit;
     long _dimensions[AXES];
     long _homeOffset[AXES];
+    uint8_t _minStepsPerMillimeter[AXES];
     uint8_t _stepsPerMillimeter[AXES];
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#define AXES 3
+
 enum Axis
 {
     X,

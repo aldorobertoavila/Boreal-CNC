@@ -65,13 +65,13 @@ void setup()
     CARTESIAN.setLimitSwitch(Axis::Y, SW_Y);
     CARTESIAN.setLimitSwitch(Axis::Z, SW_Z);
 
-    CARTESIAN.setResolution(Axis::X, Resolution::FULL);
-    CARTESIAN.setResolution(Axis::Y, Resolution::FULL);
-    CARTESIAN.setResolution(Axis::Z, Resolution::FULL);
+    CARTESIAN.setMinStepsPerMillimeter(Axis::X, 5);
+    CARTESIAN.setMinStepsPerMillimeter(Axis::Y, 5);
+    CARTESIAN.setMinStepsPerMillimeter(Axis::Z, 25);
 
-    CARTESIAN.setStepsPerMillimeter(Axis::X, 5);
-    CARTESIAN.setStepsPerMillimeter(Axis::Y, 5);
-    CARTESIAN.setStepsPerMillimeter(Axis::Z, 5);
+    CARTESIAN.setStepsPerMillimeter(Axis::X, 10);
+    CARTESIAN.setStepsPerMillimeter(Axis::Y, 10);
+    CARTESIAN.setStepsPerMillimeter(Axis::Z, 50);
 
     CARTESIAN.setDimension(Axis::X, 400);
     CARTESIAN.setDimension(Axis::Y, 420);
