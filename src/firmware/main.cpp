@@ -32,7 +32,8 @@ LimitSwitch SW_Y(SW_Y_PIN);
 LimitSwitch SW_Z(SW_Z_PIN);
 
 Cartesian CARTESIAN;
-AutohomeCommand AUTOHOME(CARTESIAN);
+
+Command *cmd;
 
 void setup()
 {
@@ -77,15 +78,23 @@ void setup()
     CARTESIAN.setDimension(Axis::Y, 420);
     CARTESIAN.setDimension(Axis::Z, 95);
 
-    AUTOHOME.start();
+    AutohomeCommand autohome(CARTESIAN);
+
+    cmd = &autohome;
+    cmd->start();
 }
 
 void loop()
 {
-    CommandStatus status = AUTOHOME.status();
-
-    if (status == CommandStatus::CONTINUE)
+    if (cmd)
     {
-        AUTOHOME.execute();
+        cmd->execute();
+
+        CommandStatus status = cmd->status();
+
+        if (status == CommandStatus::COMPLETED)
+        {
+            cmd = nullptr;
+        }
     }
 }

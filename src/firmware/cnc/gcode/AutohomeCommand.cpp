@@ -1,4 +1,3 @@
-#include <Cartesian.h>
 #include <Command.h>
 
 AutohomeCommand::AutohomeCommand(Cartesian &cartesian) : _cartesian(cartesian)
@@ -19,7 +18,8 @@ void AutohomeCommand::execute()
     switch (_currentState)
     {
     case PRESS:
-        _cartesian.run();
+        stepper->run();
+        sw->tick();
 
         if (sw->wasPressed() || sw->isPressed())
         {
@@ -34,7 +34,8 @@ void AutohomeCommand::execute()
         break;
 
     case RELEASE:
-        _cartesian.run();
+        stepper->run();
+        sw->tick();
 
         if (sw->wasReleased())
         {
@@ -49,7 +50,8 @@ void AutohomeCommand::execute()
         break;
 
     case RETURN:
-        _cartesian.run();
+        stepper->run();
+        sw->tick();
 
         if (sw->wasPressed() || sw->isPressed())
         {
@@ -81,9 +83,4 @@ void AutohomeCommand::start()
     _currentAxis = Axis::X;
     _currentState = AutohomeState::PRESS;
     _currentStatus = CommandStatus::CONTINUE;
-}
-
-CommandStatus AutohomeCommand::status()
-{
-    return _currentStatus;
 }

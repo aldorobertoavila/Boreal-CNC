@@ -2,7 +2,6 @@
 
 Cartesian::Cartesian()
 {
-
 }
 
 long Cartesian::getDimension(Axis axis)
@@ -54,11 +53,11 @@ void Cartesian::moveTo(Axis axis, Unit unit, float u)
 {
     StepperMotor *stepper = _steppers[axis];
 
-    if(stepper)
+    if (stepper)
     {
         long steps = toSteps(axis, unit, u);
 
-        if(_positioning == ABSOLUTE)
+        if (_positioning == ABSOLUTE)
         {
             stepper->moveTo(steps);
         }
@@ -83,23 +82,6 @@ void Cartesian::moveToLimit(Axis axis, Direction dir)
     long dimension = getDimension(axis);
 
     moveTo(axis, Unit::MILLIMETER, dir == Direction::NEGATIVE ? -dimension : dimension);
-}
-
-void Cartesian::run()
-{
-    for (uint8_t i = 0; i < AXES; i++)
-    {
-        Axis axis = static_cast<Axis>(i);
-
-        StepperMotor *stepper = getStepperMotor(axis);
-        LimitSwitch *sw = getLimitSwitch(axis);
-
-        if(stepper && sw)
-        {
-            stepper->run();
-            sw->tick();
-        }
-    }
 }
 
 void Cartesian::setDimension(Axis axis, float u)
@@ -158,8 +140,6 @@ long Cartesian::toSteps(Axis axis, Unit unit, float u)
         return u * steps;
     case INCH:
         return 25.4 * u * steps;
-    case CENTIMETER:
-        return 10 * u * steps; 
     default:
         return 0;
     }
@@ -167,10 +147,14 @@ long Cartesian::toSteps(Axis axis, Unit unit, float u)
 
 Resolution Cartesian::toResolution(float factor)
 {
-    if(factor <= 1) return FULL;
-    if(factor <= 2) return HALF;
-    if(factor <= 4) return QUARTER;
-    if(factor <= 8) return EIGHTH;
+    if (factor <= 1)
+        return FULL;
+    if (factor <= 2)
+        return HALF;
+    if (factor <= 4)
+        return QUARTER;
+    if (factor <= 8)
+        return EIGHTH;
 
     return Resolution::SIXTEENTH;
 }

@@ -1,4 +1,3 @@
-#include <Axis.h>
 #include <Command.h>
 
 LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, float x, float y, float z) : _cartesian(cartesian)
@@ -10,29 +9,34 @@ LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, float x, float y, flo
 
 void LinearMoveCommand::execute()
 {
-    _cartesian.run();
+    bool completed = HIGH;
+
+    for (uint8_t i = 0; i < AXES; i++)
+    {
+        Axis axis = static_cast<Axis>(i);
+
+        StepperMotor *stepper = _cartesian.getStepperMotor(axis);
+        LimitSwitch *sw = _cartesian.getLimitSwitch(axis);
+
+        if (stepper && sw)
+        {
+            stepper->run();
+            sw->tick();
+
+            if(stepper->distanceTo() == 0 || sw->wasPressed() || sw->isPressed())
+            {
+                completed &= HIGH;
+            }
+        }
+    }
+
+    if(completed)
+    {
+        _currentStatus = CommandStatus::COMPLETED;
+    }
 }
 
 void LinearMoveCommand::start()
 {
     _cartesian.moveTo(_x, _y, _z);
-}
-
-CommandStatus LinearMoveCommand::status()
-{
-    StepperMotor *x = _cartesian.getStepperMotor(Axis::X);
-    StepperMotor *y = _cartesian.getStepperMotor(Axis::Y);
-    StepperMotor *z = _cartesian.getStepperMotor(Axis::Z);
-
-    if(!x || !y || !z)
-    {
-        return ERROR;
-    }
-
-    if(x && y && z)
-    {
-        if(x->distanceTo() == 0 && y->distanceTo() == 0 && z->distanceTo() == 0) return COMPLETED;
-    }
-
-    return CONTINUE;
 }

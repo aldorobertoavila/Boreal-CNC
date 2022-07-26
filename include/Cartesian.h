@@ -29,8 +29,6 @@ public:
 
     Unit getUnit();
 
-    void run();
-
     void moveTo(Axis axis, float u);
 
     void moveTo(Axis axis, Unit unit, float u);
