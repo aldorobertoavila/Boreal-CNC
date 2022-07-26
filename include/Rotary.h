@@ -34,7 +34,10 @@ private:
     long _position;
     long _prevPosition;
     unsigned long _clickDebounceTime;
+    unsigned long _lastClickTime;
+    unsigned long _lastRotationTime;
     unsigned long _rotationDebounceTime;
+    bool _previousStateClk;
     uint8_t _dtPin;
     uint8_t _clkPin;
     uint8_t _swPin;

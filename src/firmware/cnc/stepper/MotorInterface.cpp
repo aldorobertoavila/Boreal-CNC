@@ -1,5 +1,7 @@
 #include <MotorInterface.h>
 
+#define DEBUG_MODE
+
 BilateralMotorInterface::BilateralMotorInterface(MotorInterface &motorA, MotorInterface &motorB) : _motorA(motorA), _motorB(motorB)
 {
     this->_motorA = motorA;
@@ -131,9 +133,19 @@ void ShiftRegisterMotorInterface::step()
 {
     bitWrite(_dataIn, STEP_OUT, HIGH);
     updateShiftOut();
-    delayMicroseconds(STEP_DELAY);
+
+    #ifdef DEBUG_MODE
+        delay(DEBUG_STEP_DELAY);
+    #else
+        delayMicroseconds(STEP_DELAY);
+    #endif
+    
     bitWrite(_dataIn, STEP_OUT, LOW);
     updateShiftOut();
+
+    #ifdef DEBUG_MODE
+        delay(DEBUG_STEP_DELAY);
+    #endif
 }
 
 void ShiftRegisterMotorInterface::updateShiftOut()

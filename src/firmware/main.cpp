@@ -45,10 +45,6 @@ void setup()
     pinMode(CS_RS3_PIN, OUTPUT);
     pinMode(CS_RS4_PIN, OUTPUT);
 
-    pinMode(SW_X_PIN, INPUT);
-    pinMode(SW_Y_PIN, INPUT);
-    pinMode(SW_Z_PIN, INPUT);
-
     DRIVER_X.setMaxSpeed(600);
     DRIVER_Y.setMaxSpeed(600);
     DRIVER_Z.setMaxSpeed(600);
@@ -92,4 +88,5 @@ void loop()
     {
         AUTOHOME.execute();
     }
+
 }

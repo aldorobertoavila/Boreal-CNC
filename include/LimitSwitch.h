@@ -21,5 +21,8 @@ private:
   uint8_t _swPin;
   bool _previousState;
   bool _currentState;
-  unsigned long _debounceTime;
+  bool _wasPressedAlready;
+  bool _wasReleasedAlready;
+  unsigned long _debounceTimeInterval;
+  unsigned long _lastDebounceTime;
 };

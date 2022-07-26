@@ -3,6 +3,10 @@
 LimitSwitch::LimitSwitch(uint8_t swPin) {
   this->_swPin = swPin;
   this->_previousState = digitalRead(swPin);
+  this->_wasPressedAlready = HIGH;
+  this->_wasReleasedAlready = HIGH;
+
+  pinMode(_swPin, INPUT);
 }
 
 bool LimitSwitch::isPressed() {
@@ -10,46 +14,43 @@ bool LimitSwitch::isPressed() {
 }
 
 void LimitSwitch::tick() {
-  static unsigned long lastDebounceTime;
   unsigned long currentTime = millis();
 
-  if(currentTime - lastDebounceTime > _debounceTime)
+  if(currentTime - _lastDebounceTime > _debounceTimeInterval)
   {
     _previousState = _currentState;
     _currentState = digitalRead(_swPin);
-    lastDebounceTime = currentTime;
+    _lastDebounceTime = currentTime;
   }
 }
 
 bool LimitSwitch::wasPressed() {
-  static bool alreadyRead = HIGH;
   bool wasPressed = LOW;
  
-  if (!_currentState && !alreadyRead)
+  if (!_currentState && !_wasPressedAlready)
   {
     wasPressed = HIGH;
   }
 
-  alreadyRead = !_currentState;
+  _wasPressedAlready = !_currentState;
 
   return wasPressed;
 }
 
 bool LimitSwitch::wasReleased() {
-  static bool alreadyRead = HIGH;
   bool wasReleased = LOW;
  
-  if (_currentState && !alreadyRead)
+  if (_currentState && !_wasReleasedAlready)
   {
     wasReleased = HIGH;
   }
 
-  alreadyRead = _currentState;
+  _wasReleasedAlready = _currentState;
 
   return wasReleased;
 }
 
 void LimitSwitch::setDebounceTime(unsigned long debounceTime)
 {
-  _debounceTime = debounceTime;
+  _debounceTimeInterval = debounceTime;
 }

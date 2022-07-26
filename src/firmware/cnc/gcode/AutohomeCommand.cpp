@@ -25,9 +25,13 @@ void AutohomeCommand::execute()
 
         if (sw->wasPressed() || sw->isPressed())
         {
+            Serial.print("Axis ");
+            Serial.print(_currentAxis);
+            Serial.println(" was pressed!");
+
             stepper->setCurrentPosition(0);
 
-            _cartesian.moveTo(_currentAxis++, Unit::MILLIMETER, -dimension);
+            _cartesian.moveTo(_currentAxis, Unit::MILLIMETER, -dimension);
             _currentState = AutohomeState::RELEASE;
 
             stepper->pause(1000);
@@ -40,7 +44,11 @@ void AutohomeCommand::execute()
 
         if (sw->wasReleased())
         {
-            _cartesian.moveTo(_currentAxis++, Unit::MILLIMETER, -dimension);
+            Serial.print("Axis ");
+            Serial.print(_currentAxis);
+            Serial.println(" was released!");
+
+            _cartesian.moveTo(_currentAxis, Unit::MILLIMETER, -dimension);
             _currentState = AutohomeState::RETURN;
 
             stepper->pause(1000);
@@ -53,6 +61,10 @@ void AutohomeCommand::execute()
 
         if (sw->wasPressed() || sw->isPressed())
         {
+            Serial.print("Axis ");
+            Serial.print(_currentAxis);
+            Serial.println(" was pressed again!");
+
             stepper->setCurrentPosition(0);
 
             if (_currentAxis == Axis::Z)
