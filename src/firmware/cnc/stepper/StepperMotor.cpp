@@ -63,9 +63,11 @@ void StepperMotor::computeSpeed()
         _nSteps++;
         _speed = 1e6 / _accelStepInterval;
         _stepInterval = _accelStepInterval;
+    }
 
-        if (_rotation == COUNTERCLOCKWISE)
-            _speed = -_speed;
+    if (_rotation == COUNTERCLOCKWISE)
+    {
+        _speed = -_speed;
     }
 }
 

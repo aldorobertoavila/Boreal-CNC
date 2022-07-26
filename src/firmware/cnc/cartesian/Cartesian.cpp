@@ -5,12 +5,12 @@ Cartesian::Cartesian()
 
 }
 
-float Cartesian::getDimension(Axis axis)
+long Cartesian::getDimension(Axis axis)
 {
     return _dimensions[axis];
 }
 
-float Cartesian::getHomeOffset(Axis axis)
+long Cartesian::getHomeOffset(Axis axis)
 {
     return _homeOffset[axis];
 }
@@ -76,6 +76,13 @@ void Cartesian::moveTo(float x, float y, float z)
     moveTo(Axis::X, x);
     moveTo(Axis::Y, y);
     moveTo(Axis::Z, z);
+}
+
+void Cartesian::moveToLimit(Axis axis, Direction dir)
+{
+    long dimension = getDimension(axis);
+
+    moveTo(axis, Unit::MILLIMETER, dir == Direction::NEGATIVE ? -dimension : dimension);
 }
 
 void Cartesian::run()

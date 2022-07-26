@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Axis.h>
+#include <Direction.h>
 #include <LimitSwitch.h>
 #include <Positioning.h>
 #include <Resolution.h>
@@ -14,9 +15,9 @@ class Cartesian
 public:
     Cartesian();
 
-    float getDimension(Axis axis);
+    long getDimension(Axis axis);
 
-    float getHomeOffset(Axis axis);
+    long getHomeOffset(Axis axis);
 
     LimitSwitch *getLimitSwitch(Axis axis);
 
@@ -37,6 +38,8 @@ public:
     void moveTo(Axis axis, Unit unit, float u);
 
     void moveTo(float x, float y, float z);
+
+    void moveToLimit(Axis axis, Direction dir);
 
     void setDimension(Axis axis, float u);
 
@@ -63,7 +66,7 @@ private:
     Resolution _resolutions[AXES];
     Positioning _positioning;
     Unit _unit;
-    float _dimensions[AXES];
-    float _homeOffset[AXES];
+    long _dimensions[AXES];
+    long _homeOffset[AXES];
     uint8_t _stepsPerMillimeter[AXES];
 };

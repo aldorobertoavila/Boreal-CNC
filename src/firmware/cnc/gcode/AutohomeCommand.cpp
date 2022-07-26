@@ -16,8 +16,6 @@ void AutohomeCommand::execute()
         return;
     }
 
-    float dimension = _cartesian.getDimension(_currentAxis);
-
     switch (_currentState)
     {
     case PRESS:
@@ -25,16 +23,12 @@ void AutohomeCommand::execute()
 
         if (sw->wasPressed() || sw->isPressed())
         {
-            Serial.print("Axis ");
-            Serial.print(_currentAxis);
-            Serial.println(" was pressed!");
-
             stepper->setCurrentPosition(0);
 
-            _cartesian.moveTo(_currentAxis, Unit::MILLIMETER, -dimension);
+            _cartesian.moveToLimit(_currentAxis, Direction::POSITIVE);
             _currentState = AutohomeState::RELEASE;
 
-            stepper->pause(1000);
+            stepper->pause(500);
         }
 
         break;
@@ -44,14 +38,12 @@ void AutohomeCommand::execute()
 
         if (sw->wasReleased())
         {
-            Serial.print("Axis ");
-            Serial.print(_currentAxis);
-            Serial.println(" was released!");
+            stepper->setCurrentPosition(0);
 
-            _cartesian.moveTo(_currentAxis, Unit::MILLIMETER, -dimension);
+            _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
             _currentState = AutohomeState::RETURN;
 
-            stepper->pause(1000);
+            stepper->pause(500);
         }
 
         break;
@@ -61,10 +53,6 @@ void AutohomeCommand::execute()
 
         if (sw->wasPressed() || sw->isPressed())
         {
-            Serial.print("Axis ");
-            Serial.print(_currentAxis);
-            Serial.println(" was pressed again!");
-
             stepper->setCurrentPosition(0);
 
             if (_currentAxis == Axis::Z)
@@ -73,7 +61,9 @@ void AutohomeCommand::execute()
                 return;
             }
 
-            _cartesian.moveTo(_currentAxis++, Unit::MILLIMETER, -dimension);
+            // move next motor
+            _currentAxis++;
+            _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
             _currentState = AutohomeState::PRESS;
         }
 
@@ -86,9 +76,7 @@ void AutohomeCommand::execute()
 
 void AutohomeCommand::start()
 {
-    float dimension = _cartesian.getDimension(_currentAxis);
-
-    _cartesian.moveTo(_currentAxis, -dimension);
+    _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
 
     _currentAxis = Axis::X;
     _currentState = AutohomeState::PRESS;

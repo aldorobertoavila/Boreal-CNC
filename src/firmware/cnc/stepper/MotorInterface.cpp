@@ -1,6 +1,6 @@
 #include <MotorInterface.h>
 
-#define DEBUG_MODE
+// #define DEBUG_MODE
 
 BilateralMotorInterface::BilateralMotorInterface(MotorInterface &motorA, MotorInterface &motorB) : _motorA(motorA), _motorB(motorB)
 {
