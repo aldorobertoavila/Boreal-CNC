@@ -6,6 +6,7 @@
 #include <SPI.h>
 
 #include <queue>
+#include <memory>
 
 using namespace std;
 
@@ -37,8 +38,8 @@ LimitSwitch SW_Z(SW_Z_PIN);
 
 Cartesian CARTESIAN;
 
-queue<Command*> cmdQueue;
-Command *cmd;
+queue<std::shared_ptr<Command>> cmdQueue;
+std::shared_ptr<Command> cmd;
 
 void setup()
 {
@@ -83,7 +84,7 @@ void setup()
     CARTESIAN.setDimension(Axis::Y, 420);
     CARTESIAN.setDimension(Axis::Z, 95);
 
-    cmdQueue.push(new AutohomeCommand(CARTESIAN));
+    cmdQueue.push(std::make_shared<AutohomeCommand>(CARTESIAN));
 }
 
 void loop()
