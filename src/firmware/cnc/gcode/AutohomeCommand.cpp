@@ -78,9 +78,9 @@ void AutohomeCommand::execute()
 
 void AutohomeCommand::start()
 {
-    _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
-
     _currentAxis = Axis::X;
     _currentState = AutohomeState::PRESS;
     _currentStatus = CommandStatus::CONTINUE;
+
+    _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
 }

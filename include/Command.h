@@ -25,12 +25,11 @@ enum InlineMode
 class Command
 {
 public:
-    virtual void execute() {};
+    virtual void execute() = 0;
 
-    virtual void start() {};
+    virtual void start() = 0;
 
-    virtual CommandStatus status() { return CONTINUE; };
-
+    virtual CommandStatus status() = 0;
 };
 
 class InstantCommand : public Command

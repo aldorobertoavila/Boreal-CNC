@@ -37,8 +37,8 @@ LimitSwitch SW_Z(SW_Z_PIN);
 
 Cartesian CARTESIAN;
 
-queue<Command> cmdQueue;
-Command* cmd;
+queue<Command*> cmdQueue;
+Command *cmd;
 
 void setup()
 {
@@ -83,17 +83,20 @@ void setup()
     CARTESIAN.setDimension(Axis::Y, 420);
     CARTESIAN.setDimension(Axis::Z, 95);
 
-    AutohomeCommand autohome(CARTESIAN);
-
-    cmdQueue.push(autohome);
+    cmdQueue.push(new AutohomeCommand(CARTESIAN));
 }
 
 void loop()
 {
-    if(!cmd && !cmdQueue.empty())
+    if (!cmdQueue.empty())
     {
-        cmd = &cmdQueue.front();
-        cmd->start();
+        cmd = cmdQueue.front();
+        cmdQueue.pop();
+
+        if (cmd)
+        {
+            cmd->start();
+        }
     }
 
     if (cmd)
