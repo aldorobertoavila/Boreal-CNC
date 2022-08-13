@@ -8,10 +8,10 @@
 
 SPIClass spi(VSPI);
 
-ShiftRegisterMotorInterface SHIFT_REGISTER_X1(spi, CS_RS1_PIN, LSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_X2(spi, CS_RS2_PIN, LSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_Y(spi, CS_RS3_PIN, LSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_Z(spi, CS_RS4_PIN, LSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_X1(spi, CS_RS1_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_X2(spi, CS_RS2_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_Y(spi, CS_RS3_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_Z(spi, CS_RS4_PIN, MSBFIRST);
 
 BilateralMotorInterface BILATERAL_X(SHIFT_REGISTER_X1, SHIFT_REGISTER_X2);
 
@@ -20,7 +20,7 @@ StepperMotor DRIVER_Y(SHIFT_REGISTER_Y);
 StepperMotor DRIVER_Z(SHIFT_REGISTER_Z);
 
 const float INITIAL_SPEED = 200;
-const unsigned int TARGET = 1000;
+const unsigned int TARGET = 10;
 
 void setup()
 {
@@ -62,7 +62,7 @@ void loop()
     delay(1000);
   }
 
-  if (DRIVER_X.getCurrentPosition() == 0)
+  if (DRIVER_X.getCurrentPosition() == 0 && DRIVER_Y.getCurrentPosition() == 0 && DRIVER_Z.getCurrentPosition() == 0)
   {
     DRIVER_X.setSpeed(INITIAL_SPEED);
     DRIVER_X.moveTo(TARGET);

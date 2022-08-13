@@ -1,8 +1,8 @@
 #include <Rotary.h>
 
-#define EN_CLK_PIN 2
-#define EN_DT_PIN 4
-#define EN_SW_PIN 15
+#define EN_CLK_PIN 4
+#define EN_DT_PIN 2
+#define EN_SW_PIN 17
 
 Rotary rotary(EN_CLK_PIN, EN_DT_PIN, EN_SW_PIN);
 

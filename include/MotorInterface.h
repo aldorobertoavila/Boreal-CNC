@@ -12,7 +12,7 @@
 #define STEP_DELAY 10
 
 // PWM per Step delay (ms)
-#define DEBUG_STEP_DELAY 500
+#define DEBUG_STEP_DELAY 1000
 
 // Emerging from Sleep delay (ms)
 #define SLEEP_DELAY 1
