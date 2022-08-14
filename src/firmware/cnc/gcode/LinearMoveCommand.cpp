@@ -1,42 +1,50 @@
 #include <Command.h>
 
-LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, float x, float y, float z) : _cartesian(cartesian)
+LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, uint8_t s) : _cartesian(cartesian), _laser(laser)
 {
     this->_x = x;
     this->_y = y;
     this->_z = z;
+    this->_s = s;
 }
 
 void LinearMoveCommand::execute()
 {
-    bool completed = HIGH;
+    StepperMotor *stepper = _cartesian.getStepperMotor(_currentAxis);
+    LimitSwitch *sw = _cartesian.getLimitSwitch(_currentAxis);
 
-    for (uint8_t i = 0; i < AXES; i++)
+    stepper->run();
+    sw->tick();
+
+    if (stepper->distanceTo() == 0 || sw->wasPressed() || sw->isPressed())
     {
-        Axis axis = static_cast<Axis>(i);
-
-        StepperMotor *stepper = _cartesian.getStepperMotor(axis);
-        LimitSwitch *sw = _cartesian.getLimitSwitch(axis);
-
-        if (stepper && sw)
+        if (_currentAxis == Axis::Z)
         {
-            stepper->run();
-            sw->tick();
-
-            if(stepper->distanceTo() == 0 || sw->wasPressed() || sw->isPressed())
-            {
-                completed &= HIGH;
-            }
+            _currentStatus = Status::COMPLETED;
+            return;
         }
-    }
 
-    if(completed)
+        _currentAxis++;
+    }
+}
+
+void LinearMoveCommand::finish()
+{
+    if (_s > 0 && _laser.getInlineMode() == OFF)
     {
-        _currentStatus = CommandStatus::COMPLETED;
+        _laser.turnOff();
     }
 }
 
 void LinearMoveCommand::start()
 {
+    _currentAxis = Axis::X;
+
+    if (_laser.getInlineMode() == OFF)
+    {
+        _laser.setPower(_s);
+    }
+
     _cartesian.moveTo(_x, _y, _z);
+    _laser.turnOn();
 }

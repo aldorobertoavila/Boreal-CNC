@@ -1,11 +1,32 @@
 #pragma once
 
+#include <Status.h>
+
 #include <Arduino.h>
+#include <FS.h>
+
+using namespace std;
 
 class Process
 {
 public:
-    Process();
+    Process(fs::FS &fs, String path);
 
-    String nextLine();
+    String readNextLine();
+
+    void pause();
+
+    void resume();
+
+    void start();
+
+    Status status();
+
+    void stop();
+
+private:
+    fs::FS &_fs;
+    fs::File _file;
+    String _path;
+    Status _status;
 };

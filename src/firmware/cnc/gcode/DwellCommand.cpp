@@ -9,12 +9,17 @@ void DwellCommand::execute()
 {
     if(millis() - _startTime > _remainTime)
     {
-        _currentStatus = CommandStatus::COMPLETED;        
+        _currentStatus = Status::COMPLETED;        
     }
+}
+
+void DwellCommand::finish()
+{
+
 }
 
 void DwellCommand::start()
 {
     _startTime = millis();
-    _currentStatus = CommandStatus::CONTINUE;
+    _currentStatus = Status::CONTINUE;
 }

@@ -1,13 +1,8 @@
 #pragma once
 
 #include <Cartesian.h>
-
-enum CommandStatus
-{
-    COMPLETED,
-    CONTINUE,
-    ERROR
-};
+#include <Laser.h>
+#include <Status.h>
 
 enum AutohomeState
 {
@@ -16,20 +11,16 @@ enum AutohomeState
     RETURN
 };
 
-enum InlineMode
-{
-    ON,
-    OFF
-};
-
 class Command
 {
 public:
     virtual void execute() = 0;
 
+    virtual void finish() = 0;
+
     virtual void start() = 0;
 
-    virtual CommandStatus status() = 0;
+    virtual Status status() = 0;
 };
 
 class InstantCommand : public Command
@@ -37,60 +28,90 @@ class InstantCommand : public Command
 public:
     void start() override{};
 
-    CommandStatus status() override { return COMPLETED; };
+    void finish() override{};
+
+    Status status() override { return COMPLETED; };
 };
 
-class DurableCommand : public Command
+class CancelableCommand : public Command
 {
 public:
-    CommandStatus status() override { return _currentStatus; };
+    Status status() override { return _currentStatus; };
 
 protected:
-    CommandStatus _currentStatus;
+    Status _currentStatus;
 };
 
-class ArcMoveCommand : public Command
+class ArcMoveCommand : public CancelableCommand
 {
 public:
-    ArcMoveCommand(Cartesian &cartesian, float x, float y, float z, float i, float j, float k, float r);
+    ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, uint8_t s);
 
     void execute() override;
+
+    void finish() override;
 
     void start() override;
 
 private:
     Cartesian &_cartesian;
+    Laser &_laser;
     float _x;
     float _y;
     float _z;
     float _i;
     float _j;
     float _k;
-    float _r;
+    uint8_t _s;
 };
 
-// TODO turn off laser
-class AutohomeCommand : public DurableCommand
+class AutohomeCommand : public CancelableCommand
 {
 public:
-    AutohomeCommand(Cartesian &cartesian);
+    AutohomeCommand(Cartesian &cartesian, Laser &laser);
 
     void execute() override;
+
+    void finish() override;
 
     void start() override;
 
 private:
     Cartesian &_cartesian;
+    Laser &_laser;
     Axis _currentAxis;
     AutohomeState _currentState;
 };
 
-class DwellCommand : public DurableCommand
+class CircleMoveCommand : public CancelableCommand
+{
+public:
+    CircleMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float r, uint8_t s);
+
+    void execute() override;
+
+    void finish() override;
+
+    void start() override;
+
+private:
+    Cartesian &_cartesian;
+    Laser &_laser;
+    float _x;
+    float _y;
+    float _z;
+    float _r;
+    uint8_t _s;
+};
+
+class DwellCommand : public CancelableCommand
 {
 public:
     DwellCommand(unsigned long remainTime);
 
     void execute() override;
+
+    void finish() override;
 
     void start() override;
 
@@ -99,21 +120,25 @@ private:
     unsigned long _startTime;
 };
 
-// TODO turn off laser
-class LinearMoveCommand : public DurableCommand
+class LinearMoveCommand : public CancelableCommand
 {
 public:
-    LinearMoveCommand(Cartesian &cartesian, float x, float y, float z);
+    LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, uint8_t s);
 
     void execute() override;
+
+    void finish() override;
 
     void start() override;
 
 private:
     Cartesian &_cartesian;
+    Laser &_laser;
+    Axis _currentAxis;
     float _x;
     float _y;
     float _z;
+    uint8_t _s;
 };
 
 class SetPositioningCommand : public InstantCommand
@@ -140,32 +165,26 @@ private:
     Unit _unit;
 };
 
-/*
-class LaserOnCommand : public Command
+class LaserOnCommand : public InstantCommand
 {
 public:
-    LaserOnCommand(uint8_t pwm, InlineMode mode);
+    LaserOnCommand(Laser &laser, uint8_t power, InlineMode mode);
 
     void execute() override;
-
-    void start() override;
-
-    CommandStatus status() override;
 
 private:
     InlineMode _mode;
-    uint8_t _pwm;
+    uint8_t _power;
+    Laser &_laser;
 };
 
-class LaserOffCommand : public Command
+class LaserOffCommand : public InstantCommand
 {
 public:
-    LaserOffCommand();
+    LaserOffCommand(Laser &laser);
 
     void execute() override;
 
-    void start() override;
-
-    CommandStatus status() override;
+private:
+    Laser &_laser;
 };
-*/

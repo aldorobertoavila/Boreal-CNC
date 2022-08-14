@@ -7,6 +7,7 @@
 #include <StepperMotor.h>
 
 #include <LiquidCrystal_I2C.h>
+#include <SD.h>
 #include <SPI.h>
 #include <Wire.h>
 
@@ -29,9 +30,13 @@ using namespace std;
 #define LCD_ZERO_COL 0
 #define LCD_ZERO_ROW 0
 
+#define LSR_MAX_POWER 255
+
 #define EN_CLK_PIN 4
 #define EN_DT_PIN 2
 #define EN_SW_PIN 17
+
+#define LSR_PIN 13
 
 #define SW_X_PIN 36
 #define SW_Y_PIN 39
@@ -104,6 +109,7 @@ LiquidViewport viewport(lcd, LCD_COLS, LCD_ROWS);
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 
 Cartesian CARTESIAN;
+Laser laser(LSR_PIN);
 
 const uint8_t TEN_MILLIMETER = 100;
 const uint8_t ONE_MILLIMETER = 10;
@@ -120,15 +126,12 @@ byte ARROW[8] =
         0b00100,
         0b00000};
 
-Axis currentAxis;
-uint8_t currentUnit;
-uint16_t millimeters;
-
 queue<std::shared_ptr<Command>> cmdQueue;
 queue<std::shared_ptr<Process>> procQueue;
 std::shared_ptr<Command> cmd;
 std::shared_ptr<Process> proc;
 
+/*
 void setScreen(LiquidScreen *screen, uint8_t screenId, bool forcePosition)
 {
   uint8_t lineIndex = viewport.getCurrentLineIndex(screenId);
@@ -159,9 +162,6 @@ void setScreen(uint8_t screenId)
 void setMoveAxisScreen(Axis axis, uint8_t unit)
 {
   setScreen(MOVE_AXIS);
-
-  currentAxis = axis;
-  currentUnit = unit;
 
   rotary.setBoundaries(-100, 1);
 
@@ -211,7 +211,7 @@ void ctrlScreenClicked()
     setScreen(MOTION);
     break;
   case 2:
-    setScreen(LASER);
+    setScreen(Screen::LASER);
     break;
   case 3:
     // storeSettings();
@@ -241,9 +241,7 @@ void mainScreenClicked()
     setScreen(CTRL);
     break;
   case 3:
-    /*
-      setScreen(CARD);
-    */
+    // setScreen(CARD);
     break;
   case 4:
     setScreen(ABOUT);
@@ -446,9 +444,9 @@ void formatAxisLine(Buffer buf, char *text)
 
 void formatMilliLine(Buffer buf, char *text)
 {
-  uint8_t tens = millimeters / 10;
-  uint8_t ones = millimeters % 10;
-  snprintf(buf, sizeof(buf), text, tens, ones);
+  // uint8_t tens = millimeters / 10;
+  // uint8_t ones = millimeters % 10;
+  // snprintf(buf, sizeof(buf), text, tens, ones);
 }
 
 void clickCallback()
@@ -525,9 +523,6 @@ void onRotationCW()
     break;
   case MOVE_AXIS:
     // cnc.move(currentAxis, Rotation::NEGATIVE, units);
-    millimeters -= currentUnit;
-    if (millimeters < 0)
-      millimeters = 0;
     viewport.display(true);
     break;
   default:
@@ -555,7 +550,6 @@ void onRotationCCW()
     break;
   case MOVE_AXIS:
     // cnc.move(currentAxis, Rotation::POSITIVE, units);
-    millimeters += currentUnit;
     viewport.display(true);
     break;
   default:
@@ -575,19 +569,55 @@ void rotateCallback(Rotation direction)
     onRotationCCW();
   }
 }
+*/
+
+float parseNumber(String line, int index, char arg, float val)
+{
+  if (index < 0)
+  {
+    return val;
+  }
+
+  String sub = line.substring(index + 1);
+  index = sub.indexOf(' ');
+  sub = sub.substring(0, index);
+
+  return atof(sub.c_str());
+}
+
+float parseNumber(String line, char arg, float val)
+{
+  return parseNumber(line, line.indexOf(arg), arg, val);
+}
 
 void setup()
 {
   Serial.begin(115200);
 
+  // wait until serial
+  while (!Serial)
+    ;
+
   spi.begin();
 
+  Serial.print("SD ");
+
+  if (!SD.begin(SS))
+  {
+    Serial.println("failed to mount!");
+    return;
+  }
+
+  Serial.println("mount!");
+
+  /*
   lcd.init();
   Wire.setClock(400000);
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.createChar(LCD_ARROW_CHAR, ARROW);
+  */
 
   pinMode(EN_CLK_PIN, INPUT);
   pinMode(EN_DT_PIN, INPUT);
@@ -606,11 +636,15 @@ void setup()
   DRIVER_Y.setAcceleration(300);
   DRIVER_Z.setAcceleration(300);
 
+  laser.setMaxPower(LSR_MAX_POWER);
+
+  /*
   rotary.setOnClicked(clickCallback);
   rotary.setOnRotation(rotateCallback);
 
   rotary.setClickDebounceTime(EN_CLICK_DEBOUNCE);
   rotary.setRotationDebounceTime(EN_ROT_DEBOUNCE);
+  */
 
   SW_X.setDebounceTime(10);
   SW_Y.setDebounceTime(10);
@@ -636,6 +670,7 @@ void setup()
   CARTESIAN.setDimension(Axis::Y, 420);
   CARTESIAN.setDimension(Axis::Z, 95);
 
+  /*
   LiquidScreen::createLine(infoScreen, LCD_ZERO_COL, 0, "Boreal CNC");
   LiquidScreen::createLine(infoScreen, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0");
   LiquidScreen::createLine(infoScreen, LCD_ZERO_COL, 2, "0%");
@@ -729,23 +764,116 @@ void setup()
 
   viewport.setCurrentScreen(INFO);
   viewport.display(true);
+  */
+
+  procQueue.push(std::make_shared<Process>(SD, "/test1.gcode"));
+  // procQueue.push(std::make_shared<Process>(SD, "/test2.gcode"));
+  // procQueue.push(std::make_shared<Process>(SD, "/test3.gcode"));
+
+  // cmdQueue.push(std::make_shared<AutohomeCommand>(CARTESIAN, laser));
+  // cmdQueue.push(std::make_shared<DwellCommand>(5000));
+  // cmdQueue.push(std::make_shared<LinearMoveCommand>(CARTESIAN, laser, 10, 10, 2, 0));
+  // cmdQueue.push(std::make_shared<DwellCommand>(5000));
+  // cmdQueue.push(std::make_shared<LinearMoveCommand>(CARTESIAN, laser, 20, 20, 2, 0));
 }
 
 void loop()
 {
-  rotary.tick();
+  // rotary.tick();
 
   if (!procQueue.empty() && !proc)
   {
     proc = procQueue.front();
     procQueue.pop();
+
+    if (proc)
+    {
+      proc->start();
+    }
   }
 
-  if (proc && cmdQueue.size() < CMD_QUEUE_SIZE)
+  if (proc)
   {
-    String line = proc->nextLine();
-    // TODO: parse line to command
-    cmdQueue.push(std::make_shared<LinearMoveCommand>(CARTESIAN, 100, 100, 10));
+    Status status = proc->status();
+
+    switch (status)
+    {
+    case Status::COMPLETED:
+      proc = nullptr;
+      break;
+
+    case Status::CONTINUE:
+      if (cmdQueue.size() < CMD_QUEUE_SIZE)
+      {
+        String line = proc->readNextLine();
+
+        if (line.isEmpty())
+        {
+          return;
+        }
+
+        int code = parseNumber(line, 'G', -1);
+        // TODO: ignore comments
+
+        switch (code)
+        {
+        case 0:
+        case 1:
+          cmdQueue.push(std::make_shared<LinearMoveCommand>(CARTESIAN, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'X', 0), parseNumber(line, 'S', 0)));
+          break;
+        case 2:
+        case 3:
+
+          if (line.indexOf('I') > 0 || line.indexOf('J') > 0)
+          {
+            // TODO: invalid arc
+            if (line.indexOf('R') > 0)
+            {
+              return;
+            }
+
+            cmdQueue.push(std::make_shared<ArcMoveCommand>(CARTESIAN, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'S', 0)));
+          }
+          else
+          {
+            // TODO: invalid circle
+            if (line.indexOf('X') < 0 && line.indexOf('Y') < 0)
+            {
+              return;
+            }
+
+            cmdQueue.push(std::make_shared<CircleMoveCommand>(CARTESIAN, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'S', 0)));
+          }
+
+          break;
+        case 4:
+          if (line.indexOf('S') > 0)
+          {
+            cmdQueue.push(std::make_shared<DwellCommand>(parseNumber(line, 'S', 0) * 1000));
+          }
+          else
+          {
+            cmdQueue.push(std::make_shared<DwellCommand>(parseNumber(line, 'P', 0)));
+          }
+
+          break;
+
+        case 28:
+          cmdQueue.push(std::make_shared<AutohomeCommand>(CARTESIAN, laser));
+          break;
+        default:
+          break;
+        }
+      }
+      break;
+
+    case Status::ERROR:
+      // TODO: create report
+      proc = nullptr;
+      break;
+    default:
+      break;
+    }
   }
 
   if (!cmdQueue.empty() && !cmd)
@@ -763,11 +891,21 @@ void loop()
   {
     cmd->execute();
 
-    CommandStatus status = cmd->status();
+    Status status = cmd->status();
 
-    if (status == CommandStatus::COMPLETED || status == CommandStatus::ERROR)
+    switch (status)
     {
+    case Status::COMPLETED:
+      cmd->finish();
       cmd = nullptr;
+      break;
+
+    case Status::ERROR:
+      // TODO: create report
+      cmd = nullptr;
+      break;
+    default:
+      break;
     }
   }
 }

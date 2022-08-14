@@ -1,6 +1,6 @@
 #include <Command.h>
 
-AutohomeCommand::AutohomeCommand(Cartesian &cartesian) : _cartesian(cartesian)
+AutohomeCommand::AutohomeCommand(Cartesian &cartesian, Laser &laser) : _cartesian(cartesian), _laser(laser)
 {
 }
 
@@ -11,7 +11,7 @@ void AutohomeCommand::execute()
 
     if (!stepper || !sw)
     {
-        _currentStatus = CommandStatus::ERROR;
+        _currentStatus = Status::ERROR;
         return;
     }
 
@@ -59,11 +59,10 @@ void AutohomeCommand::execute()
 
             if (_currentAxis == Axis::Z)
             {
-                _currentStatus = CommandStatus::COMPLETED;
+                _currentStatus = Status::COMPLETED;
                 return;
             }
 
-            // move next motor
             _currentAxis++;
             _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
             _currentState = AutohomeState::PRESS;
@@ -76,11 +75,17 @@ void AutohomeCommand::execute()
     }
 }
 
+void AutohomeCommand::finish()
+{
+}
+
 void AutohomeCommand::start()
 {
+    _laser.turnOff();
+
     _currentAxis = Axis::X;
     _currentState = AutohomeState::PRESS;
-    _currentStatus = CommandStatus::CONTINUE;
+    _currentStatus = Status::CONTINUE;
 
     _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
 }
