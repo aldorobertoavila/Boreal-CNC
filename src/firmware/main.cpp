@@ -610,23 +610,28 @@ void setup()
 
   Serial.println("mount!");
 
-  /*
-  lcd.init();
-  Wire.setClock(400000);
-  lcd.backlight();
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.createChar(LCD_ARROW_CHAR, ARROW);
-  */
-
-  pinMode(EN_CLK_PIN, INPUT);
-  pinMode(EN_DT_PIN, INPUT);
-  pinMode(EN_SW_PIN, INPUT_PULLUP);
+  Wire.begin();
+  Wire.setClock(3400000); // High Speed Mode at 3.4 Mbps
 
   pinMode(CS_RS1_PIN, OUTPUT);
   pinMode(CS_RS2_PIN, OUTPUT);
   pinMode(CS_RS3_PIN, OUTPUT);
   pinMode(CS_RS4_PIN, OUTPUT);
+
+  pinMode(EN_CLK_PIN, INPUT);
+  pinMode(EN_DT_PIN, INPUT);
+  pinMode(EN_SW_PIN, INPUT_PULLUP);
+
+  pinMode(SDA, PULLUP);
+  pinMode(SCL, PULLUP);
+
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.createChar(LCD_ARROW_CHAR, ARROW);
+
+  lcd.setCursor(0, 0);
+  lcd.print("Hello World!");
 
   DRIVER_X.setMaxSpeed(600);
   DRIVER_Y.setMaxSpeed(600);
