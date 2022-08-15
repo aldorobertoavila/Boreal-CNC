@@ -25,7 +25,7 @@ public:
 
     StepperMotor *getStepperMotor(Axis axis);
 
-    uint8_t getStepsPerMillimeter(Axis axis);
+    long getStepsPerMillimeter(Axis axis);
 
     Unit getUnit();
 
@@ -41,7 +41,7 @@ public:
 
     void setHomeOffset(Axis axis, float u);
 
-    void setMinStepsPerMillimeter(Axis axis, uint8_t steps);
+    void setMinStepsPerMillimeter(Axis axis, long steps);
 
     void setLimitSwitch(Axis axis, LimitSwitch &sw);
 
@@ -51,7 +51,7 @@ public:
 
     void setStepperMotor(Axis axis, StepperMotor &stepper);
 
-    void setStepsPerMillimeter(Axis axis, uint8_t steps);
+    void setStepsPerMillimeter(Axis axis, long steps);
 
     void setUnit(Unit unit);
 
@@ -68,6 +68,6 @@ private:
     Unit _unit;
     long _dimensions[AXES];
     long _homeOffset[AXES];
-    uint8_t _minStepsPerMillimeter[AXES];
-    uint8_t _stepsPerMillimeter[AXES];
+    long _minStepsPerMillimeter[AXES];
+    long _stepsPerMillimeter[AXES];
 };

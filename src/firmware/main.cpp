@@ -17,6 +17,7 @@
 using namespace std;
 
 #define CMD_QUEUE_SIZE 10
+#define MAX_FILES_SIZE 20
 
 #define EN_CLICK_DEBOUNCE 800
 #define EN_ROT_DEBOUNCE 25
@@ -67,6 +68,21 @@ enum ScreenID
   VELOCITY
 };
 
+byte ARROW[8] =
+    {
+        0b00000,
+        0b00100,
+        0b00110,
+        0b11111,
+        0b11111,
+        0b00110,
+        0b00100,
+        0b00000};
+
+char INTERNAL_FILE_EXT = '~';
+String GCODE_FILE_EXT = ".gcode";
+String SYSTEM_VOLUME = "System Volume Information";
+
 SPIClass spi(VSPI);
 
 ShiftRegisterMotorInterface SHIFT_REGISTER_X1(spi, CS_RS1_PIN, MSBFIRST);
@@ -111,23 +127,14 @@ Cartesian cartesian;
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 Laser laser(LSR_PIN);
 
-byte ARROW[8] =
-    {
-        0b00000,
-        0b00100,
-        0b00110,
-        0b11111,
-        0b11111,
-        0b00110,
-        0b00100,
-        0b00000};
+String filePaths[MAX_FILES_SIZE];
+ScreenID currentScreen;
+File root;
 
 queue<std::shared_ptr<Command>> cmdQueue;
 queue<std::shared_ptr<Process>> procQueue;
 std::shared_ptr<Command> cmd;
 std::shared_ptr<Process> proc;
-
-ScreenID currentScreen;
 
 LiquidScreen *getScreen(ScreenID screenIndex)
 {
@@ -189,33 +196,103 @@ void display(ScreenID screenIndex, bool forcePosition)
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
 {
-  rotary.setBoundaries(-100, 1);
-
   display(ScreenID::MOVE_AXIS, false);
 }
 
 void autohome()
 {
-  display(ScreenID::INFO, false);
-
   cmdQueue.push(std::make_shared<AutohomeCommand>(cartesian, laser));
+  display(ScreenID::INFO, false);
+}
+
+bool isGcodeFile(String filename)
+{
+  String ext = filename.substring(filename.indexOf("."));
+  ext.toLowerCase();
+  return ext == GCODE_FILE_EXT;
+}
+
+bool isHiddenFile(String filename)
+{
+  return filename.indexOf(INTERNAL_FILE_EXT) > 0 || filename == SYSTEM_VOLUME;
+}
+
+uint8_t getFiles(File &root, String paths[], uint8_t maxFilePaths)
+{
+  File file;
+  uint8_t i;
+  String path;
+
+  while (i < maxFilePaths)
+  {
+    file = root.openNextFile();
+
+    if (!file)
+      break;
+
+    path = file.name();
+    Serial.println(path);
+
+    if (isHiddenFile(path) || file.isDirectory())
+    {
+      file.close();
+      continue;
+    }
+
+    if (isGcodeFile(path))
+    {
+      file.close();
+      paths[i] = path;
+      i++;
+    }
+  }
+
+  return i;
 }
 
 void setHomeOffsets()
 {
+  display(ScreenID::INFO, false);
+}
+
+void enableSteppers()
+{
+  for (uint8_t i = 0; i < AXES; i++)
+  {
+    StepperMotor *stepper = cartesian.getStepperMotor(static_cast<Axis>(i));
+
+    if (stepper)
+    {
+      stepper->enable();
+    }
+  }
+
+  display(ScreenID::INFO, false);
 }
 
 void disableSteppers()
 {
+  for (uint8_t i = 0; i < AXES; i++)
+  {
+    StepperMotor *stepper = cartesian.getStepperMotor(static_cast<Axis>(i));
+
+    if (stepper)
+    {
+      stepper->disable();
+    }
+  }
+
+  display(ScreenID::INFO, false);
 }
 
 void aboutScreenClicked()
 {
-  display(ScreenID::MAIN, true);
+  display(ScreenID::INFO, false);
 }
 
 void storeSettings()
 {
+  display(ScreenID::INFO, false);
 }
 
 void accelerationScreenClicked()
@@ -234,13 +311,16 @@ void accelerationScreenClicked()
 
 void cardScreenClicked()
 {
-  switch (CARD_SCREEN.getCurrentLineIndex())
+  uint8_t index = CARD_SCREEN.getCurrentLineIndex();
+
+  if (index > 0)
   {
-  case 0:
+    procQueue.push(std::make_shared<Process>(SD, "/" + filePaths[index - 1]));
+    enableSteppers();
+  }
+  else
+  {
     display(ScreenID::MAIN, true);
-    break;
-  default:
-    break;
   }
 }
 
@@ -543,6 +623,13 @@ void setupAboutScreen()
 void setupCardScreen()
 {
   createLine(CARD_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 4);
+
+  uint8_t n = getFiles(root, filePaths, MAX_FILES_SIZE);
+
+  for (uint8_t i = 0; i < n; i++)
+  {
+    createLine(CARD_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, filePaths[i].c_str(), 18);
+  }
 }
 
 void setupCtrlScreen()
@@ -647,9 +734,17 @@ void setup()
 {
   Serial.begin(115200);
 
-  // wait until serial
-  while (!Serial)
-    ;
+  pinMode(CS_RS1_PIN, OUTPUT);
+  pinMode(CS_RS2_PIN, OUTPUT);
+  pinMode(CS_RS3_PIN, OUTPUT);
+  pinMode(CS_RS4_PIN, OUTPUT);
+
+  pinMode(EN_CLK_PIN, INPUT);
+  pinMode(EN_DT_PIN, INPUT);
+  pinMode(EN_SW_PIN, INPUT_PULLUP);
+
+  pinMode(SDA, PULLUP);
+  pinMode(SCL, PULLUP);
 
   spi.begin();
 
@@ -666,22 +761,12 @@ void setup()
   Wire.begin();
   Wire.setClock(3400000); // High Speed Mode at 3.4 Mbps
 
-  pinMode(CS_RS1_PIN, OUTPUT);
-  pinMode(CS_RS2_PIN, OUTPUT);
-  pinMode(CS_RS3_PIN, OUTPUT);
-  pinMode(CS_RS4_PIN, OUTPUT);
-
-  pinMode(EN_CLK_PIN, INPUT);
-  pinMode(EN_DT_PIN, INPUT);
-  pinMode(EN_SW_PIN, INPUT_PULLUP);
-
-  pinMode(SDA, PULLUP);
-  pinMode(SCL, PULLUP);
-
   lcd.init();
   lcd.backlight();
   lcd.clear();
   lcd.createChar(LCD_ARROW_CHAR, ARROW);
+
+  root = SD.open("/");
 
   DRIVER_X.setMaxSpeed(600);
   DRIVER_Y.setMaxSpeed(600);
@@ -784,7 +869,7 @@ void loop()
         {
         case 0:
         case 1:
-          cmdQueue.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'X', 0), parseNumber(line, 'S', 0)));
+          cmdQueue.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'S', 0)));
           break;
         case 2:
         case 3:

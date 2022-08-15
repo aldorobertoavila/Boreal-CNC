@@ -34,7 +34,7 @@ StepperMotor *Cartesian::getStepperMotor(Axis axis)
     return _steppers[axis];
 }
 
-uint8_t Cartesian::getStepsPerMillimeter(Axis axis)
+long Cartesian::getStepsPerMillimeter(Axis axis)
 {
     return _stepsPerMillimeter[axis];
 }
@@ -99,7 +99,7 @@ void Cartesian::setLimitSwitch(Axis axis, LimitSwitch &sw)
     _switches[axis] = &sw;
 }
 
-void Cartesian::setMinStepsPerMillimeter(Axis axis, uint8_t steps)
+void Cartesian::setMinStepsPerMillimeter(Axis axis, long steps)
 {
     _minStepsPerMillimeter[axis] = steps;
 }
@@ -119,7 +119,7 @@ void Cartesian::setStepperMotor(Axis axis, StepperMotor &stepper)
     _steppers[axis] = &stepper;
 }
 
-void Cartesian::setStepsPerMillimeter(Axis axis, uint8_t steps)
+void Cartesian::setStepsPerMillimeter(Axis axis, long steps)
 {
     _resolutions[axis] = toResolution(steps / _minStepsPerMillimeter[axis]);
     _stepsPerMillimeter[axis] = steps;
@@ -132,7 +132,7 @@ void Cartesian::setUnit(Unit unit)
 
 long Cartesian::toSteps(Axis axis, Unit unit, float u)
 {
-    uint8_t steps = _stepsPerMillimeter[axis];
+    long steps = _stepsPerMillimeter[axis];
 
     switch (unit)
     {
