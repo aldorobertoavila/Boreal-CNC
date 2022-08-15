@@ -18,7 +18,7 @@ using namespace std;
 
 #define CMD_QUEUE_SIZE 10
 
-#define EN_CLICK_DEBOUNCE 250
+#define EN_CLICK_DEBOUNCE 800
 #define EN_ROT_DEBOUNCE 25
 
 #define LCD_ADDR 0x27
