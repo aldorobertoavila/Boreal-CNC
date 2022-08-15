@@ -196,6 +196,9 @@ void setMoveAxisScreen(Axis axis, uint8_t unit)
 
 void autohome()
 {
+  display(ScreenID::INFO, false);
+
+  cmdQueue.push(std::make_shared<AutohomeCommand>(cartesian, laser));
 }
 
 void setHomeOffsets()
