@@ -19,7 +19,7 @@ using namespace std;
 #define CMD_QUEUE_SIZE 10
 
 #define EN_CLICK_DEBOUNCE 250
-#define EN_ROT_DEBOUNCE 5
+#define EN_ROT_DEBOUNCE 25
 
 #define LCD_ADDR 0x27
 #define LCD_COLS 20
@@ -107,27 +107,8 @@ LiquidMenu VELOCITY_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu STEPS_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu ACCEL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-LiquidScreen SCREENS[] = {
-    ABOUT_SCREEN,
-    ACCEL_SCREEN,
-    CARD_SCREEN,
-    CTRL_SCREEN,
-    INFO_SCREEN,
-    LASER_SCREEN,
-    MAIN_SCREEN,
-    MOTION_SCREEN,
-    MOVE_AXES_SCREEN,
-    MOVE_AXIS_SCREEN,
-    MOVE_X_SCREEN,
-    MOVE_Y_SCREEN,
-    MOVE_Z_SCREEN,
-    PREP_SCREEN,
-    STEPS_SCREEN,
-    VELOCITY_SCREEN
-};
-
-Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 Cartesian cartesian;
+Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 Laser laser(LSR_PIN);
 
 byte ARROW[8] =
@@ -148,18 +129,62 @@ std::shared_ptr<Process> proc;
 
 ScreenID currentScreen;
 
+LiquidScreen *getScreen(ScreenID screenIndex)
+{
+  switch (screenIndex)
+  {
+  case ABOUT:
+    return &ABOUT_SCREEN;
+  case ACCELERATION:
+    return &ACCEL_SCREEN;
+  case CARD:
+    return &CARD_SCREEN;
+  case CTRL:
+    return &CTRL_SCREEN;
+  case INFO:
+    return &INFO_SCREEN;
+  case LASER:
+    return &LASER_SCREEN;
+  case MAIN:
+    return &MAIN_SCREEN;
+  case MOTION:
+    return &MOTION_SCREEN;
+  case MOVE_AXES:
+    return &MOVE_AXES_SCREEN;
+  case MOVE_AXIS:
+    return &MOVE_AXIS_SCREEN;
+  case MOVE_X:
+    return &MOVE_X_SCREEN;
+  case MOVE_Y:
+    return &MOVE_Y_SCREEN;
+  case MOVE_Z:
+    return &MOVE_Z_SCREEN;
+  case PREP:
+    return &PREP_SCREEN;
+  case STEPS:
+    return &STEPS_SCREEN;
+  case VELOCITY:
+    return &VELOCITY_SCREEN;
+  default:
+    return nullptr;
+  }
+}
+
 void display(ScreenID screenIndex, bool forcePosition)
 {
-  LiquidScreen screen = SCREENS[screenIndex];
+  LiquidScreen *screen = getScreen(screenIndex);
 
-  uint8_t lineIndex = screen.getCurrentLineIndex();
-  uint8_t lineCount = screen.getLineCount();
+  if (screen)
+  {
+    uint8_t lineIndex = screen->getCurrentLineIndex();
+    uint8_t lineCount = screen->getLineCount();
 
-  rotary.setBoundaries(0, lineCount);
-  rotary.setPosition(forcePosition ? lineIndex : 0);
+    rotary.setBoundaries(0, lineCount);
+    rotary.setPosition(forcePosition ? lineIndex : 0);
 
-  currentScreen = screenIndex;
-  screen.display();
+    currentScreen = screenIndex;
+    screen->display();
+  }
 }
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
@@ -432,24 +457,27 @@ void clickCallback()
 
 void rotateCallback(Rotation direction)
 {
-  LiquidScreen screen = SCREENS[currentScreen];
+  LiquidScreen *screen = getScreen(currentScreen);
 
-  if (currentScreen == ScreenID::MOVE_AXIS)
+  if (screen)
   {
-    screen.display(true);
-    return;
-  }
+    if (currentScreen == ScreenID::MOVE_AXIS)
+    {
+      screen->display(true);
+      return;
+    }
 
-  if (direction == Rotation::CLOCKWISE)
-  {
-    screen.nextLine();
-  }
-  else
-  {
-    screen.previousLine();
-  }
+    if (direction == Rotation::CLOCKWISE)
+    {
+      screen->nextLine();
+    }
+    else
+    {
+      screen->previousLine();
+    }
 
-  screen.display(false);
+    screen->display(false);
+  }
 }
 
 float parseNumber(String line, int index, char arg, float val)
@@ -471,9 +499,21 @@ float parseNumber(String line, char arg, float val)
   return parseNumber(line, line.indexOf(arg), arg, val);
 }
 
-void createLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text)
+std::string pad_right(std::string const &str, size_t s)
 {
-  screen.append(std::make_shared<LiquidLine>(row, col, text));
+  if (str.size() < s)
+  {
+    return str + std::string(s - str.size(), ' ');
+  }
+
+  return str;
+}
+
+void createLine(LiquidScreen &screen, uint8_t row, uint8_t col, string text, size_t textLength)
+{
+  String padded = pad_right(text, textLength).c_str();
+
+  screen.append(std::make_shared<LiquidLine>(row, col, padded));
 }
 
 void createFormattedLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text)
@@ -484,55 +524,55 @@ void createFormattedLine(LiquidScreen &screen, uint8_t row, uint8_t col, String 
 
 void setupAccelScreen()
 {
-  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Accel");
-  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel");
-  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax X");
-  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Y");
-  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Z");
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 7);
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Accel", 7);
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel", 7);
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax X", 7);
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Y", 7);
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Z", 7);
 }
 
 void setupAboutScreen()
 {
-  createLine(ABOUT_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
+  createLine(ABOUT_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 4);
 }
 
 void setupCardScreen()
 {
-  createLine(CARD_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
+  createLine(CARD_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 4);
 }
 
 void setupCtrlScreen()
 {
-  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
-  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Laser");
-  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Store settings");
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 15);
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 15);
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Laser", 15);
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Store settings", 15);
 }
 
 void setupInfoScreen()
 {
-  createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC");
-  createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0");
-  createLine(INFO_SCREEN, LCD_ZERO_COL, 2, "0%");
+  createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC", 0);
+  createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0", 0);
+  createLine(INFO_SCREEN, LCD_ZERO_COL, 2, "0%", 0);
 }
 
 void setupMainScreen()
 {
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Info");
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare");
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control");
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card");
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC");
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Info", 11);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 11);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 11);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card", 11);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC", 11);
 }
 
 void setupMoveAxesScreen()
 {
 
-  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare");
-  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X");
-  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y");
-  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z");
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 8);
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X", 8);
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y", 8);
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z", 8);
 }
 
 void setupMoveAxisScreen()
@@ -544,60 +584,60 @@ void setupMoveAxisScreen()
 void setupMoveXScreen()
 {
 
-  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
-  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 10mm");
-  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 1mm");
-  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 0.1mm");
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 10mm", 13);
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 1mm", 13);
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 0.1mm", 13);
 }
 
 void setupMoveYScreen()
 {
 
-  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
-  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 10mm");
-  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 1mm");
-  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 0.1mm");
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 10mm", 13);
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 1mm", 13);
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 0.1mm", 13);
 }
 void setupMoveZScreen()
 {
-  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
-  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 10mm");
-  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 1mm");
-  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 0.1mm");
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 10mm", 13);
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 1mm", 13);
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 0.1mm", 13);
 }
 
 void setupPrepScreen()
 {
 
-  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
-  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move axes");
-  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Auto home");
-  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Set home offsets");
-  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Disable steppers");
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 17);
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move axes", 17);
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Auto home", 17);
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Set home offsets", 17);
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Disable steppers", 17);
 }
 
 void setupMotionScreen()
 {
-  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control");
-  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Acceleration");
-  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Velocity");
-  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Steps/mm");
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 13);
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Acceleration", 13);
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Velocity", 13);
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Steps/mm", 13);
 }
 void setupStepsScreen()
 {
-  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "X steps/mm");
-  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Y steps/mm");
-  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Z steps/mm");
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 11);
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "X steps/mm", 11);
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Y steps/mm", 11);
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Z steps/mm", 11);
 }
 void setupVelocityScreen()
 {
-  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vel");
-  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel");
-  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax X");
-  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Y");
-  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Z");
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 7);
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vel", 7);
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel", 7);
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax X", 7);
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Y", 7);
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Z", 7);
 }
 
 void setup()
@@ -696,12 +736,12 @@ void setup()
   setupStepsScreen();
   setupVelocityScreen();
 
-  INFO_SCREEN.display();
+  display(ScreenID::INFO, false);
 }
 
 void loop()
 {
-  // rotary.tick();
+  rotary.tick();
 
   if (!procQueue.empty() && !proc)
   {
