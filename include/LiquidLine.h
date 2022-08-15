@@ -1,5 +1,7 @@
 #include <LiquidCrystal_I2C.h>
 
+#include <Printable.h>
+
 #define BUFFER_SIZE 20
 
 using LCD = LiquidCrystal_I2C;
@@ -10,13 +12,13 @@ typedef void (*FormatFunc)(Buffer, char *);
 class LiquidLine
 {
 public:
-    LiquidLine(uint8_t col, uint8_t row, char *text);
+    LiquidLine(uint8_t col, uint8_t row, String text);
 
     uint8_t getColumn();
 
     uint8_t getRow();
 
-    char *getText();
+    String getText();
 
     virtual void display(LCD &lcd);
 
@@ -24,12 +26,12 @@ public:
 
     void setRow(uint8_t row);
 
-    void setText(char *text);
+    void setText(String text);
 
 protected:
     uint8_t _col;
     uint8_t _row;
-    char *_text;
+    String _text;
 };
 
 class LiquidFormattedLine : public LiquidLine

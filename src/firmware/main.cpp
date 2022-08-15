@@ -2,7 +2,7 @@
 #include <Command.h>
 #include <Process.h>
 #include <LimitSwitch.h>
-#include <LiquidViewport.h>
+#include <LiquidScreen.h>
 #include <Rotary.h>
 #include <StepperMotor.h>
 
@@ -86,11 +86,10 @@ LimitSwitch SW_Z(SW_Z_PIN);
 
 LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
-LiquidScreen infoScreen;
+/*
 LiquidScreen aboutScreen;
 LiquidScreen moveAxisScreen;
 
-LiquidMenu mainScreen;
 LiquidMenu prepScreen;
 LiquidMenu ctrlScreen;
 LiquidMenu cardScreen;
@@ -104,16 +103,15 @@ LiquidMenu motionScreen;
 LiquidMenu velocityScreen;
 LiquidMenu stepsScreen;
 LiquidMenu accelScreen;
+*/
 
-LiquidViewport viewport(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreen INFO_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu MAIN_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 
 Cartesian CARTESIAN;
 Laser laser(LSR_PIN);
-
-const uint8_t TEN_MILLIMETER = 100;
-const uint8_t ONE_MILLIMETER = 10;
-const uint8_t TENTH_MILLIMETER = 1;
 
 byte ARROW[8] =
     {
@@ -590,6 +588,27 @@ float parseNumber(String line, char arg, float val)
   return parseNumber(line, line.indexOf(arg), arg, val);
 }
 
+void createLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text)
+{
+  screen.append(std::make_shared<LiquidLine>(row, col, text));
+}
+
+void setupInfoScreen()
+{
+  createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC");
+  createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0");
+  createLine(INFO_SCREEN, LCD_ZERO_COL, 2, "0%");
+}
+
+void setupMainScreen()
+{
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Info");
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare");
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control");
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card");
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC");
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -629,9 +648,6 @@ void setup()
   lcd.backlight();
   lcd.clear();
   lcd.createChar(LCD_ARROW_CHAR, ARROW);
-
-  lcd.setCursor(0, 0);
-  lcd.print("Hello World!");
 
   DRIVER_X.setMaxSpeed(600);
   DRIVER_Y.setMaxSpeed(600);
@@ -675,111 +691,10 @@ void setup()
   CARTESIAN.setDimension(Axis::Y, 420);
   CARTESIAN.setDimension(Axis::Z, 95);
 
-  /*
-  LiquidScreen::createLine(infoScreen, LCD_ZERO_COL, 0, "Boreal CNC");
-  LiquidScreen::createLine(infoScreen, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0");
-  LiquidScreen::createLine(infoScreen, LCD_ZERO_COL, 2, "0%");
-  LiquidScreen::createLine(infoScreen, LCD_ZERO_COL, 3, "Boreal CNC");
+  setupInfoScreen();
+  setupMainScreen();
 
-  LiquidScreen::createLine(mainScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Info");
-  LiquidScreen::createLine(mainScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare");
-  LiquidScreen::createLine(mainScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Control");
-  LiquidScreen::createLine(mainScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card");
-  LiquidScreen::createLine(mainScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC ");
-
-  LiquidScreen::createLine(prepScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
-  LiquidScreen::createLine(prepScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move axes");
-  LiquidScreen::createLine(prepScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Auto home");
-  LiquidScreen::createLine(prepScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Set home offsets");
-  LiquidScreen::createLine(prepScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Disable steppers");
-
-  LiquidScreen::createLine(moveAxesScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare");
-  LiquidScreen::createLine(moveAxesScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X");
-  LiquidScreen::createLine(moveAxesScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y");
-  LiquidScreen::createLine(moveAxesScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z");
-
-  LiquidScreen::createLine(moveXScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
-  LiquidScreen::createLine(moveXScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 10mm");
-  LiquidScreen::createLine(moveXScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 1mm");
-  LiquidScreen::createLine(moveXScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 0.1mm");
-
-  LiquidScreen::createLine(moveYScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
-  LiquidScreen::createLine(moveYScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 10mm");
-  LiquidScreen::createLine(moveYScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 1mm");
-  LiquidScreen::createLine(moveYScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 0.1mm");
-
-  LiquidScreen::createLine(moveZScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
-  LiquidScreen::createLine(moveZScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 10mm");
-  LiquidScreen::createLine(moveZScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 1mm");
-  LiquidScreen::createLine(moveZScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 0.1mm");
-
-  LiquidScreen::createLine(ctrlScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
-  LiquidScreen::createLine(ctrlScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  LiquidScreen::createLine(ctrlScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Laser");
-  LiquidScreen::createLine(ctrlScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Store settings");
-
-  LiquidScreen::createLine(motionScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Control");
-  LiquidScreen::createLine(motionScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Acceleration");
-  LiquidScreen::createLine(motionScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Velocity");
-  LiquidScreen::createLine(motionScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Steps/mm");
-
-  LiquidScreen::createLine(stepsScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  LiquidScreen::createLine(stepsScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "X steps/mm");
-  LiquidScreen::createLine(stepsScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Y steps/mm");
-  LiquidScreen::createLine(stepsScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Z steps/mm");
-
-  LiquidScreen::createLine(velocityScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  LiquidScreen::createLine(velocityScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Vel");
-  LiquidScreen::createLine(velocityScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel");
-  LiquidScreen::createLine(velocityScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax X");
-  LiquidScreen::createLine(velocityScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Y");
-  LiquidScreen::createLine(velocityScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Z");
-
-  LiquidScreen::createLine(accelScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
-  LiquidScreen::createLine(accelScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Accel");
-  LiquidScreen::createLine(accelScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel");
-  LiquidScreen::createLine(accelScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax X");
-  LiquidScreen::createLine(accelScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Y");
-  LiquidScreen::createLine(accelScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Z");
-
-  LiquidScreen::createLine(cardScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
-  LiquidScreen::createLine(aboutScreen, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
-
-  LiquidScreen::createFormattedLine(moveAxisScreen, LCD_ZERO_ROW, 1, "Move %s");  // e.g "Move X"
-  LiquidScreen::createFormattedLine(moveAxisScreen, LCD_ZERO_ROW, 2, "+%03d.%d"); // e.g "+000.0"
-
-  viewport.addScreen(INFO, infoScreen);
-  viewport.addScreen(MAIN, mainScreen);
-  viewport.addScreen(PREP, prepScreen);
-  viewport.addScreen(CTRL, ctrlScreen);
-  viewport.addScreen(CARD, cardScreen);
-  viewport.addScreen(ABOUT, aboutScreen);
-
-  viewport.addScreen(MOVE_AXES, moveAxesScreen);
-  viewport.addScreen(MOVE_AXIS, moveAxisScreen);
-  viewport.addScreen(MOVE_X, moveXScreen);
-  viewport.addScreen(MOVE_Y, moveYScreen);
-  viewport.addScreen(MOVE_Z, moveZScreen);
-
-  viewport.addScreen(MOTION, motionScreen);
-
-  viewport.addScreen(ACCELERATION, accelScreen);
-  viewport.addScreen(VELOCITY, velocityScreen);
-  viewport.addScreen(STEPS, stepsScreen);
-
-  viewport.setCurrentScreen(INFO);
-  viewport.display(true);
-  */
-
-  procQueue.push(std::make_shared<Process>(SD, "/test1.gcode"));
-  // procQueue.push(std::make_shared<Process>(SD, "/test2.gcode"));
-  // procQueue.push(std::make_shared<Process>(SD, "/test3.gcode"));
-
-  // cmdQueue.push(std::make_shared<AutohomeCommand>(CARTESIAN, laser));
-  // cmdQueue.push(std::make_shared<DwellCommand>(5000));
-  // cmdQueue.push(std::make_shared<LinearMoveCommand>(CARTESIAN, laser, 10, 10, 2, 0));
-  // cmdQueue.push(std::make_shared<DwellCommand>(5000));
-  // cmdQueue.push(std::make_shared<LinearMoveCommand>(CARTESIAN, laser, 20, 20, 2, 0));
+  INFO_SCREEN.display();
 }
 
 void loop()

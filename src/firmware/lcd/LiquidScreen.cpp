@@ -1,36 +1,56 @@
-#include <LiquidViewport.h>
+#include <LiquidScreen.h>
 
-LiquidScreen::LiquidScreen()
+LiquidScreen::LiquidScreen(LCD &lcd, uint8_t cols, uint8_t rows) : _lcd(lcd)
 {
+    this->_cols = cols;
+    this->_rows = rows;
 }
 
-void LiquidScreen::createLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
-{
-    LiquidLine line = LiquidLine(col, row, text);
-
-    screen.addLine(line);
-}
-
-void LiquidScreen::createFormattedLine(LiquidScreen &screen, uint8_t col, uint8_t row, char *text)
-{
-    // LiquidFormattedLine line = LiquidFormattedLine(col, row, text);
-    LiquidLine line = LiquidLine(col, row, text);
-
-    screen.addLine(line);
-}
-
-void LiquidScreen::addLine(LiquidLine &line)
+void LiquidScreen::append(LiquidLinePtr line)
 {
     if (_lineCount < MAX_LINES)
     {
-        _lines[_lineCount] = &line;
+        _lines[_lineCount] = line;
         _lineCount++;
     }
 }
 
-LiquidLine *LiquidScreen::getCurrentLine()
+void LiquidScreen::display()
 {
-    return _lines[_currentLine];
+    _lcd.clear();
+    display(true);
+}
+
+void LiquidScreen::display(bool clear)
+{
+    if (clear)
+    {
+        draw(_currentLine);
+    }
+}
+
+void LiquidScreen::draw(uint8_t startLine)
+{
+    uint8_t lineIndex = _currentLine;
+
+    for (int row = 0; row < _rows; row++)
+    {
+
+        if (lineIndex > _lineCount - 1)
+        {
+            return;
+        }
+
+        LiquidLinePtr &ptr = _lines.at(lineIndex);
+        LiquidLine *line = ptr.get();
+
+        if (line)
+        {
+            line->display(_lcd);
+        }
+
+        lineIndex++;
+    }
 }
 
 uint8_t LiquidScreen::getCurrentLineIndex()
@@ -67,89 +87,61 @@ void LiquidScreen::previousLine()
     }
 }
 
-void LiquidScreen::display(LCD &lcd, bool redraw)
-{
-    if (redraw)
-    {
-        displayLines(lcd, _currentLine);
-    }
-}
-
-void LiquidScreen::displayLines(LCD &lcd, uint8_t startLine)
-{
-    uint8_t lineIndex = startLine;
-
-    for (int row = 0; row < _rows; row++)
-    {
-        LiquidLine *line = _lines[lineIndex];
-
-        if (line)
-        {
-            line->display(lcd);
-        }
-
-        lineIndex++;
-    }
-}
-
 void LiquidScreen::setCurrentLine(uint8_t id)
 {
     _prevLine = _currentLine;
     _currentLine = id;
 }
 
-void LiquidScreen::setCols(uint8_t cols)
-{
-    _cols = cols;
-}
-
-void LiquidScreen::setRows(uint8_t rows)
-{
-    _rows = rows;
-}
-
-LiquidMenu::LiquidMenu()
+LiquidMenu::LiquidMenu(LCD &lcd, uint8_t cols, uint8_t rows) : LiquidScreen(lcd, cols, rows)
 {
 }
 
-void LiquidMenu::display(LCD &lcd, bool redraw)
+void LiquidMenu::display()
+{
+    _lcd.clear();
+    display(true);
+}
+
+void LiquidMenu::display(bool clear)
 {
     uint8_t startLine = _lineCount > _rows ? _lineCount - _rows : 0;
 
-    lcd.setCursor(0, _prevLine - startLine);
-    lcd.print(" ");
+    _lcd.setCursor(0, _prevLine - startLine);
+    _lcd.print(" ");
 
     if (_currentLine + _rows > _lineCount)
     {
-        lcd.setCursor(0, _currentLine - startLine);
-        lcd.write(_symbol);
+        _lcd.setCursor(0, _currentLine - startLine);
+        _lcd.write(_symbol);
 
-        if (redraw)
+        if (clear)
         {
-            displayLines(lcd, startLine);
+            draw(startLine);
         }
 
         return;
     }
 
-    lcd.setCursor(0, 0);
-    lcd.write(_symbol);
+    _lcd.setCursor(0, 0);
+    _lcd.write(_symbol);
 
-    displayLines(lcd, _currentLine);
+    draw(_currentLine);
 }
 
-void LiquidMenu::displayLines(LCD &lcd, uint8_t startLine)
+void LiquidMenu::draw(uint8_t startLine)
 {
     uint8_t lineIndex = startLine;
 
     for (int row = 0; row < _rows; row++)
     {
-        LiquidLine *line = _lines[lineIndex];
+        LiquidLinePtr &ptr = _lines.at(lineIndex);
+        LiquidLine *line = ptr.get();
 
         if (line)
         {
             line->setRow(row);
-            line->display(lcd);
+            line->display(_lcd);
             lineIndex++;
         }
     }
