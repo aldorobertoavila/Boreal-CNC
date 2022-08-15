@@ -47,7 +47,7 @@ using namespace std;
 #define CS_RS3_PIN 25
 #define CS_RS4_PIN 33
 
-enum Screen
+enum ScreenID
 {
   ABOUT,
   ACCELERATION,
@@ -86,31 +86,48 @@ LimitSwitch SW_Z(SW_Z_PIN);
 
 LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
-/*
-LiquidScreen aboutScreen;
-LiquidScreen moveAxisScreen;
-
-LiquidMenu prepScreen;
-LiquidMenu ctrlScreen;
-LiquidMenu cardScreen;
-
-LiquidMenu moveAxesScreen;
-LiquidMenu moveXScreen;
-LiquidMenu moveYScreen;
-LiquidMenu moveZScreen;
-
-LiquidMenu motionScreen;
-LiquidMenu velocityScreen;
-LiquidMenu stepsScreen;
-LiquidMenu accelScreen;
-*/
-
 LiquidScreen INFO_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreen ABOUT_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreen MOVE_AXIS_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
+
 LiquidMenu MAIN_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu PREP_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu CTRL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu CARD_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
+LiquidMenu LASER_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
+LiquidMenu MOVE_AXES_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu MOVE_X_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu MOVE_Y_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu MOVE_Z_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
+LiquidMenu MOTION_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu VELOCITY_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu STEPS_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidMenu ACCEL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
+LiquidScreen SCREENS[] = {
+    ABOUT_SCREEN,
+    ACCEL_SCREEN,
+    CARD_SCREEN,
+    CTRL_SCREEN,
+    INFO_SCREEN,
+    LASER_SCREEN,
+    MAIN_SCREEN,
+    MOTION_SCREEN,
+    MOVE_AXES_SCREEN,
+    MOVE_AXIS_SCREEN,
+    MOVE_X_SCREEN,
+    MOVE_Y_SCREEN,
+    MOVE_Z_SCREEN,
+    PREP_SCREEN,
+    STEPS_SCREEN,
+    VELOCITY_SCREEN
+};
 
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
-
-Cartesian CARTESIAN;
+Cartesian cartesian;
 Laser laser(LSR_PIN);
 
 byte ARROW[8] =
@@ -129,55 +146,56 @@ queue<std::shared_ptr<Process>> procQueue;
 std::shared_ptr<Command> cmd;
 std::shared_ptr<Process> proc;
 
-/*
-void setScreen(LiquidScreen *screen, uint8_t screenId, bool forcePosition)
+ScreenID currentScreen;
+
+void display(ScreenID screenIndex, bool forcePosition)
 {
-  uint8_t lineIndex = viewport.getCurrentLineIndex(screenId);
-  uint8_t lineCount = screen->getLineCount();
+  LiquidScreen screen = SCREENS[screenIndex];
+
+  uint8_t lineIndex = screen.getCurrentLineIndex();
+  uint8_t lineCount = screen.getLineCount();
 
   rotary.setBoundaries(0, lineCount);
   rotary.setPosition(forcePosition ? lineIndex : 0);
 
-  viewport.setCurrentScreen(screenId);
-  viewport.display(true);
-}
-
-void setScreen(uint8_t screenId, bool forcePosition)
-{
-  LiquidScreen *screen = viewport.getScreen(screenId);
-
-  if (screen)
-  {
-    setScreen(screen, screenId, forcePosition);
-  }
-}
-
-void setScreen(uint8_t screenId)
-{
-  setScreen(screenId, false);
+  currentScreen = screenIndex;
+  screen.display();
 }
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
 {
-  setScreen(MOVE_AXIS);
-
   rotary.setBoundaries(-100, 1);
 
-  viewport.setCurrentScreen(MOVE_AXIS);
-  viewport.display(true);
+  display(ScreenID::MOVE_AXIS, false);
+}
+
+void autohome()
+{
+}
+
+void setHomeOffsets()
+{
+}
+
+void disableSteppers()
+{
 }
 
 void aboutScreenClicked()
 {
-  setScreen(MAIN, true);
+  display(ScreenID::MAIN, true);
+}
+
+void storeSettings()
+{
 }
 
 void accelerationScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(ACCELERATION))
+  switch (ACCEL_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(MOTION, true);
+    display(ScreenID::MOTION, true);
     break;
   case 1:
     break;
@@ -188,10 +206,10 @@ void accelerationScreenClicked()
 
 void cardScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(CARD))
+  switch (CARD_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(MAIN, true);
+    display(ScreenID::MAIN, true);
     break;
   default:
     break;
@@ -200,19 +218,19 @@ void cardScreenClicked()
 
 void ctrlScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(CTRL))
+  switch (CTRL_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(MAIN, true);
+    display(ScreenID::MAIN, true);
     break;
   case 1:
-    setScreen(MOTION);
+    display(ScreenID::MOTION, false);
     break;
   case 2:
-    setScreen(Screen::LASER);
+    display(ScreenID::LASER, false);
     break;
   case 3:
-    // storeSettings();
+    storeSettings();
     break;
   default:
     break;
@@ -221,28 +239,27 @@ void ctrlScreenClicked()
 
 void infoScreenClicked()
 {
-  setScreen(MAIN);
+  display(ScreenID::MAIN, false);
 }
 
 void mainScreenClicked()
 {
-
-  switch (viewport.getCurrentLineIndex(MAIN))
+  switch (MAIN_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(INFO);
+    display(ScreenID::INFO, true);
     break;
   case 1:
-    setScreen(PREP);
+    display(ScreenID::PREP, false);
     break;
   case 2:
-    setScreen(CTRL);
+    display(ScreenID::CTRL, false);
     break;
   case 3:
-    // setScreen(CARD);
+    display(ScreenID::CARD, false);
     break;
   case 4:
-    setScreen(ABOUT);
+    display(ScreenID::ABOUT, false);
     break;
   default:
     break;
@@ -251,19 +268,19 @@ void mainScreenClicked()
 
 void motionScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(MOTION))
+  switch (MOTION_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(CTRL, true);
+    display(ScreenID::CTRL, true);
     break;
   case 1:
-    setScreen(ACCELERATION);
+    display(ScreenID::ACCELERATION, false);
     break;
   case 2:
-    setScreen(VELOCITY);
+    display(ScreenID::VELOCITY, false);
     break;
   case 3:
-    setScreen(STEPS);
+    display(ScreenID::STEPS, false);
     break;
   default:
     break;
@@ -272,19 +289,19 @@ void motionScreenClicked()
 
 void moveAxesScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(MOVE_AXES))
+  switch (MOVE_AXES_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(PREP, true);
+    display(PREP, true);
     break;
   case 1:
-    setScreen(MOVE_X);
+    display(ScreenID::MOVE_X, false);
     break;
   case 2:
-    setScreen(MOVE_Y);
+    display(ScreenID::MOVE_Y, false);
     break;
   case 3:
-    setScreen(MOVE_Z);
+    display(ScreenID::MOVE_Z, false);
     break;
   default:
     break;
@@ -293,103 +310,38 @@ void moveAxesScreenClicked()
 
 void moveAxisScreenClicked()
 {
-  switch (currentAxis)
-  {
-  case X:
-    setScreen(MOVE_X, true);
-    break;
-  case Y:
-    setScreen(MOVE_Y, true);
-    break;
-  case Z:
-    setScreen(MOVE_Z, true);
-    break;
-  default:
-    break;
-  }
 }
 
 void moveXScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(MOVE_X))
-  {
-  case 0:
-    setScreen(MOVE_AXES, true);
-    break;
-  case 1:
-    setMoveAxisScreen(X, TEN_MILLIMETER);
-    break;
-  case 2:
-    setMoveAxisScreen(X, ONE_MILLIMETER);
-    break;
-  case 3:
-    setMoveAxisScreen(X, TENTH_MILLIMETER);
-    break;
-  default:
-    break;
-  }
 }
 
 void moveYScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(MOVE_Y))
-  {
-  case 0:
-    setScreen(MOVE_AXES, true);
-    break;
-  case 1:
-    setMoveAxisScreen(Y, TEN_MILLIMETER);
-    break;
-  case 2:
-    setMoveAxisScreen(Y, ONE_MILLIMETER);
-    break;
-  case 3:
-    setMoveAxisScreen(Y, TENTH_MILLIMETER);
-    break;
-  default:
-    break;
-  }
 }
 
 void moveZScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(MOVE_Z))
-  {
-  case 0:
-    setScreen(MOVE_AXES, true);
-    break;
-  case 1:
-    setMoveAxisScreen(Z, TEN_MILLIMETER);
-    break;
-  case 2:
-    setMoveAxisScreen(Z, ONE_MILLIMETER);
-    break;
-  case 3:
-    setMoveAxisScreen(Z, TENTH_MILLIMETER);
-    break;
-  default:
-    break;
-  }
 }
 
 void prepScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(PREP))
+  switch (PREP_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(MAIN, true);
+    display(ScreenID::MAIN, true);
     break;
   case 1:
-    setScreen(MOVE_AXES);
+    display(MOVE_AXES, false);
     break;
   case 2:
-    // autohome();
+    autohome();
     break;
   case 3:
-    // setHomeOffsets();
+    setHomeOffsets();
     break;
   case 4:
-    // disableSteppers();
+    disableSteppers();
     break;
   default:
     break;
@@ -398,10 +350,10 @@ void prepScreenClicked()
 
 void stepsScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(STEPS))
+  switch (STEPS_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(MOTION, true);
+    display(MOTION, true);
     break;
   case 1:
     break;
@@ -412,10 +364,10 @@ void stepsScreenClicked()
 
 void velocityScreenClicked()
 {
-  switch (viewport.getCurrentLineIndex(VELOCITY))
+  switch (VELOCITY_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    setScreen(MOTION, true);
+    display(MOTION, true);
     break;
   case 1:
     break;
@@ -424,32 +376,9 @@ void velocityScreenClicked()
   }
 }
 
-void formatAxisLine(Buffer buf, char *text)
-{
-  switch (currentAxis)
-  {
-  case X:
-    snprintf(buf, sizeof(buf), text, "X");
-    break;
-  case Y:
-    snprintf(buf, sizeof(buf), text, "Y");
-    break;
-  case Z:
-    snprintf(buf, sizeof(buf), text, "Z");
-    break;
-  }
-}
-
-void formatMilliLine(Buffer buf, char *text)
-{
-  // uint8_t tens = millimeters / 10;
-  // uint8_t ones = millimeters % 10;
-  // snprintf(buf, sizeof(buf), text, tens, ones);
-}
-
 void clickCallback()
 {
-  switch (viewport.getCurrentScreenIndex())
+  switch (currentScreen)
   {
   case ABOUT:
     aboutScreenClicked();
@@ -501,73 +430,27 @@ void clickCallback()
   }
 }
 
-void onRotationCW()
-{
-  switch (viewport.getCurrentScreenIndex())
-  {
-  case ACCELERATION:
-  case CTRL:
-  case MAIN:
-  case MOTION:
-  case MOVE_AXES:
-  case MOVE_X:
-  case MOVE_Y:
-  case MOVE_Z:
-  case PREP:
-  case STEPS:
-  case VELOCITY:
-    viewport.nextLine();
-    viewport.display(false);
-    break;
-  case MOVE_AXIS:
-    // cnc.move(currentAxis, Rotation::NEGATIVE, units);
-    viewport.display(true);
-    break;
-  default:
-    break;
-  }
-}
-
-void onRotationCCW()
-{
-  switch (viewport.getCurrentScreenIndex())
-  {
-  case ACCELERATION:
-  case CTRL:
-  case MAIN:
-  case MOTION:
-  case MOVE_AXES:
-  case MOVE_X:
-  case MOVE_Y:
-  case MOVE_Z:
-  case PREP:
-  case STEPS:
-  case VELOCITY:
-    viewport.previousLine();
-    viewport.display(false);
-    break;
-  case MOVE_AXIS:
-    // cnc.move(currentAxis, Rotation::POSITIVE, units);
-    viewport.display(true);
-    break;
-  default:
-    break;
-  }
-}
-
 void rotateCallback(Rotation direction)
 {
+  LiquidScreen screen = SCREENS[currentScreen];
+
+  if (currentScreen == ScreenID::MOVE_AXIS)
+  {
+    screen.display(true);
+    return;
+  }
 
   if (direction == Rotation::CLOCKWISE)
   {
-    onRotationCW();
+    screen.nextLine();
   }
   else
   {
-    onRotationCCW();
+    screen.previousLine();
   }
+
+  screen.display(false);
 }
-*/
 
 float parseNumber(String line, int index, char arg, float val)
 {
@@ -593,6 +476,40 @@ void createLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text)
   screen.append(std::make_shared<LiquidLine>(row, col, text));
 }
 
+void createFormattedLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text)
+{
+  // screen.append(std::make_shared<LiquidFormattedLine>());
+  screen.append(std::make_shared<LiquidLine>(row, col, text));
+}
+
+void setupAccelScreen()
+{
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Accel");
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel");
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax X");
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Y");
+  createLine(ACCEL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Z");
+}
+
+void setupAboutScreen()
+{
+  createLine(ABOUT_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
+}
+
+void setupCardScreen()
+{
+  createLine(CARD_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
+}
+
+void setupCtrlScreen()
+{
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Laser");
+  createLine(CTRL_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Store settings");
+}
+
 void setupInfoScreen()
 {
   createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC");
@@ -607,6 +524,80 @@ void setupMainScreen()
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control");
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card");
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC");
+}
+
+void setupMoveAxesScreen()
+{
+
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare");
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X");
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y");
+  createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z");
+}
+
+void setupMoveAxisScreen()
+{
+  createFormattedLine(MOVE_AXIS_SCREEN, LCD_ZERO_ROW, 1, "Move %s");  // e.g "Move X"
+  createFormattedLine(MOVE_AXIS_SCREEN, LCD_ZERO_ROW, 2, "+%03d.%d"); // e.g "+000.0"
+}
+
+void setupMoveXScreen()
+{
+
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 10mm");
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 1mm");
+  createLine(MOVE_X_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 0.1mm");
+}
+
+void setupMoveYScreen()
+{
+
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 10mm");
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 1mm");
+  createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 0.1mm");
+}
+void setupMoveZScreen()
+{
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes");
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 10mm");
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 1mm");
+  createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 0.1mm");
+}
+
+void setupPrepScreen()
+{
+
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main");
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move axes");
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Auto home");
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Set home offsets");
+  createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Disable steppers");
+}
+
+void setupMotionScreen()
+{
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control");
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Acceleration");
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Velocity");
+  createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Steps/mm");
+}
+void setupStepsScreen()
+{
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "X steps/mm");
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Y steps/mm");
+  createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Z steps/mm");
+}
+void setupVelocityScreen()
+{
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion");
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vel");
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel");
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax X");
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Y");
+  createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Z");
 }
 
 void setup()
@@ -659,40 +650,51 @@ void setup()
 
   laser.setMaxPower(LSR_MAX_POWER);
 
-  /*
   rotary.setOnClicked(clickCallback);
   rotary.setOnRotation(rotateCallback);
 
   rotary.setClickDebounceTime(EN_CLICK_DEBOUNCE);
   rotary.setRotationDebounceTime(EN_ROT_DEBOUNCE);
-  */
 
   SW_X.setDebounceTime(10);
   SW_Y.setDebounceTime(10);
   SW_Z.setDebounceTime(10);
 
-  CARTESIAN.setStepperMotor(Axis::X, DRIVER_X);
-  CARTESIAN.setStepperMotor(Axis::Y, DRIVER_Y);
-  CARTESIAN.setStepperMotor(Axis::Z, DRIVER_Z);
+  cartesian.setStepperMotor(Axis::X, DRIVER_X);
+  cartesian.setStepperMotor(Axis::Y, DRIVER_Y);
+  cartesian.setStepperMotor(Axis::Z, DRIVER_Z);
 
-  CARTESIAN.setLimitSwitch(Axis::X, SW_X);
-  CARTESIAN.setLimitSwitch(Axis::Y, SW_Y);
-  CARTESIAN.setLimitSwitch(Axis::Z, SW_Z);
+  cartesian.setLimitSwitch(Axis::X, SW_X);
+  cartesian.setLimitSwitch(Axis::Y, SW_Y);
+  cartesian.setLimitSwitch(Axis::Z, SW_Z);
 
-  CARTESIAN.setMinStepsPerMillimeter(Axis::X, 5);
-  CARTESIAN.setMinStepsPerMillimeter(Axis::Y, 5);
-  CARTESIAN.setMinStepsPerMillimeter(Axis::Z, 25);
+  cartesian.setMinStepsPerMillimeter(Axis::X, 5);
+  cartesian.setMinStepsPerMillimeter(Axis::Y, 5);
+  cartesian.setMinStepsPerMillimeter(Axis::Z, 25);
 
-  CARTESIAN.setStepsPerMillimeter(Axis::X, 10);
-  CARTESIAN.setStepsPerMillimeter(Axis::Y, 10);
-  CARTESIAN.setStepsPerMillimeter(Axis::Z, 50);
+  cartesian.setStepsPerMillimeter(Axis::X, 10);
+  cartesian.setStepsPerMillimeter(Axis::Y, 10);
+  cartesian.setStepsPerMillimeter(Axis::Z, 50);
 
-  CARTESIAN.setDimension(Axis::X, 400);
-  CARTESIAN.setDimension(Axis::Y, 420);
-  CARTESIAN.setDimension(Axis::Z, 95);
+  cartesian.setDimension(Axis::X, 400);
+  cartesian.setDimension(Axis::Y, 420);
+  cartesian.setDimension(Axis::Z, 95);
 
+  setupAccelScreen();
+  setupAboutScreen();
+  setupCardScreen();
+  setupCtrlScreen();
   setupInfoScreen();
   setupMainScreen();
+  setupMotionScreen();
+  setupMoveAxesScreen();
+  setupMoveAxisScreen();
+  setupMoveXScreen();
+  setupMoveYScreen();
+  setupMoveZScreen();
+  setupPrepScreen();
+  setupStepsScreen();
+  setupVelocityScreen();
 
   INFO_SCREEN.display();
 }
@@ -739,7 +741,7 @@ void loop()
         {
         case 0:
         case 1:
-          cmdQueue.push(std::make_shared<LinearMoveCommand>(CARTESIAN, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'X', 0), parseNumber(line, 'S', 0)));
+          cmdQueue.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'X', 0), parseNumber(line, 'S', 0)));
           break;
         case 2:
         case 3:
@@ -752,7 +754,7 @@ void loop()
               return;
             }
 
-            cmdQueue.push(std::make_shared<ArcMoveCommand>(CARTESIAN, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'S', 0)));
+            cmdQueue.push(std::make_shared<ArcMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'S', 0)));
           }
           else
           {
@@ -762,7 +764,7 @@ void loop()
               return;
             }
 
-            cmdQueue.push(std::make_shared<CircleMoveCommand>(CARTESIAN, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'S', 0)));
+            cmdQueue.push(std::make_shared<CircleMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'S', 0)));
           }
 
           break;
@@ -779,7 +781,7 @@ void loop()
           break;
 
         case 28:
-          cmdQueue.push(std::make_shared<AutohomeCommand>(CARTESIAN, laser));
+          cmdQueue.push(std::make_shared<AutohomeCommand>(cartesian, laser));
           break;
         default:
           break;
