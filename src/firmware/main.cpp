@@ -33,6 +33,8 @@ using namespace std;
 
 #define LSR_MAX_POWER 255
 
+#define STEPPER_MAX_SPEED 500
+
 #define EN_CLK_PIN 4
 #define EN_DT_PIN 2
 #define EN_SW_PIN 17
@@ -768,9 +770,9 @@ void setup()
 
   root = SD.open("/");
 
-  DRIVER_X.setMaxSpeed(600);
-  DRIVER_Y.setMaxSpeed(600);
-  DRIVER_Z.setMaxSpeed(600);
+  DRIVER_X.setMaxSpeed(STEPPER_MAX_SPEED);
+  DRIVER_Y.setMaxSpeed(STEPPER_MAX_SPEED);
+  DRIVER_Z.setMaxSpeed(STEPPER_MAX_SPEED);
 
   DRIVER_X.setAcceleration(300);
   DRIVER_Y.setAcceleration(300);
@@ -856,6 +858,7 @@ void loop()
       if (cmdQueue.size() < CMD_QUEUE_SIZE)
       {
         String line = proc->readNextLine();
+        Serial.println(line);
 
         if (line.isEmpty())
         {
@@ -869,7 +872,7 @@ void loop()
         {
         case 0:
         case 1:
-          cmdQueue.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'S', 0)));
+          cmdQueue.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
           break;
         case 2:
         case 3:
@@ -882,7 +885,7 @@ void loop()
               return;
             }
 
-            cmdQueue.push(std::make_shared<ArcMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'S', 0)));
+            cmdQueue.push(std::make_shared<ArcMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
           }
           else
           {
@@ -892,7 +895,7 @@ void loop()
               return;
             }
 
-            cmdQueue.push(std::make_shared<CircleMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'S', 0)));
+            cmdQueue.push(std::make_shared<CircleMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
           }
 
           break;
@@ -939,6 +942,7 @@ void loop()
 
   if (cmd)
   {
+    // TODO: move to continue case
     cmd->execute();
 
     Status status = cmd->status();

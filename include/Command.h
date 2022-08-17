@@ -45,7 +45,7 @@ protected:
 class ArcMoveCommand : public CancelableCommand
 {
 public:
-    ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, uint8_t s);
+    ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, float feedrate, uint8_t power);
 
     void execute() override;
 
@@ -62,7 +62,8 @@ private:
     float _i;
     float _j;
     float _k;
-    uint8_t _s;
+    float _feedrate;
+    uint8_t _power;
 };
 
 class AutohomeCommand : public CancelableCommand
@@ -86,7 +87,7 @@ private:
 class CircleMoveCommand : public CancelableCommand
 {
 public:
-    CircleMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float r, uint8_t s);
+    CircleMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float r, float feedrate, uint8_t power);
 
     void execute() override;
 
@@ -101,7 +102,8 @@ private:
     float _y;
     float _z;
     float _r;
-    uint8_t _s;
+    float _feedrate;
+    uint8_t _power;
 };
 
 class DwellCommand : public CancelableCommand
@@ -123,7 +125,7 @@ private:
 class LinearMoveCommand : public CancelableCommand
 {
 public:
-    LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, uint8_t s);
+    LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float feedrate, uint8_t power);
 
     void execute() override;
 
@@ -138,7 +140,8 @@ private:
     float _x;
     float _y;
     float _z;
-    uint8_t _s;
+    float _feedrate;
+    uint8_t _power;
 };
 
 class SetPositioningCommand : public InstantCommand

@@ -1,11 +1,12 @@
 #include <Command.h>
 
-LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, uint8_t s) : _cartesian(cartesian), _laser(laser)
+LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float feedrate, uint8_t power) : _cartesian(cartesian), _laser(laser)
 {
     this->_x = x;
     this->_y = y;
     this->_z = z;
-    this->_s = s;
+    this->_feedrate = feedrate;
+    this->_power = power;
 }
 
 void LinearMoveCommand::execute()
@@ -30,7 +31,7 @@ void LinearMoveCommand::execute()
 
 void LinearMoveCommand::finish()
 {
-    if (_s > 0 && _laser.getInlineMode() == OFF)
+    if (_power > 0)
     {
         _laser.turnOff();
     }
@@ -42,9 +43,23 @@ void LinearMoveCommand::start()
 
     if (_laser.getInlineMode() == OFF)
     {
-        _laser.setPower(_s);
+        _laser.setPower(_power);
     }
 
-    _cartesian.moveTo(_x, _y, _z);
+    if (_x > 0)
+    {
+        _cartesian.moveTo(Axis::X, _x);
+    }
+
+    if (_y > 0)
+    {
+        _cartesian.moveTo(Axis::Y, _y);
+    }
+
+    if (_z > 0)
+    {
+        _cartesian.moveTo(Axis::Z, _z);
+    }
+
     _laser.turnOn();
 }
