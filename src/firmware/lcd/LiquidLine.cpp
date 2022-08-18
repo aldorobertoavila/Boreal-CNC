@@ -22,6 +22,21 @@ String LiquidLine::getText()
     return _text;
 }
 
+void LiquidLine::hide()
+{
+    _hidden = true;
+}
+
+bool LiquidLine::isHidden()
+{
+    return _hidden;
+}
+
+void LiquidLine::unhide()
+{
+    _hidden = false;
+}
+
 void LiquidLine::display(LCD &lcd)
 {
     if (!_text.isEmpty())

@@ -40,6 +40,7 @@ void LinearMoveCommand::finish()
 void LinearMoveCommand::start()
 {
     _currentAxis = Axis::X;
+    _currentStatus = Status::CONTINUE;
 
     if (_laser.getInlineMode() == OFF)
     {
@@ -48,17 +49,17 @@ void LinearMoveCommand::start()
 
     if (_x > 0)
     {
-        _cartesian.moveTo(Axis::X, _x);
+        _cartesian.setTargetPosition(Axis::X, _x);
     }
 
     if (_y > 0)
     {
-        _cartesian.moveTo(Axis::Y, _y);
+        _cartesian.setTargetPosition(Axis::Y, _y);
     }
 
     if (_z > 0)
     {
-        _cartesian.moveTo(Axis::Z, _z);
+        _cartesian.setTargetPosition(Axis::Z, _z);
     }
 
     _laser.turnOn();

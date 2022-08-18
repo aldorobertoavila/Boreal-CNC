@@ -6,9 +6,6 @@
 
 using LCD = LiquidCrystal_I2C;
 
-typedef char (&Buffer)[BUFFER_SIZE];
-typedef void (*FormatFunc)(Buffer, char *);
-
 class LiquidLine
 {
 public:
@@ -20,7 +17,13 @@ public:
 
     String getText();
 
-    virtual void display(LCD &lcd);
+    void hide();
+
+    bool isHidden();
+
+    void unhide();
+
+    void display(LCD &lcd);
 
     void setColumn(uint8_t col);
 
@@ -31,16 +34,6 @@ public:
 protected:
     uint8_t _col;
     uint8_t _row;
+    bool _hidden;
     String _text;
-};
-
-class LiquidFormattedLine : public LiquidLine
-{
-public:
-    LiquidFormattedLine();
-
-    void display(LCD &lcd) override;
-
-protected:
-    FormatFunc _format;
 };

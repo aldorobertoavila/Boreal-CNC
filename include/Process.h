@@ -22,6 +22,8 @@ public:
 
     Status status();
 
+    uint8_t progress();
+
     void stop();
 
 private:

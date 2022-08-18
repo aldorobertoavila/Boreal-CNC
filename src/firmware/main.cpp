@@ -11,8 +11,8 @@
 #include <SPI.h>
 #include <Wire.h>
 
-#include <queue>
 #include <memory>
+#include <queue>
 
 using namespace std;
 
@@ -87,6 +87,11 @@ String SYSTEM_VOLUME = "System Volume Information";
 
 SPIClass spi(VSPI);
 
+Cartesian cartesian;
+Laser laser(LSR_PIN);
+LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
+Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
+
 ShiftRegisterMotorInterface SHIFT_REGISTER_X1(spi, CS_RS1_PIN, MSBFIRST);
 ShiftRegisterMotorInterface SHIFT_REGISTER_X2(spi, CS_RS2_PIN, MSBFIRST);
 ShiftRegisterMotorInterface SHIFT_REGISTER_Y(spi, CS_RS3_PIN, MSBFIRST);
@@ -101,8 +106,6 @@ StepperMotor DRIVER_Z(SHIFT_REGISTER_Z);
 LimitSwitch SW_X(SW_X_PIN);
 LimitSwitch SW_Y(SW_Y_PIN);
 LimitSwitch SW_Z(SW_Z_PIN);
-
-LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
 LiquidScreen INFO_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
 LiquidScreen ABOUT_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
@@ -125,16 +128,22 @@ LiquidMenu VELOCITY_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu STEPS_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu ACCEL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-Cartesian cartesian;
-Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
-Laser laser(LSR_PIN);
+LiquidLinePtr positionInfo;
+LiquidLinePtr progressInfo;
+
+LiquidLinePtr noTFCard;
+LiquidLinePtr startFromTF;
+LiquidLinePtr pauseOption;
+LiquidLinePtr resumeOption;
+LiquidLinePtr stopOption;
 
 String filePaths[MAX_FILES_SIZE];
 ScreenID currentScreen;
 File root;
 
-queue<std::shared_ptr<Command>> cmdQueue;
-queue<std::shared_ptr<Process>> procQueue;
+queue<std::shared_ptr<Command>> commands;
+queue<std::shared_ptr<Process>> processes;
+
 std::shared_ptr<Command> cmd;
 std::shared_ptr<Process> proc;
 
@@ -203,8 +212,8 @@ void setMoveAxisScreen(Axis axis, uint8_t unit)
 
 void autohome()
 {
-  cmdQueue.push(std::make_shared<AutohomeCommand>(cartesian, laser));
-  display(ScreenID::INFO, false);
+  commands.push(std::make_shared<AutohomeCommand>(cartesian, laser));
+  display(ScreenID::INFO, true);
 }
 
 bool isGcodeFile(String filename)
@@ -254,7 +263,7 @@ uint8_t getFiles(File &root, String paths[], uint8_t maxFilePaths)
 
 void setHomeOffsets()
 {
-  display(ScreenID::INFO, false);
+  display(ScreenID::INFO, true);
 }
 
 void enableSteppers()
@@ -268,8 +277,6 @@ void enableSteppers()
       stepper->enable();
     }
   }
-
-  display(ScreenID::INFO, false);
 }
 
 void disableSteppers()
@@ -284,17 +291,17 @@ void disableSteppers()
     }
   }
 
-  display(ScreenID::INFO, false);
+  display(ScreenID::INFO, true);
 }
 
 void aboutScreenClicked()
 {
-  display(ScreenID::INFO, false);
+  display(ScreenID::INFO, true);
 }
 
 void storeSettings()
 {
-  display(ScreenID::INFO, false);
+  display(ScreenID::INFO, true);
 }
 
 void accelerationScreenClicked()
@@ -317,8 +324,15 @@ void cardScreenClicked()
 
   if (index > 0)
   {
-    procQueue.push(std::make_shared<Process>(SD, "/" + filePaths[index - 1]));
+    processes.push(std::make_shared<Process>(SD, "/" + filePaths[index - 1]));
     enableSteppers();
+
+    startFromTF->hide();
+    pauseOption->unhide();
+    resumeOption->hide();
+    stopOption->unhide();
+
+    display(ScreenID::INFO, true);
   }
   else
   {
@@ -366,9 +380,32 @@ void mainScreenClicked()
     display(ScreenID::CTRL, false);
     break;
   case 3:
-    display(ScreenID::CARD, false);
+    display(ScreenID::INFO, true);
     break;
   case 4:
+    display(ScreenID::CARD, false);
+    break;
+  case 5:
+    pauseOption->hide();
+    resumeOption->unhide();
+    proc->pause();
+    display(ScreenID::INFO, true);
+    break;
+  case 6:
+    resumeOption->hide();
+    pauseOption->unhide();
+    proc->resume();
+    display(ScreenID::INFO, true);
+    break;
+  case 7:
+    startFromTF->unhide();
+    pauseOption->hide();
+    resumeOption->hide();
+    stopOption->hide();
+    proc->stop();
+    display(ScreenID::INFO, true);
+    break;
+  case 8:
     display(ScreenID::ABOUT, false);
     break;
   default:
@@ -546,9 +583,13 @@ void rotateCallback(Rotation direction)
 
   if (screen)
   {
+    if (currentScreen == ScreenID::INFO)
+    {
+      return;
+    }
+
     if (currentScreen == ScreenID::MOVE_AXIS)
     {
-      screen->display(true);
       return;
     }
 
@@ -594,17 +635,12 @@ std::string pad_right(std::string const &str, size_t s)
   return str;
 }
 
-void createLine(LiquidScreen &screen, uint8_t row, uint8_t col, string text, size_t textLength)
+LiquidLinePtr createLine(LiquidScreen &screen, uint8_t row, uint8_t col, string text, size_t textLength)
 {
-  String padded = pad_right(text, textLength).c_str();
+  LiquidLinePtr ptr = std::make_shared<LiquidLine>(row, col, pad_right(text, textLength).c_str());
 
-  screen.append(std::make_shared<LiquidLine>(row, col, padded));
-}
-
-void createFormattedLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text)
-{
-  // screen.append(std::make_shared<LiquidFormattedLine>());
-  screen.append(std::make_shared<LiquidLine>(row, col, text));
+  screen.append(ptr);
+  return ptr;
 }
 
 void setupAccelScreen()
@@ -645,22 +681,30 @@ void setupCtrlScreen()
 void setupInfoScreen()
 {
   createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC", 0);
-  createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0", 0);
-  createLine(INFO_SCREEN, LCD_ZERO_COL, 2, "0%", 0);
+  positionInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0", 0);
+  progressInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 2, "0%", 0);
 }
 
 void setupMainScreen()
 {
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Info", 11);
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 11);
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 11);
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card", 11);
-  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC", 11);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Info", 14);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 14);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 14);
+  noTFCard = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card", 14);
+  startFromTF = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Start from TF", 14);
+  pauseOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Pause", 14);
+  resumeOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Resume", 14);
+  stopOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Stop", 14);
+  createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC", 14);
+
+  noTFCard->hide();
+  pauseOption->hide();
+  resumeOption->hide();
+  stopOption->hide();
 }
 
 void setupMoveAxesScreen()
 {
-
   createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 8);
   createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X", 8);
   createLine(MOVE_AXES_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y", 8);
@@ -669,8 +713,8 @@ void setupMoveAxesScreen()
 
 void setupMoveAxisScreen()
 {
-  createFormattedLine(MOVE_AXIS_SCREEN, LCD_ZERO_ROW, 1, "Move %s");  // e.g "Move X"
-  createFormattedLine(MOVE_AXIS_SCREEN, LCD_ZERO_ROW, 2, "+%03d.%d"); // e.g "+000.0"
+  createLine(MOVE_AXIS_SCREEN, LCD_ZERO_ROW, 1, "Move %s", 0);
+  createLine(MOVE_AXIS_SCREEN, LCD_ZERO_ROW, 2, "+%03d.%d", 0);
 }
 
 void setupMoveXScreen()
@@ -690,6 +734,7 @@ void setupMoveYScreen()
   createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 1mm", 13);
   createLine(MOVE_Y_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 0.1mm", 13);
 }
+
 void setupMoveZScreen()
 {
   createLine(MOVE_Z_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes", 13);
@@ -715,6 +760,7 @@ void setupMotionScreen()
   createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Velocity", 13);
   createLine(MOTION_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Steps/mm", 13);
 }
+
 void setupStepsScreen()
 {
   createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 11);
@@ -722,6 +768,7 @@ void setupStepsScreen()
   createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Y steps/mm", 11);
   createLine(STEPS_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Z steps/mm", 11);
 }
+
 void setupVelocityScreen()
 {
   createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 7);
@@ -730,6 +777,71 @@ void setupVelocityScreen()
   createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax X", 7);
   createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Y", 7);
   createLine(VELOCITY_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Z", 7);
+}
+
+void parseNextCommand()
+{
+  if (commands.size() >= CMD_QUEUE_SIZE)
+  {
+    return;
+  }
+
+  String line = proc.get()->readNextLine();
+
+  if (line.isEmpty())
+  {
+    return;
+  }
+
+  int code = parseNumber(line, 'G', -1);
+
+  switch (code)
+  {
+  case 0:
+  case 1:
+    commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
+    break;
+  case 2:
+  case 3:
+    if (line.indexOf('I') > 0 || line.indexOf('J') > 0)
+    {
+      // TODO: invalid arc
+      if (line.indexOf('R') > 0)
+      {
+        return;
+      }
+
+      commands.push(std::make_shared<ArcMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
+    }
+    else
+    {
+      // TODO: invalid circle
+      if (line.indexOf('X') < 0 && line.indexOf('Y') < 0)
+      {
+        return;
+      }
+
+      commands.push(std::make_shared<CircleMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
+    }
+
+    break;
+  case 4:
+    if (line.indexOf('S') > 0)
+    {
+      commands.push(std::make_shared<DwellCommand>(parseNumber(line, 'S', 0) * 1000));
+    }
+    else
+    {
+      commands.push(std::make_shared<DwellCommand>(parseNumber(line, 'P', 0)));
+    }
+    break;
+
+  case 28:
+    commands.push(std::make_shared<AutohomeCommand>(cartesian, laser));
+    break;
+  default:
+    break;
+  }
 }
 
 void setup()
@@ -826,17 +938,58 @@ void setup()
   setupStepsScreen();
   setupVelocityScreen();
 
-  display(ScreenID::INFO, false);
+  display(ScreenID::INFO, true);
+}
+
+void updateInfoScreen()
+{
+  static uint8_t prevProgress;
+  static long prevX;
+  static long prevY;
+  static long prevZ;
+
+  char positionBuf[LCD_COLS];
+  char progressBuf[LCD_COLS];
+
+  float x = cartesian.getTargetPosition(Axis::X);
+  float y = cartesian.getTargetPosition(Axis::Y);
+  float z = cartesian.getTargetPosition(Axis::Z);
+
+  if (x != prevX || y != prevY || z != prevZ)
+  {
+    char *buf;
+    snprintf(buf, LCD_COLS, "X %.2f Y %.2f Z %.2f", x, y, z);
+
+    if (positionInfo->getText() != buf)
+    {
+      positionInfo->setText(buf);
+      positionInfo->display(lcd);
+      prevX = x;
+      prevY = y;
+      prevZ = z;
+    }
+  }
+
+  uint8_t progress = proc->progress();
+
+  if (progress != prevProgress)
+  {
+    char *buf;
+    snprintf(buf, LCD_COLS, "%d%", progress);
+    progressInfo->setText(buf);
+    progressInfo->display(lcd);
+    prevProgress = progress;
+  }
 }
 
 void loop()
 {
   rotary.tick();
 
-  if (!procQueue.empty() && !proc)
+  if (!processes.empty() && !proc)
   {
-    proc = procQueue.front();
-    procQueue.pop();
+    proc = processes.front();
+    processes.pop();
 
     if (proc)
     {
@@ -846,82 +999,19 @@ void loop()
 
   if (proc)
   {
-    Status status = proc->status();
+    updateInfoScreen();
 
-    switch (status)
+    switch (proc->status())
     {
     case Status::COMPLETED:
       proc = nullptr;
       break;
 
     case Status::CONTINUE:
-      if (cmdQueue.size() < CMD_QUEUE_SIZE)
-      {
-        String line = proc->readNextLine();
-        Serial.println(line);
-
-        if (line.isEmpty())
-        {
-          return;
-        }
-
-        int code = parseNumber(line, 'G', -1);
-        // TODO: ignore comments
-
-        switch (code)
-        {
-        case 0:
-        case 1:
-          cmdQueue.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
-          break;
-        case 2:
-        case 3:
-
-          if (line.indexOf('I') > 0 || line.indexOf('J') > 0)
-          {
-            // TODO: invalid arc
-            if (line.indexOf('R') > 0)
-            {
-              return;
-            }
-
-            cmdQueue.push(std::make_shared<ArcMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
-          }
-          else
-          {
-            // TODO: invalid circle
-            if (line.indexOf('X') < 0 && line.indexOf('Y') < 0)
-            {
-              return;
-            }
-
-            cmdQueue.push(std::make_shared<CircleMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
-          }
-
-          break;
-        case 4:
-          if (line.indexOf('S') > 0)
-          {
-            cmdQueue.push(std::make_shared<DwellCommand>(parseNumber(line, 'S', 0) * 1000));
-          }
-          else
-          {
-            cmdQueue.push(std::make_shared<DwellCommand>(parseNumber(line, 'P', 0)));
-          }
-
-          break;
-
-        case 28:
-          cmdQueue.push(std::make_shared<AutohomeCommand>(cartesian, laser));
-          break;
-        default:
-          break;
-        }
-      }
+      parseNextCommand();
       break;
 
     case Status::ERROR:
-      // TODO: create report
       proc = nullptr;
       break;
     default:
@@ -929,10 +1019,10 @@ void loop()
     }
   }
 
-  if (!cmdQueue.empty() && !cmd)
+  if (!commands.empty() && !cmd)
   {
-    cmd = cmdQueue.front();
-    cmdQueue.pop();
+    cmd = commands.front();
+    commands.pop();
 
     if (cmd)
     {
@@ -942,9 +1032,6 @@ void loop()
 
   if (cmd)
   {
-    // TODO: move to continue case
-    cmd->execute();
-
     Status status = cmd->status();
 
     switch (status)
@@ -954,8 +1041,11 @@ void loop()
       cmd = nullptr;
       break;
 
+    case Status::CONTINUE:
+      cmd->execute();
+      break;
+
     case Status::ERROR:
-      // TODO: create report
       cmd = nullptr;
       break;
     default:

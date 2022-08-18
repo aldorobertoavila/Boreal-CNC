@@ -44,7 +44,7 @@ void LiquidScreen::draw(uint8_t startLine)
         LiquidLinePtr &ptr = _lines.at(lineIndex);
         LiquidLine *line = ptr.get();
 
-        if (line)
+        if (line && !line->isHidden())
         {
             line->display(_lcd);
         }
@@ -138,7 +138,7 @@ void LiquidMenu::draw(uint8_t startLine)
         LiquidLinePtr &ptr = _lines.at(lineIndex);
         LiquidLine *line = ptr.get();
 
-        if (line)
+        if (line && !line->isHidden())
         {
             line->setRow(row);
             line->display(_lcd);

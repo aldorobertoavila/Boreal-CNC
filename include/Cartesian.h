@@ -27,15 +27,17 @@ public:
 
     long getStepsPerMillimeter(Axis axis);
 
+    float getTargetPosition(Axis axis);
+
     Unit getUnit();
 
-    void moveTo(Axis axis, float u);
+    void setTargetPosition(Axis axis, float u);
 
-    void moveTo(Axis axis, Unit unit, float u);
+    void setTargetPosition(Axis axis, Unit unit, float u);
 
-    void moveTo(float x, float y, float z);
+    void setTargetPosition(float x, float y, float z);
 
-    void moveToLimit(Axis axis, Direction dir);
+    void setTargetPosition(Axis axis, Direction dir);
 
     void setDimension(Axis axis, float u);
 
@@ -70,4 +72,5 @@ private:
     long _homeOffset[AXES];
     long _minStepsPerMillimeter[AXES];
     long _stepsPerMillimeter[AXES];
+    float _targetPosition[AXES];
 };

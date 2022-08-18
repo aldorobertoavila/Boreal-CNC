@@ -39,17 +39,22 @@ long Cartesian::getStepsPerMillimeter(Axis axis)
     return _stepsPerMillimeter[axis];
 }
 
+float Cartesian::getTargetPosition(Axis axis)
+{
+    return _targetPosition[axis];
+}
+
 Unit Cartesian::getUnit()
 {
     return _unit;
 }
 
-void Cartesian::moveTo(Axis axis, float u)
+void Cartesian::setTargetPosition(Axis axis, float u)
 {
-    moveTo(axis, _unit, u);
+    setTargetPosition(axis, _unit, u);
 }
 
-void Cartesian::moveTo(Axis axis, Unit unit, float u)
+void Cartesian::setTargetPosition(Axis axis, Unit unit, float u)
 {
     StepperMotor *stepper = _steppers[axis];
 
@@ -66,22 +71,24 @@ void Cartesian::moveTo(Axis axis, Unit unit, float u)
             stepper->move(steps);
         }
 
+        _targetPosition[axis] = u;
+
         stepper->setResolution(_resolutions[axis]);
     }
 }
 
-void Cartesian::moveTo(float x, float y, float z)
+void Cartesian::setTargetPosition(float x, float y, float z)
 {
-    moveTo(Axis::X, x);
-    moveTo(Axis::Y, y);
-    moveTo(Axis::Z, z);
+    setTargetPosition(Axis::X, x);
+    setTargetPosition(Axis::Y, y);
+    setTargetPosition(Axis::Z, z);
 }
 
-void Cartesian::moveToLimit(Axis axis, Direction dir)
+void Cartesian::setTargetPosition(Axis axis, Direction dir)
 {
     long dimension = getDimension(axis);
 
-    moveTo(axis, Unit::MILLIMETER, dir == Direction::NEGATIVE ? -dimension : dimension);
+    setTargetPosition(axis, Unit::MILLIMETER, dir == Direction::NEGATIVE ? -dimension : dimension);
 }
 
 void Cartesian::setDimension(Axis axis, float u)

@@ -24,6 +24,8 @@ void CircleMoveCommand::finish()
 
 void CircleMoveCommand::start()
 {
+    _currentStatus = Status::CONTINUE;
+
     if (_laser.getInlineMode() == OFF)
     {
         _laser.setPower(_power);

@@ -14,7 +14,20 @@ String Process::readNextLine()
             _status = Status::COMPLETED;
         }
 
-        return _file.readStringUntil('\n');
+        String line = _file.readStringUntil('\n');
+        int comment = line.indexOf(";");
+
+        if (comment == 0)
+        {
+            return "";
+        }
+
+        if (comment > 0)
+        {
+            line = line.substring(0, comment);
+        }
+
+        return line;
     }
 
     return "";
@@ -53,12 +66,25 @@ Status Process::status()
     return _status;
 }
 
-void Process::stop()
+uint8_t Process::progress()
 {
-    if (_file)
+    if(_file)
     {
-        _file.close();
+        return map(_file.position(), 0, _file.size(), 0, 100);
     }
 
-    _status = Status::STOPPED;
+    return 0;
+}
+
+void Process::stop()
+{
+    if (_status == Status::CONTINUE || _status == Status::PAUSED)
+    {
+        if (_file)
+        {
+            _file.close();
+        }
+
+        _status = Status::STOPPED;
+    }
 }

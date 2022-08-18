@@ -25,7 +25,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.moveToLimit(_currentAxis, Direction::POSITIVE);
+            _cartesian.setTargetPosition(_currentAxis, Direction::POSITIVE);
             _currentState = AutohomeState::RELEASE;
 
             stepper->pause(500);
@@ -41,7 +41,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
+            _cartesian.setTargetPosition(_currentAxis, Direction::NEGATIVE);
             _currentState = AutohomeState::RETURN;
 
             stepper->pause(500);
@@ -64,7 +64,7 @@ void AutohomeCommand::execute()
             }
 
             _currentAxis++;
-            _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
+            _cartesian.setTargetPosition(_currentAxis, Direction::NEGATIVE);
             _currentState = AutohomeState::PRESS;
         }
 
@@ -87,5 +87,5 @@ void AutohomeCommand::start()
     _currentState = AutohomeState::PRESS;
     _currentStatus = Status::CONTINUE;
 
-    _cartesian.moveToLimit(_currentAxis, Direction::NEGATIVE);
+    _cartesian.setTargetPosition(_currentAxis, Direction::NEGATIVE);
 }

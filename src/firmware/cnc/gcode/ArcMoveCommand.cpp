@@ -26,6 +26,8 @@ void ArcMoveCommand::finish()
 
 void ArcMoveCommand::start()
 {
+    _currentStatus = Status::CONTINUE;
+
     if (_laser.getInlineMode() == OFF)
     {
         _laser.setPower(_power);
