@@ -86,6 +86,7 @@ const uint8_t RESUME_CARD = 6;
 const uint8_t STOP_CARD = 7;
 
 char INTERNAL_FILE_EXT = '~';
+String EMPTY_ROW = "                    ";
 String GCODE_FILE_EXT = ".gcode";
 String SYSTEM_VOLUME = "System Volume Information";
 
@@ -890,11 +891,6 @@ void updateInfoScreen()
     return;
   }
 
-  /*
-  std::string EMPTY_ROW(LCD_COLS, ' ');
-  char* positionBuf = (char *) EMPTY_ROW.c_str();
-  char* progressBuf = (char *) EMPTY_ROW.c_str();
-  */
   char positionBuf[LCD_COLS];
   char progressBuf[LCD_COLS];
 
@@ -916,6 +912,10 @@ void updateInfoScreen()
 
   if (positionInfo->getText() != positionBuf)
   {
+    uint8_t row = positionInfo->getRow();
+
+    lcd.setCursor(0, row);
+    lcd.print(EMPTY_ROW);
     positionInfo->setText(positionBuf);
     positionInfo->display(lcd);
   }
