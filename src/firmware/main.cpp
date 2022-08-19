@@ -33,8 +33,6 @@ using namespace std;
 
 #define LSR_MAX_POWER 255
 
-#define STEPPER_MAX_SPEED 500
-
 #define EN_CLK_PIN 4
 #define EN_DT_PIN 2
 #define EN_SW_PIN 17
@@ -81,6 +79,12 @@ byte ARROW[8] =
         0b00100,
         0b00000};
 
+const uint8_t NO_TF_CARD = 3;
+const uint8_t START_FROM_TF = 4;
+const uint8_t PAUSE_CARD = 5;
+const uint8_t RESUME_CARD = 6;
+const uint8_t STOP_CARD = 7;
+
 char INTERNAL_FILE_EXT = '~';
 String GCODE_FILE_EXT = ".gcode";
 String SYSTEM_VOLUME = "System Volume Information";
@@ -99,13 +103,13 @@ ShiftRegisterMotorInterface SHIFT_REGISTER_Z(spi, CS_RS4_PIN, MSBFIRST);
 
 BilateralMotorInterface BILATERAL_X(SHIFT_REGISTER_X1, SHIFT_REGISTER_X2);
 
-StepperMotor DRIVER_X(BILATERAL_X);
-StepperMotor DRIVER_Y(SHIFT_REGISTER_Y);
-StepperMotor DRIVER_Z(SHIFT_REGISTER_Z);
+StepperMotorPtr stepperX = std::make_shared<StepperMotor>(BILATERAL_X);
+StepperMotorPtr stepperY = std::make_shared<StepperMotor>(SHIFT_REGISTER_Y);
+StepperMotorPtr stepperZ = std::make_shared<StepperMotor>(SHIFT_REGISTER_Z);
 
-LimitSwitch SW_X(SW_X_PIN);
-LimitSwitch SW_Y(SW_Y_PIN);
-LimitSwitch SW_Z(SW_Z_PIN);
+LimitSwitchPtr switchX = std::make_shared<LimitSwitch>(SW_X_PIN);
+LimitSwitchPtr switchY = std::make_shared<LimitSwitch>(SW_Y_PIN);
+LimitSwitchPtr switchZ = std::make_shared<LimitSwitch>(SW_Z_PIN);
 
 LiquidScreen INFO_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
 LiquidScreen ABOUT_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
@@ -266,34 +270,6 @@ void setHomeOffsets()
   display(ScreenID::INFO, true);
 }
 
-void enableSteppers()
-{
-  for (uint8_t i = 0; i < AXES; i++)
-  {
-    StepperMotor *stepper = cartesian.getStepperMotor(static_cast<Axis>(i));
-
-    if (stepper)
-    {
-      stepper->enable();
-    }
-  }
-}
-
-void disableSteppers()
-{
-  for (uint8_t i = 0; i < AXES; i++)
-  {
-    StepperMotor *stepper = cartesian.getStepperMotor(static_cast<Axis>(i));
-
-    if (stepper)
-    {
-      stepper->disable();
-    }
-  }
-
-  display(ScreenID::INFO, true);
-}
-
 void aboutScreenClicked()
 {
   display(ScreenID::INFO, true);
@@ -325,13 +301,7 @@ void cardScreenClicked()
   if (index > 0)
   {
     processes.push(std::make_shared<Process>(SD, "/" + filePaths[index - 1]));
-    enableSteppers();
-
-    startFromTF->hide();
-    pauseOption->unhide();
-    resumeOption->hide();
-    stopOption->unhide();
-
+    cartesian.enableSteppers();
     display(ScreenID::INFO, true);
   }
   else
@@ -380,32 +350,9 @@ void mainScreenClicked()
     display(ScreenID::CTRL, false);
     break;
   case 3:
-    display(ScreenID::INFO, true);
-    break;
-  case 4:
     display(ScreenID::CARD, false);
     break;
-  case 5:
-    pauseOption->hide();
-    resumeOption->unhide();
-    proc->pause();
-    display(ScreenID::INFO, true);
-    break;
-  case 6:
-    resumeOption->hide();
-    pauseOption->unhide();
-    proc->resume();
-    display(ScreenID::INFO, true);
-    break;
-  case 7:
-    startFromTF->unhide();
-    pauseOption->hide();
-    resumeOption->hide();
-    stopOption->hide();
-    proc->stop();
-    display(ScreenID::INFO, true);
-    break;
-  case 8:
+  case 4:
     display(ScreenID::ABOUT, false);
     break;
   default:
@@ -488,7 +435,8 @@ void prepScreenClicked()
     setHomeOffsets();
     break;
   case 4:
-    disableSteppers();
+    cartesian.disableSteppers();
+    display(ScreenID::INFO, true);
     break;
   default:
     break;
@@ -681,7 +629,7 @@ void setupCtrlScreen()
 void setupInfoScreen()
 {
   createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC", 0);
-  positionInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X: 0 Y: 0 Z: 0", 0);
+  positionInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X0 Y0 Z0", 0);
   progressInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 2, "0%", 0);
 }
 
@@ -690,17 +638,8 @@ void setupMainScreen()
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Info", 14);
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 14);
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 14);
-  noTFCard = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF card", 14);
   startFromTF = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Start from TF", 14);
-  pauseOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Pause", 14);
-  resumeOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Resume", 14);
-  stopOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Stop", 14);
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC", 14);
-
-  noTFCard->hide();
-  pauseOption->hide();
-  resumeOption->hide();
-  stopOption->hide();
 }
 
 void setupMoveAxesScreen()
@@ -799,7 +738,7 @@ void parseNextCommand()
   {
   case 0:
   case 1:
-    commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
+    commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'F', 0), parseNumber(line, 'S', 0)));
     break;
   case 2:
   case 3:
@@ -811,7 +750,7 @@ void parseNextCommand()
         return;
       }
 
-      commands.push(std::make_shared<ArcMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
+      commands.push(std::make_shared<ArcMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'F', 0), parseNumber(line, 'S', 0)));
     }
     else
     {
@@ -821,7 +760,7 @@ void parseNextCommand()
         return;
       }
 
-      commands.push(std::make_shared<CircleMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'F', STEPPER_MAX_SPEED), parseNumber(line, 'S', 0)));
+      commands.push(std::make_shared<CircleMoveCommand>(cartesian, laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'F', 0), parseNumber(line, 'S', 0)));
     }
 
     break;
@@ -882,13 +821,17 @@ void setup()
 
   root = SD.open("/");
 
-  DRIVER_X.setMaxSpeed(STEPPER_MAX_SPEED);
-  DRIVER_Y.setMaxSpeed(STEPPER_MAX_SPEED);
-  DRIVER_Z.setMaxSpeed(STEPPER_MAX_SPEED);
+  stepperX->setMaxSpeed(600);
+  stepperY->setMaxSpeed(600);
+  stepperZ->setMaxSpeed(600);
 
-  DRIVER_X.setAcceleration(300);
-  DRIVER_Y.setAcceleration(300);
-  DRIVER_Z.setAcceleration(300);
+  stepperX->setAcceleration(300);
+  stepperY->setAcceleration(300);
+  stepperZ->setAcceleration(300);
+
+  switchX->setDebounceTime(10);
+  switchY->setDebounceTime(10);
+  switchZ->setDebounceTime(10);
 
   laser.setMaxPower(LSR_MAX_POWER);
 
@@ -898,17 +841,13 @@ void setup()
   rotary.setClickDebounceTime(EN_CLICK_DEBOUNCE);
   rotary.setRotationDebounceTime(EN_ROT_DEBOUNCE);
 
-  SW_X.setDebounceTime(10);
-  SW_Y.setDebounceTime(10);
-  SW_Z.setDebounceTime(10);
+  cartesian.setStepperMotor(Axis::X, stepperX);
+  cartesian.setStepperMotor(Axis::Y, stepperY);
+  cartesian.setStepperMotor(Axis::Z, stepperZ);
 
-  cartesian.setStepperMotor(Axis::X, DRIVER_X);
-  cartesian.setStepperMotor(Axis::Y, DRIVER_Y);
-  cartesian.setStepperMotor(Axis::Z, DRIVER_Z);
-
-  cartesian.setLimitSwitch(Axis::X, SW_X);
-  cartesian.setLimitSwitch(Axis::Y, SW_Y);
-  cartesian.setLimitSwitch(Axis::Z, SW_Z);
+  cartesian.setLimitSwitch(Axis::X, switchX);
+  cartesian.setLimitSwitch(Axis::Y, switchY);
+  cartesian.setLimitSwitch(Axis::Z, switchZ);
 
   cartesian.setMinStepsPerMillimeter(Axis::X, 5);
   cartesian.setMinStepsPerMillimeter(Axis::Y, 5);
@@ -938,16 +877,24 @@ void setup()
   setupStepsScreen();
   setupVelocityScreen();
 
+  cartesian.disableSteppers();
   display(ScreenID::INFO, true);
 }
 
 void updateInfoScreen()
 {
   static uint8_t prevProgress;
-  static long prevX;
-  static long prevY;
-  static long prevZ;
 
+  if(currentScreen != ScreenID::INFO)
+  {
+    return;
+  }
+
+  /*
+  std::string EMPTY_ROW(LCD_COLS, ' ');
+  char* positionBuf = (char *) EMPTY_ROW.c_str();
+  char* progressBuf = (char *) EMPTY_ROW.c_str();
+  */
   char positionBuf[LCD_COLS];
   char progressBuf[LCD_COLS];
 
@@ -955,28 +902,30 @@ void updateInfoScreen()
   float y = cartesian.getTargetPosition(Axis::Y);
   float z = cartesian.getTargetPosition(Axis::Z);
 
-  if (x != prevX || y != prevY || z != prevZ)
+  switch (cartesian.getUnit())
   {
-    char *buf;
-    snprintf(buf, LCD_COLS, "X %.2f Y %.2f Z %.2f", x, y, z);
+  case Unit::INCH:
+    snprintf(positionBuf, LCD_COLS, "X%.1f Y%.1f Z%.1f", x, y, z);
+    break;
+  case Unit::MILLIMETER:
+    snprintf(positionBuf, LCD_COLS, "X%i Y%i Z%i", (int)x, (int)y, (int)z);
+    break;
+  default:
+    break;
+  }
 
-    if (positionInfo->getText() != buf)
-    {
-      positionInfo->setText(buf);
-      positionInfo->display(lcd);
-      prevX = x;
-      prevY = y;
-      prevZ = z;
-    }
+  if (positionInfo->getText() != positionBuf)
+  {
+    positionInfo->setText(positionBuf);
+    positionInfo->display(lcd);
   }
 
   uint8_t progress = proc->progress();
 
   if (progress != prevProgress)
   {
-    char *buf;
-    snprintf(buf, LCD_COLS, "%d%", progress);
-    progressInfo->setText(buf);
+    snprintf(progressBuf, LCD_COLS, "%i%%", progress);
+    progressInfo->setText(progressBuf);
     progressInfo->display(lcd);
     prevProgress = progress;
   }
@@ -1004,6 +953,7 @@ void loop()
     switch (proc->status())
     {
     case Status::COMPLETED:
+      // TODO: cartesian.disableSteppers();
       proc = nullptr;
       break;
 

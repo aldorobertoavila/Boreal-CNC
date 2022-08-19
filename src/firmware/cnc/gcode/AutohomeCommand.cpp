@@ -6,8 +6,8 @@ AutohomeCommand::AutohomeCommand(Cartesian &cartesian, Laser &laser) : _cartesia
 
 void AutohomeCommand::execute()
 {
-    StepperMotor *stepper = _cartesian.getStepperMotor(_currentAxis);
-    LimitSwitch *sw = _cartesian.getLimitSwitch(_currentAxis);
+    StepperMotorPtr stepper = _cartesian.getStepperMotor(_currentAxis);
+    LimitSwitchPtr sw = _cartesian.getLimitSwitch(_currentAxis);
 
     if (!stepper || !sw)
     {
@@ -25,7 +25,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(_currentAxis, Direction::POSITIVE);
+            _cartesian.setTargetPosition(_currentAxis, 400);
             _currentState = AutohomeState::RELEASE;
 
             stepper->pause(500);
@@ -41,7 +41,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(_currentAxis, Direction::NEGATIVE);
+            _cartesian.setTargetPosition(_currentAxis, -400);
             _currentState = AutohomeState::RETURN;
 
             stepper->pause(500);
@@ -64,7 +64,7 @@ void AutohomeCommand::execute()
             }
 
             _currentAxis++;
-            _cartesian.setTargetPosition(_currentAxis, Direction::NEGATIVE);
+            _cartesian.setTargetPosition(_currentAxis, -400);
             _currentState = AutohomeState::PRESS;
         }
 
@@ -87,5 +87,5 @@ void AutohomeCommand::start()
     _currentState = AutohomeState::PRESS;
     _currentStatus = Status::CONTINUE;
 
-    _cartesian.setTargetPosition(_currentAxis, Direction::NEGATIVE);
+    _cartesian.setTargetPosition(_currentAxis, -400);
 }

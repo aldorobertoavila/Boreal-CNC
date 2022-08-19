@@ -1,7 +1,35 @@
 #include <Cartesian.h>
 
+using namespace std;
+
 Cartesian::Cartesian()
 {
+}
+
+void Cartesian::disableSteppers()
+{
+  for (uint8_t i = 0; i < AXES; i++)
+  {
+    StepperMotorPtr stepper = getStepperMotor(static_cast<Axis>(i));
+
+    if (stepper)
+    {
+      stepper->disable();
+    }
+  }
+}
+
+void Cartesian::enableSteppers()
+{
+  for (uint8_t i = 0; i < AXES; i++)
+  {
+    StepperMotorPtr stepper = getStepperMotor(static_cast<Axis>(i));
+
+    if (stepper)
+    {
+      stepper->enable();
+    }
+  }
 }
 
 long Cartesian::getDimension(Axis axis)
@@ -14,7 +42,7 @@ long Cartesian::getHomeOffset(Axis axis)
     return _homeOffset[axis];
 }
 
-LimitSwitch *Cartesian::getLimitSwitch(Axis axis)
+LimitSwitchPtr Cartesian::getLimitSwitch(Axis axis)
 {
     return _switches[axis];
 }
@@ -29,7 +57,7 @@ Resolution Cartesian::getResolution(Axis axis)
     return _resolutions[axis];
 }
 
-StepperMotor *Cartesian::getStepperMotor(Axis axis)
+StepperMotorPtr Cartesian::getStepperMotor(Axis axis)
 {
     return _steppers[axis];
 }
@@ -56,7 +84,7 @@ void Cartesian::setTargetPosition(Axis axis, float u)
 
 void Cartesian::setTargetPosition(Axis axis, Unit unit, float u)
 {
-    StepperMotor *stepper = _steppers[axis];
+    StepperMotorPtr stepper = _steppers[axis];
 
     if (stepper)
     {
@@ -84,13 +112,6 @@ void Cartesian::setTargetPosition(float x, float y, float z)
     setTargetPosition(Axis::Z, z);
 }
 
-void Cartesian::setTargetPosition(Axis axis, Direction dir)
-{
-    long dimension = getDimension(axis);
-
-    setTargetPosition(axis, Unit::MILLIMETER, dir == Direction::NEGATIVE ? -dimension : dimension);
-}
-
 void Cartesian::setDimension(Axis axis, float u)
 {
     _dimensions[axis] = u;
@@ -101,9 +122,9 @@ void Cartesian::setHomeOffset(Axis axis, float u)
     _homeOffset[axis] = u;
 }
 
-void Cartesian::setLimitSwitch(Axis axis, LimitSwitch &sw)
+void Cartesian::setLimitSwitch(Axis axis, LimitSwitchPtr sw)
 {
-    _switches[axis] = &sw;
+    _switches[axis] = sw;
 }
 
 void Cartesian::setMinStepsPerMillimeter(Axis axis, long steps)
@@ -121,9 +142,9 @@ void Cartesian::setResolution(Axis axis, Resolution res)
     _resolutions[axis] = res;
 }
 
-void Cartesian::setStepperMotor(Axis axis, StepperMotor &stepper)
+void Cartesian::setStepperMotor(Axis axis, StepperMotorPtr stepper)
 {
-    _steppers[axis] = &stepper;
+    _steppers[axis] = stepper;
 }
 
 void Cartesian::setStepsPerMillimeter(Axis axis, long steps)

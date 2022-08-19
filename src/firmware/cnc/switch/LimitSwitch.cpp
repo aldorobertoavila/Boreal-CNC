@@ -10,7 +10,7 @@ LimitSwitch::LimitSwitch(uint8_t swPin) {
 }
 
 bool LimitSwitch::isPressed() {
-  return _previousState && !_currentState;
+  return (_previousState && !_currentState) || (!_previousState && !_currentState);
 }
 
 void LimitSwitch::tick() {

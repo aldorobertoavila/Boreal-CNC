@@ -11,8 +11,8 @@ LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x
 
 void LinearMoveCommand::execute()
 {
-    StepperMotor *stepper = _cartesian.getStepperMotor(_currentAxis);
-    LimitSwitch *sw = _cartesian.getLimitSwitch(_currentAxis);
+    StepperMotorPtr stepper = _cartesian.getStepperMotor(_currentAxis);
+    LimitSwitchPtr sw = _cartesian.getLimitSwitch(_currentAxis);
 
     stepper->run();
     sw->tick();

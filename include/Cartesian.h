@@ -1,29 +1,39 @@
 #pragma once
 
 #include <Axis.h>
-#include <Direction.h>
 #include <LimitSwitch.h>
 #include <Positioning.h>
 #include <Resolution.h>
 #include <StepperMotor.h>
 #include <Unit.h>
 
+#include <memory>
+
+using namespace std;
+
+using LimitSwitchPtr = std::shared_ptr<LimitSwitch>;
+using StepperMotorPtr = std::shared_ptr<StepperMotor>;
+
 class Cartesian
 {
 public:
     Cartesian();
 
+    void disableSteppers();
+
+    void enableSteppers();
+
     long getDimension(Axis axis);
 
     long getHomeOffset(Axis axis);
 
-    LimitSwitch *getLimitSwitch(Axis axis);
+    LimitSwitchPtr getLimitSwitch(Axis axis);
 
     Positioning getPositioning();
 
     Resolution getResolution(Axis axis);
 
-    StepperMotor *getStepperMotor(Axis axis);
+    StepperMotorPtr getStepperMotor(Axis axis);
 
     long getStepsPerMillimeter(Axis axis);
 
@@ -37,21 +47,19 @@ public:
 
     void setTargetPosition(float x, float y, float z);
 
-    void setTargetPosition(Axis axis, Direction dir);
-
     void setDimension(Axis axis, float u);
 
     void setHomeOffset(Axis axis, float u);
 
     void setMinStepsPerMillimeter(Axis axis, long steps);
 
-    void setLimitSwitch(Axis axis, LimitSwitch &sw);
+    void setLimitSwitch(Axis axis, LimitSwitchPtr sw);
 
     void setPositioning(Positioning positioning);
 
     void setResolution(Axis axis, Resolution res);
 
-    void setStepperMotor(Axis axis, StepperMotor &stepper);
+    void setStepperMotor(Axis axis, StepperMotorPtr stepper);
 
     void setStepsPerMillimeter(Axis axis, long steps);
 
@@ -63,8 +71,8 @@ protected:
     long toSteps(Axis axis, Unit unit, float u);
 
 private:
-    StepperMotor *_steppers[AXES];
-    LimitSwitch *_switches[AXES];
+    StepperMotorPtr _steppers[AXES];
+    LimitSwitchPtr _switches[AXES];
     Resolution _resolutions[AXES];
     Positioning _positioning;
     Unit _unit;
