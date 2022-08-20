@@ -5,6 +5,28 @@ Process::Process(fs::FS &fs, String path) : _fs(fs)
     this->_path = path;
 }
 
+uint8_t Process::getPreviousProgress()
+{
+    return _previousProgress;
+}
+
+uint8_t Process::getProgress()
+{
+    _previousProgress = _progress;
+    _progress = map(_file.position(), 0, _file.size(), 0, 100);
+    return _progress;
+}
+
+String Process::name()
+{
+    if(_file)
+    {
+        return _file.name();
+    }
+
+    return "";
+}
+
 String Process::readNextLine()
 {
     if (_file)
@@ -64,16 +86,6 @@ void Process::start()
 Status Process::status()
 {
     return _status;
-}
-
-uint8_t Process::progress()
-{
-    if(_file)
-    {
-        return map(_file.position(), 0, _file.size(), 0, 100);
-    }
-
-    return 0;
 }
 
 void Process::stop()

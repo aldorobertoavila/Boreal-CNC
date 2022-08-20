@@ -27,11 +27,19 @@ using namespace std;
 #define LCD_ROWS 4
 
 #define LCD_ARROW_CHAR 0
+#define LCD_GAUGE_FILL_1 1
+#define LCD_GAUGE_FILL_2 2
+#define LCD_GAUGE_FILL_3 3
+#define LCD_GAUGE_FILL_4 4
+#define LCD_GAUGE_LEFT 5
+#define LCD_GAUGE_RIGHT 6
+#define LCD_GAUGE_EMPTY 7
+
 #define LCD_ARROW_COL 2
 #define LCD_ZERO_COL 0
 #define LCD_ZERO_ROW 0
 
-#define LSR_MAX_POWER 255
+#define LSR_MAX_POWER 100
 
 #define EN_CLK_PIN 4
 #define EN_DT_PIN 2
@@ -47,6 +55,8 @@ using namespace std;
 #define CS_RS2_PIN 26
 #define CS_RS3_PIN 25
 #define CS_RS4_PIN 33
+
+using namespace std;
 
 enum ScreenID
 {
@@ -68,27 +78,30 @@ enum ScreenID
   VELOCITY
 };
 
-byte ARROW[8] =
-    {
-        0b00000,
-        0b00100,
-        0b00110,
-        0b11111,
-        0b11111,
-        0b00110,
-        0b00100,
-        0b00000};
+byte ARROW_CHAR[8] = {B00000, B00100, B00110, B11111, B11111, B00110, B00100, B00000};
+byte GAUGE_EMPTY[8] = {B11111, B00000, B00000, B00000, B00000, B00000, B00000, B11111};
+byte GAUGE_FILL_1[8] = {B11111, B10000, B10000, B10000, B10000, B10000, B10000, B11111};
+byte GAUGE_FILL_2[8] = {B11111, B11000, B11000, B11000, B11000, B11000, B11000, B11111};
+byte GAUGE_FILL_3[8] = {B11111, B11100, B11100, B11100, B11100, B11100, B11100, B11111};
+byte GAUGE_FILL_4[8] = {B11111, B11110, B11110, B11110, B11110, B11110, B11110, B11111};
+byte GAUGE_FILL_5[8] = {B11111, B11111, B11111, B11111, B11111, B11111, B11111, B11111};
 
-const uint8_t NO_TF_CARD = 3;
-const uint8_t START_FROM_TF = 4;
-const uint8_t PAUSE_CARD = 5;
-const uint8_t RESUME_CARD = 6;
-const uint8_t STOP_CARD = 7;
+byte GAUGE_LEFT[8] = {B01111, B10000, B10000, B10000, B10000, B10000, B10000, B01111};
+byte GAUGE_RIGHT[8] = {B11110, B00001, B00001, B00001, B00001, B00001, B00001, B11110};
+
+byte GAUGE_MASK_LEFT[8] = {B01111, B11111, B11111, B11111, B11111, B11111, B11111, B01111};
+byte GAUGE_MASK_RIGHT[8] = {B11110, B11111, B11111, B11111, B11111, B11111, B11111, B11110};
+
+const int CHAR_PIXEL_WIDTH = 5;
+const int EMPTY_SPACE = 255;
+const int GAUGE_SIZE = 14;
+
+String READY_MSG("Ready!");
+String EMPTY_ROW("                    ");
+String SYSTEM_VOLUME("System Volume Information");
 
 char INTERNAL_FILE_EXT = '~';
-String EMPTY_ROW = "                    ";
-String GCODE_FILE_EXT = ".gcode";
-String SYSTEM_VOLUME = "System Volume Information";
+String GCODE_FILE_EXT(".gcode");
 
 SPIClass spi(VSPI);
 
@@ -134,6 +147,7 @@ LiquidMenu STEPS_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu ACCEL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
 LiquidLinePtr positionInfo;
+LiquidLinePtr processInfo;
 LiquidLinePtr progressInfo;
 
 LiquidLinePtr noTFCard;
@@ -141,6 +155,9 @@ LiquidLinePtr startFromTF;
 LiquidLinePtr pauseOption;
 LiquidLinePtr resumeOption;
 LiquidLinePtr stopOption;
+
+byte gauge_left_dynamic[8];
+byte gauge_right_dynamic[8];
 
 String filePaths[MAX_FILES_SIZE];
 ScreenID currentScreen;
@@ -193,6 +210,132 @@ LiquidScreen *getScreen(ScreenID screenIndex)
   }
 }
 
+void clearRow(LiquidLinePtr line)
+{
+  uint8_t row = line->getRow();
+
+  lcd.setCursor(0, row);
+  lcd.print(EMPTY_ROW);
+}
+
+void updateProgressInfo(uint8_t progress)
+{
+  char gaugeBuffer[GAUGE_SIZE];
+
+  float unitsPerPixel = (GAUGE_SIZE * CHAR_PIXEL_WIDTH) / 100.0;
+  int valueInPixels = round(progress * unitsPerPixel);
+  int moveOffset = (CHAR_PIXEL_WIDTH - 1) - ((valueInPixels - 1) % CHAR_PIXEL_WIDTH);
+
+  for (int i = 0; i < 8; i++)
+  {
+    if (valueInPixels < CHAR_PIXEL_WIDTH)
+    {
+      gauge_left_dynamic[i] = (GAUGE_FILL_5[i] << moveOffset) | GAUGE_LEFT[i];
+    }
+    else
+    {
+      gauge_left_dynamic[i] = GAUGE_FILL_5[i];
+    }
+
+    gauge_left_dynamic[i] = gauge_left_dynamic[i] & GAUGE_MASK_LEFT[i];
+  }
+
+  for (int i = 0; i < 8; i++)
+  {
+    if (valueInPixels > GAUGE_SIZE * CHAR_PIXEL_WIDTH - CHAR_PIXEL_WIDTH)
+    {
+      gauge_right_dynamic[i] = (GAUGE_FILL_5[i] << moveOffset) | GAUGE_RIGHT[i];
+    }
+    else
+    {
+      gauge_right_dynamic[i] = GAUGE_RIGHT[i];
+    }
+
+    gauge_right_dynamic[i] = gauge_right_dynamic[i] & GAUGE_MASK_RIGHT[i];
+  }
+
+  lcd.createChar(LCD_GAUGE_LEFT, gauge_left_dynamic);
+  lcd.createChar(LCD_GAUGE_RIGHT, gauge_right_dynamic);
+
+  for (int i = 0; i < GAUGE_SIZE; i++)
+  {
+    if (i == 0)
+    {
+      gaugeBuffer[i] = LCD_GAUGE_LEFT;
+    }
+    else if (i == GAUGE_SIZE - 1)
+    {
+      gaugeBuffer[i] = LCD_GAUGE_RIGHT;
+    }
+    else
+    {
+      if (valueInPixels <= i * CHAR_PIXEL_WIDTH)
+      {
+        gaugeBuffer[i] = LCD_GAUGE_EMPTY;
+      }
+      else if (valueInPixels > i * CHAR_PIXEL_WIDTH && valueInPixels < (i + 1) * CHAR_PIXEL_WIDTH)
+      {
+        gaugeBuffer[i] = CHAR_PIXEL_WIDTH - moveOffset;
+      }
+      else
+      {
+        gaugeBuffer[i] = EMPTY_SPACE;
+      }
+    }
+  }
+
+  progressInfo->setText(String(gaugeBuffer) + " " + progress + "%");
+  progressInfo->display(lcd);
+}
+
+void updateInfoScreen()
+{
+  if (currentScreen != ScreenID::INFO)
+  {
+    return;
+  }
+
+  char positionBuf[LCD_COLS];
+
+  float x = cartesian.getTargetPosition(Axis::X);
+  float y = cartesian.getTargetPosition(Axis::Y);
+  float z = cartesian.getTargetPosition(Axis::Z);
+
+  switch (cartesian.getUnit())
+  {
+  case Unit::INCH:
+    snprintf(positionBuf, LCD_COLS, "X%.1f Y%.1f Z%.1f", x, y, z);
+    break;
+  case Unit::MILLIMETER:
+    snprintf(positionBuf, LCD_COLS, "X%i Y%i Z%i", (int)x, (int)y, (int)z);
+    break;
+  default:
+    break;
+  }
+
+  if (positionInfo->getText() != positionBuf)
+  {
+    clearRow(positionInfo);
+    positionInfo->setText(positionBuf);
+    positionInfo->display(lcd);
+  }
+
+  if (proc->status() == Status::COMPLETED)
+  {
+    clearRow(processInfo);
+    processInfo->setText(READY_MSG);
+    processInfo->display(lcd);
+  }
+
+  uint8_t prevProgress = proc->getPreviousProgress();
+  uint8_t progress = proc->getProgress();
+
+  if (progress != prevProgress)
+  {
+    updateProgressInfo(progress);
+  }
+}
+
 void display(ScreenID screenIndex, bool forcePosition)
 {
   LiquidScreen *screen = getScreen(screenIndex);
@@ -210,6 +353,12 @@ void display(ScreenID screenIndex, bool forcePosition)
   }
 }
 
+void displayInfoScreen()
+{
+  display(ScreenID::INFO, true);
+  updateProgressInfo(0);
+}
+
 void setMoveAxisScreen(Axis axis, uint8_t unit)
 {
   display(ScreenID::MOVE_AXIS, false);
@@ -218,7 +367,7 @@ void setMoveAxisScreen(Axis axis, uint8_t unit)
 void autohome()
 {
   commands.push(std::make_shared<AutohomeCommand>(cartesian, laser));
-  display(ScreenID::INFO, true);
+  displayInfoScreen();
 }
 
 bool isGcodeFile(String filename)
@@ -268,17 +417,17 @@ uint8_t getFiles(File &root, String paths[], uint8_t maxFilePaths)
 
 void setHomeOffsets()
 {
-  display(ScreenID::INFO, true);
+  displayInfoScreen();
 }
 
 void aboutScreenClicked()
 {
-  display(ScreenID::INFO, true);
+  displayInfoScreen();
 }
 
 void storeSettings()
 {
-  display(ScreenID::INFO, true);
+  displayInfoScreen();
 }
 
 void accelerationScreenClicked()
@@ -303,7 +452,7 @@ void cardScreenClicked()
   {
     processes.push(std::make_shared<Process>(SD, "/" + filePaths[index - 1]));
     cartesian.enableSteppers();
-    display(ScreenID::INFO, true);
+    displayInfoScreen();
   }
   else
   {
@@ -342,7 +491,7 @@ void mainScreenClicked()
   switch (MAIN_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    display(ScreenID::INFO, true);
+    displayInfoScreen();
     break;
   case 1:
     display(ScreenID::PREP, false);
@@ -437,7 +586,7 @@ void prepScreenClicked()
     break;
   case 4:
     cartesian.disableSteppers();
-    display(ScreenID::INFO, true);
+    displayInfoScreen();
     break;
   default:
     break;
@@ -574,7 +723,7 @@ float parseNumber(String line, char arg, float val)
   return parseNumber(line, line.indexOf(arg), arg, val);
 }
 
-std::string pad_right(std::string const &str, size_t s)
+std::string pad_right(std::string str, size_t s)
 {
   if (str.size() < s)
   {
@@ -584,9 +733,9 @@ std::string pad_right(std::string const &str, size_t s)
   return str;
 }
 
-LiquidLinePtr createLine(LiquidScreen &screen, uint8_t row, uint8_t col, string text, size_t textLength)
+LiquidLinePtr createLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text, size_t textLength)
 {
-  LiquidLinePtr ptr = std::make_shared<LiquidLine>(row, col, pad_right(text, textLength).c_str());
+  LiquidLinePtr ptr = std::make_shared<LiquidLine>(row, col, pad_right(text.c_str(), textLength).c_str());
 
   screen.append(ptr);
   return ptr;
@@ -631,7 +780,8 @@ void setupInfoScreen()
 {
   createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC", 0);
   positionInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X0 Y0 Z0", 0);
-  progressInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 2, "0%", 0);
+  processInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 2, READY_MSG, 0);
+  progressInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 3, "0%", 0);
 }
 
 void setupMainScreen()
@@ -818,7 +968,15 @@ void setup()
   lcd.init();
   lcd.backlight();
   lcd.clear();
-  lcd.createChar(LCD_ARROW_CHAR, ARROW);
+
+  lcd.createChar(LCD_ARROW_CHAR, ARROW_CHAR);
+  lcd.createChar(LCD_GAUGE_FILL_1, GAUGE_FILL_1);
+  lcd.createChar(LCD_GAUGE_FILL_2, GAUGE_FILL_2);
+  lcd.createChar(LCD_GAUGE_FILL_3, GAUGE_FILL_3);
+  lcd.createChar(LCD_GAUGE_FILL_4, GAUGE_FILL_4);
+  lcd.createChar(LCD_GAUGE_LEFT, GAUGE_LEFT);
+  lcd.createChar(LCD_GAUGE_RIGHT, GAUGE_RIGHT);
+  lcd.createChar(LCD_GAUGE_EMPTY, GAUGE_EMPTY);
 
   root = SD.open("/");
 
@@ -879,56 +1037,7 @@ void setup()
   setupVelocityScreen();
 
   cartesian.disableSteppers();
-  display(ScreenID::INFO, true);
-}
-
-void updateInfoScreen()
-{
-  static uint8_t prevProgress;
-
-  if(currentScreen != ScreenID::INFO)
-  {
-    return;
-  }
-
-  char positionBuf[LCD_COLS];
-  char progressBuf[LCD_COLS];
-
-  float x = cartesian.getTargetPosition(Axis::X);
-  float y = cartesian.getTargetPosition(Axis::Y);
-  float z = cartesian.getTargetPosition(Axis::Z);
-
-  switch (cartesian.getUnit())
-  {
-  case Unit::INCH:
-    snprintf(positionBuf, LCD_COLS, "X%.1f Y%.1f Z%.1f", x, y, z);
-    break;
-  case Unit::MILLIMETER:
-    snprintf(positionBuf, LCD_COLS, "X%i Y%i Z%i", (int)x, (int)y, (int)z);
-    break;
-  default:
-    break;
-  }
-
-  if (positionInfo->getText() != positionBuf)
-  {
-    uint8_t row = positionInfo->getRow();
-
-    lcd.setCursor(0, row);
-    lcd.print(EMPTY_ROW);
-    positionInfo->setText(positionBuf);
-    positionInfo->display(lcd);
-  }
-
-  uint8_t progress = proc->progress();
-
-  if (progress != prevProgress)
-  {
-    snprintf(progressBuf, LCD_COLS, "%i%%", progress);
-    progressInfo->setText(progressBuf);
-    progressInfo->display(lcd);
-    prevProgress = progress;
-  }
+  displayInfoScreen();
 }
 
 void loop()
@@ -943,6 +1052,10 @@ void loop()
     if (proc)
     {
       proc->start();
+      clearRow(processInfo);
+      processInfo->setText(proc->name());
+      processInfo->display(lcd);
+      updateProgressInfo(0);
     }
   }
 
@@ -953,7 +1066,7 @@ void loop()
     switch (proc->status())
     {
     case Status::COMPLETED:
-      // TODO: cartesian.disableSteppers();
+      cartesian.disableSteppers();
       proc = nullptr;
       break;
 

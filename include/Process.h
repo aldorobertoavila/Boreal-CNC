@@ -12,6 +12,12 @@ class Process
 public:
     Process(fs::FS &fs, String path);
 
+    uint8_t getPreviousProgress();
+
+    uint8_t getProgress();
+
+    String name();
+
     String readNextLine();
 
     void pause();
@@ -22,8 +28,6 @@ public:
 
     Status status();
 
-    uint8_t progress();
-
     void stop();
 
 private:
@@ -31,4 +35,6 @@ private:
     fs::File _file;
     String _path;
     Status _status;
+    uint8_t _progress;
+    uint8_t _previousProgress;
 };

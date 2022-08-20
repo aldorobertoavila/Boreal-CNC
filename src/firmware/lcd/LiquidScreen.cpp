@@ -15,6 +15,12 @@ void LiquidScreen::append(LiquidLinePtr line)
     }
 }
 
+void LiquidScreen::clearRow(uint8_t row)
+{
+    _lcd.setCursor(0, row);
+    _lcd.print(std::string("", _rows).c_str());
+}
+
 void LiquidScreen::display()
 {
     _lcd.clear();
