@@ -96,7 +96,9 @@ const int CHAR_PIXEL_WIDTH = 5;
 const int EMPTY_SPACE = 255;
 const int GAUGE_SIZE = 14;
 
-String READY_MSG("Ready!");
+String READY_MSG("Ready!         00:00");
+String MOTOR_MSG("X0 Y0 Z0            ");
+
 String EMPTY_ROW("                    ");
 String SYSTEM_VOLUME("System Volume Information");
 
@@ -106,6 +108,8 @@ String GCODE_FILE_EXT(".gcode");
 SPIClass spi(VSPI);
 
 Cartesian cartesian;
+RTC rtc;
+
 Laser laser(LSR_PIN);
 LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
@@ -210,12 +214,39 @@ LiquidScreen *getScreen(ScreenID screenIndex)
   }
 }
 
+std::string pad_right(std::string str, size_t s)
+{
+  if (str.size() < s)
+  {
+    return str + std::string(s - str.size(), ' ');
+  }
+
+  return str;
+}
+
 void clearRow(LiquidLinePtr line)
 {
   uint8_t row = line->getRow();
 
   lcd.setCursor(0, row);
   lcd.print(EMPTY_ROW);
+}
+
+void updateProcessInfo(String time)
+{
+  String name = proc->name();
+
+  if (name.length() > GAUGE_SIZE)
+  {
+    name = name.substring(0, GAUGE_SIZE);
+  }
+  else
+  {
+    name = pad_right(name.c_str(), GAUGE_SIZE).c_str();
+  }
+
+  processInfo->setText(name + " " + time);
+  processInfo->display(lcd);
 }
 
 void updateProgressInfo(uint8_t progress)
@@ -320,11 +351,12 @@ void updateInfoScreen()
     positionInfo->display(lcd);
   }
 
-  if (proc->status() == Status::COMPLETED)
+  String prevTime = proc->getPreviousTime();
+  String time = proc->getTime();
+
+  if (prevTime != time)
   {
-    clearRow(processInfo);
-    processInfo->setText(READY_MSG);
-    processInfo->display(lcd);
+    updateProcessInfo(time);
   }
 
   uint8_t prevProgress = proc->getPreviousProgress();
@@ -356,7 +388,7 @@ void display(ScreenID screenIndex, bool forcePosition)
 void displayInfoScreen()
 {
   display(ScreenID::INFO, true);
-  updateProgressInfo(0);
+  updateProgressInfo(proc ? proc->getProgress() : 0);
 }
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
@@ -450,7 +482,7 @@ void cardScreenClicked()
 
   if (index > 0)
   {
-    processes.push(std::make_shared<Process>(SD, "/" + filePaths[index - 1]));
+    processes.push(std::make_shared<Process>(SD, rtc, "/" + filePaths[index - 1]));
     cartesian.enableSteppers();
     displayInfoScreen();
   }
@@ -723,16 +755,6 @@ float parseNumber(String line, char arg, float val)
   return parseNumber(line, line.indexOf(arg), arg, val);
 }
 
-std::string pad_right(std::string str, size_t s)
-{
-  if (str.size() < s)
-  {
-    return str + std::string(s - str.size(), ' ');
-  }
-
-  return str;
-}
-
 LiquidLinePtr createLine(LiquidScreen &screen, uint8_t row, uint8_t col, String text, size_t textLength)
 {
   LiquidLinePtr ptr = std::make_shared<LiquidLine>(row, col, pad_right(text.c_str(), textLength).c_str());
@@ -779,7 +801,7 @@ void setupCtrlScreen()
 void setupInfoScreen()
 {
   createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC", 0);
-  positionInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 1, "X0 Y0 Z0", 0);
+  positionInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 1, MOTOR_MSG, 0);
   processInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 2, READY_MSG, 0);
   progressInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 3, "0%", 0);
 }
@@ -1052,9 +1074,7 @@ void loop()
     if (proc)
     {
       proc->start();
-      clearRow(processInfo);
-      processInfo->setText(proc->name());
-      processInfo->display(lcd);
+      updateProcessInfo("00:00");
       updateProgressInfo(0);
     }
   }
@@ -1067,6 +1087,15 @@ void loop()
     {
     case Status::COMPLETED:
       cartesian.disableSteppers();
+
+      clearRow(positionInfo);
+      clearRow(processInfo);
+      clearRow(progressInfo);
+      positionInfo->setText(MOTOR_MSG);
+      positionInfo->display(lcd);
+      processInfo->setText(READY_MSG);
+      processInfo->display(lcd);
+      updateProgressInfo(0);
       proc = nullptr;
       break;
 
