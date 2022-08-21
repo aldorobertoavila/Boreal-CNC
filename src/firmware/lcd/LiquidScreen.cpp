@@ -15,12 +15,6 @@ void LiquidScreen::append(LiquidLinePtr line)
     }
 }
 
-void LiquidScreen::clearRow(uint8_t row)
-{
-    _lcd.setCursor(0, row);
-    _lcd.print(std::string("", _rows).c_str());
-}
-
 void LiquidScreen::display()
 {
     _lcd.clear();
@@ -37,25 +31,14 @@ void LiquidScreen::display(bool clear)
 
 void LiquidScreen::draw(uint8_t startLine)
 {
-    uint8_t lineIndex = _currentLine;
-
-    for (int row = 0; row < _rows; row++)
+    for (uint8_t i = _currentLine; i < _lineCount; i++)
     {
-
-        if (lineIndex > _lineCount - 1)
-        {
-            return;
-        }
-
-        LiquidLinePtr &ptr = _lines.at(lineIndex);
-        LiquidLine *line = ptr.get();
+        LiquidLinePtr &line = _lines.at(i);
 
         if (line)
         {
             line->display(_lcd);
         }
-
-        lineIndex++;
     }
 }
 

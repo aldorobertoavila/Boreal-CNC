@@ -35,10 +35,26 @@ using namespace std;
 #define LCD_GAUGE_RIGHT 6
 #define LCD_GAUGE_EMPTY 7
 
+#define POS_LBL_X_COL 0
+#define POS_LBL_Y_COL 6
+#define POS_LBL_Z_COL 12
+
+#define POS_VAL_X_COL 1
+#define POS_VAL_Y_COL 7
+#define POS_VAL_Z_COL 13
+
+#define PROC_NAME_LBL_COL 0
+#define PROC_TIME_LBL_COL 15
+
+#define PROG_BAR_COL 0
+#define PROG_VAL_COL 15
+
 #define LCD_ARROW_COL 2
 #define LCD_ZERO_COL 0
 #define LCD_ZERO_ROW 0
 
+#define PROG_VAL_SIZE 4
+#define POS_VAL_SIZE 4
 #define LSR_MAX_POWER 100
 
 #define EN_CLK_PIN 4
@@ -96,9 +112,6 @@ const int CHAR_PIXEL_WIDTH = 5;
 const int EMPTY_SPACE = 255;
 const int GAUGE_SIZE = 14;
 
-String READY_MSG("Ready!         00:00");
-String MOTOR_MSG("X0 Y0 Z0            ");
-
 String EMPTY_ROW("                    ");
 String SYSTEM_VOLUME("System Volume Information");
 
@@ -150,9 +163,14 @@ LiquidMenu VELOCITY_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu STEPS_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu ACCEL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-LiquidLinePtr positionInfo;
-LiquidLinePtr processInfo;
-LiquidLinePtr progressInfo;
+LiquidLinePtr positionValueX;
+LiquidLinePtr positionValueY;
+LiquidLinePtr positionValueZ;
+
+LiquidLinePtr processNameValue;
+LiquidLinePtr processTimeValue;
+LiquidLinePtr progressBar;
+LiquidLinePtr progressValue;
 
 LiquidLinePtr noTFCard;
 LiquidLinePtr startFromTF;
@@ -224,32 +242,36 @@ std::string pad_right(std::string str, size_t s)
   return str;
 }
 
-void clearRow(LiquidLinePtr line)
+String formatPosition(Axis axis)
 {
-  uint8_t row = line->getRow();
+  float u = cartesian.getTargetPosition(axis);
 
-  lcd.setCursor(0, row);
-  lcd.print(EMPTY_ROW);
-}
+  Unit unit = cartesian.getUnit();
+  char buf[POS_VAL_SIZE];
 
-void updateProcessInfo(String time)
-{
-  String name = proc->name();
-
-  if (name.length() > GAUGE_SIZE)
+  switch (unit)
   {
-    name = name.substring(0, GAUGE_SIZE);
-  }
-  else
-  {
-    name = pad_right(name.c_str(), GAUGE_SIZE).c_str();
+  case Unit::INCH:
+    snprintf(buf, POS_VAL_SIZE, "%.1f", u);
+    break;
+
+  case Unit::MILLIMETER:
+    snprintf(buf, POS_VAL_SIZE, "%i", (int)u);
+    break;
   }
 
-  processInfo->setText(name + " " + time);
-  processInfo->display(lcd);
+  return buf;
 }
 
-void updateProgressInfo(uint8_t progress)
+String formatProgress(uint8_t progress)
+{
+  char buf[PROG_VAL_SIZE];
+  snprintf(buf, PROG_VAL_SIZE, "%i%%", progress);
+
+  return buf;
+}
+
+void updateProgressBar(uint8_t progress)
 {
   char gaugeBuffer[GAUGE_SIZE];
 
@@ -315,8 +337,8 @@ void updateProgressInfo(uint8_t progress)
     }
   }
 
-  progressInfo->setText(String(gaugeBuffer) + " " + progress + "%");
-  progressInfo->display(lcd);
+  progressBar->setText(gaugeBuffer);
+  progressBar->display(lcd);
 }
 
 void updateInfoScreen()
@@ -326,37 +348,53 @@ void updateInfoScreen()
     return;
   }
 
-  char positionBuf[LCD_COLS];
+  unsigned long start = millis();
 
-  float x = cartesian.getTargetPosition(Axis::X);
-  float y = cartesian.getTargetPosition(Axis::Y);
-  float z = cartesian.getTargetPosition(Axis::Z);
+  String xText = formatPosition(Axis::X);
 
-  switch (cartesian.getUnit())
+  if (positionValueX->getText() != xText)
   {
-  case Unit::INCH:
-    snprintf(positionBuf, LCD_COLS, "X%.1f Y%.1f Z%.1f", x, y, z);
-    break;
-  case Unit::MILLIMETER:
-    snprintf(positionBuf, LCD_COLS, "X%i Y%i Z%i", (int)x, (int)y, (int)z);
-    break;
-  default:
-    break;
+    positionValueX->setText(xText);
+    positionValueX->display(lcd);
+
+    Serial.print("Position X: ");
+    Serial.println(millis() - start);
+    return;
+  }
+  String yText = formatPosition(Axis::Y);
+
+  if (positionValueY->getText() != yText)
+  {
+    positionValueY->setText(yText);
+    positionValueY->display(lcd);
+
+    Serial.print("Position Y: ");
+    Serial.println(millis() - start);
+    return;
   }
 
-  if (positionInfo->getText() != positionBuf)
+  String zText = formatPosition(Axis::Z);
+
+  if (positionValueZ->getText() != zText)
   {
-    clearRow(positionInfo);
-    positionInfo->setText(positionBuf);
-    positionInfo->display(lcd);
+    positionValueZ->setText(zText);
+    positionValueZ->display(lcd);
+
+    Serial.print("Position Z: ");
+    Serial.println(millis() - start);
+    return;
   }
 
-  String prevTime = proc->getPreviousTime();
   String time = proc->getTime();
 
-  if (prevTime != time)
+  if (proc->getPreviousTime() != time)
   {
-    updateProcessInfo(time);
+    processTimeValue->setText(time);
+    processTimeValue->display(lcd);
+
+    Serial.print("Process Time took: ");
+    Serial.println(millis() - start);
+    return;
   }
 
   uint8_t prevProgress = proc->getPreviousProgress();
@@ -364,7 +402,18 @@ void updateInfoScreen()
 
   if (progress != prevProgress)
   {
-    updateProgressInfo(progress);
+    String formatted = formatProgress(progress);
+
+    if (progressValue->getText() != formatted)
+    {
+      progressValue->setText(formatted);
+      progressValue->display(lcd);
+
+      updateProgressBar(progress);
+      Serial.print("Progress Bar took: ");
+      Serial.println(millis() - start);
+      return;
+    }
   }
 }
 
@@ -387,8 +436,37 @@ void display(ScreenID screenIndex, bool forcePosition)
 
 void displayInfoScreen()
 {
+  unsigned long start = millis();
+  if (proc)
+  {
+    processNameValue->setText(proc->getName());
+    processTimeValue->setText(proc->getTime());
+
+    positionValueX->setText(formatPosition(Axis::X));
+    positionValueY->setText(formatPosition(Axis::Y));
+    positionValueZ->setText(formatPosition(Axis::Z));
+
+    uint8_t progress = proc->getProgress(); 
+
+    updateProgressBar(progress);
+    progressValue->setText(formatProgress(progress));
+  }
+  else
+  {
+    positionValueX->setText("0");
+    positionValueY->setText("0");
+    positionValueZ->setText("0");
+
+    processNameValue->setText("Ready!");
+    processTimeValue->setText("00:00");
+
+    updateProgressBar(0);
+    progressValue->setText("0%");
+  }
+
   display(ScreenID::INFO, true);
-  updateProgressInfo(proc ? proc->getProgress() : 0);
+  Serial.print("Display Info Screen took: ");
+  Serial.println(millis() - start);
 }
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
@@ -428,7 +506,6 @@ uint8_t getFiles(File &root, String paths[], uint8_t maxFilePaths)
       break;
 
     path = file.name();
-    Serial.println(path);
 
     if (isHiddenFile(path) || file.isDirectory())
     {
@@ -484,6 +561,7 @@ void cardScreenClicked()
   {
     processes.push(std::make_shared<Process>(SD, rtc, "/" + filePaths[index - 1]));
     cartesian.enableSteppers();
+
     displayInfoScreen();
   }
   else
@@ -801,9 +879,19 @@ void setupCtrlScreen()
 void setupInfoScreen()
 {
   createLine(INFO_SCREEN, LCD_ZERO_COL, 0, "Boreal CNC", 0);
-  positionInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 1, MOTOR_MSG, 0);
-  processInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 2, READY_MSG, 0);
-  progressInfo = createLine(INFO_SCREEN, LCD_ZERO_COL, 3, "0%", 0);
+  createLine(INFO_SCREEN, POS_LBL_X_COL, 1, "X", 0);
+  createLine(INFO_SCREEN, POS_LBL_Y_COL, 1, "Y", 0);
+  createLine(INFO_SCREEN, POS_LBL_Z_COL, 1, "Z", 0);
+
+  positionValueX = createLine(INFO_SCREEN, POS_VAL_X_COL, 1, "0", 0);
+  positionValueY = createLine(INFO_SCREEN, POS_VAL_Y_COL, 1, "0", 0);
+  positionValueZ = createLine(INFO_SCREEN, POS_VAL_Z_COL, 1, "0", 0);
+
+  processNameValue = createLine(INFO_SCREEN, PROC_NAME_LBL_COL, 2, "Ready!", 0);
+  processTimeValue = createLine(INFO_SCREEN, PROC_TIME_LBL_COL, 2, "00:00", 0);
+
+  progressBar = createLine(INFO_SCREEN, PROG_BAR_COL, 3, "", 0);
+  progressValue = createLine(INFO_SCREEN, PROG_VAL_COL, 3, "0%", 0);
 }
 
 void setupMainScreen()
@@ -898,7 +986,7 @@ void parseNextCommand()
     return;
   }
 
-  String line = proc.get()->readNextLine();
+  String line = proc->readNextLine();
 
   if (line.isEmpty())
   {
@@ -1074,8 +1162,9 @@ void loop()
     if (proc)
     {
       proc->start();
-      updateProcessInfo("00:00");
-      updateProgressInfo(0);
+
+      processNameValue->setText(proc->getName());
+      processNameValue->display(lcd);
     }
   }
 
@@ -1087,16 +1176,9 @@ void loop()
     {
     case Status::COMPLETED:
       cartesian.disableSteppers();
-
-      clearRow(positionInfo);
-      clearRow(processInfo);
-      clearRow(progressInfo);
-      positionInfo->setText(MOTOR_MSG);
-      positionInfo->display(lcd);
-      processInfo->setText(READY_MSG);
-      processInfo->display(lcd);
-      updateProgressInfo(0);
       proc = nullptr;
+
+      displayInfoScreen();
       break;
 
     case Status::CONTINUE:

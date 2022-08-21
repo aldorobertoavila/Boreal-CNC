@@ -4,7 +4,7 @@
 #include <memory>
 
 #ifndef MAX_LINES
-#define MAX_LINES 10
+#define MAX_LINES 12
 #endif
 
 using namespace std;
@@ -17,8 +17,6 @@ class ILiquidScreen
 public:
 
     virtual void append(LiquidLinePtr line) = 0;
-
-    virtual void clearRow(uint8_t row);
 
     virtual void display() = 0;
 
@@ -43,8 +41,6 @@ public:
     LiquidScreen(LCD &lcd, uint8_t cols, uint8_t rows);
 
     void append(LiquidLinePtr line) override;
-
-    void clearRow(uint8_t row) override;
 
     void display() override;
 

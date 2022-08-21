@@ -33,7 +33,7 @@ String Process::getTime()
     return _time;
 }
 
-String Process::name()
+String Process::getName()
 {
     if(_file)
     {

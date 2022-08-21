@@ -24,7 +24,7 @@ public:
 
     String getTime();
 
-    String name();
+    String getName();
 
     String readNextLine();
 
