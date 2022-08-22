@@ -348,17 +348,12 @@ void updateInfoScreen()
     return;
   }
 
-  unsigned long start = millis();
-
   String xText = formatPosition(Axis::X);
 
   if (positionValueX->getText() != xText)
   {
     positionValueX->setText(xText);
     positionValueX->display(lcd);
-
-    Serial.print("Position X: ");
-    Serial.println(millis() - start);
     return;
   }
   String yText = formatPosition(Axis::Y);
@@ -367,9 +362,6 @@ void updateInfoScreen()
   {
     positionValueY->setText(yText);
     positionValueY->display(lcd);
-
-    Serial.print("Position Y: ");
-    Serial.println(millis() - start);
     return;
   }
 
@@ -379,9 +371,6 @@ void updateInfoScreen()
   {
     positionValueZ->setText(zText);
     positionValueZ->display(lcd);
-
-    Serial.print("Position Z: ");
-    Serial.println(millis() - start);
     return;
   }
 
@@ -391,9 +380,6 @@ void updateInfoScreen()
   {
     processTimeValue->setText(time);
     processTimeValue->display(lcd);
-
-    Serial.print("Process Time took: ");
-    Serial.println(millis() - start);
     return;
   }
 
@@ -410,8 +396,6 @@ void updateInfoScreen()
       progressValue->display(lcd);
 
       updateProgressBar(progress);
-      Serial.print("Progress Bar took: ");
-      Serial.println(millis() - start);
       return;
     }
   }
@@ -465,8 +449,6 @@ void displayInfoScreen()
   }
 
   display(ScreenID::INFO, true);
-  Serial.print("Display Info Screen took: ");
-  Serial.println(millis() - start);
 }
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
