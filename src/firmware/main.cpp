@@ -446,7 +446,7 @@ void displayInfoScreen()
     positionValueY->setText(formatPosition(Axis::Y));
     positionValueZ->setText(formatPosition(Axis::Z));
 
-    uint8_t progress = proc->getProgress(); 
+    uint8_t progress = proc->getProgress();
 
     updateProgressBar(progress);
     progressValue->setText(formatProgress(progress));
@@ -1175,10 +1175,13 @@ void loop()
     switch (proc->status())
     {
     case Status::COMPLETED:
-      cartesian.disableSteppers();
-      proc = nullptr;
+      if (commands.empty())
+      {
+        cartesian.disableSteppers();
+        proc = nullptr;
 
-      displayInfoScreen();
+        displayInfoScreen();
+      }
       break;
 
     case Status::CONTINUE:
