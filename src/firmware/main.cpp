@@ -260,7 +260,7 @@ String formatPosition(Axis axis)
     break;
   }
 
-  return buf;
+  return pad_right(buf, POS_VAL_SIZE).c_str();
 }
 
 String formatProgress(uint8_t progress)
@@ -268,7 +268,7 @@ String formatProgress(uint8_t progress)
   char buf[PROG_VAL_SIZE];
   snprintf(buf, PROG_VAL_SIZE, "%i%%", progress);
 
-  return buf;
+  return pad_right(buf, PROG_VAL_SIZE).c_str();
 }
 
 void updateProgressBar(uint8_t progress)
@@ -1072,9 +1072,9 @@ void setup()
 
   root = SD.open("/");
 
-  stepperX->setMaxSpeed(600);
-  stepperY->setMaxSpeed(600);
-  stepperZ->setMaxSpeed(600);
+  stepperX->setMaxSpeed(400);
+  stepperY->setMaxSpeed(400);
+  stepperZ->setMaxSpeed(400);
 
   stepperX->setAcceleration(300);
   stepperY->setAcceleration(300);
