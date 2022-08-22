@@ -77,6 +77,12 @@ void AutohomeCommand::execute()
 
 void AutohomeCommand::finish()
 {
+    for (uint8_t i = 0; i < AXES; i++)
+    {
+        Axis axis = static_cast<Axis>(i);
+
+        _cartesian.setTargetPosition(axis, 0);
+    }
 }
 
 void AutohomeCommand::start()

@@ -5,9 +5,13 @@ StepperMotor::StepperMotor(MotorInterface &motorInterface) : _motorInterface(mot
     this->_motorInterface = motorInterface;
     this->_maxSpeed = 1.0;
     this->_minStepInterval = 1.0;
+    this->_pauseInterval = 0;
+    this->_pauseStartTime = 0;
 
     enable();
     wakeUp();
+
+    setCurrentPosition(0);
 }
 
 void StepperMotor::computeSpeed()
@@ -200,7 +204,6 @@ bool StepperMotor::runSpeed()
         step();
 
         _prevStepTime = currentMicros;
-
         return true;
     }
 
