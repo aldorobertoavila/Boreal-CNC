@@ -5,6 +5,7 @@ LiquidLine::LiquidLine(uint8_t col, uint8_t row, String text)
     this->_col = col;
     this->_row = row;
     this->_text = text;
+    this->_hidden = false;
 }
 
 uint8_t LiquidLine::getColumn()

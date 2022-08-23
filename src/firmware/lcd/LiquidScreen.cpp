@@ -4,6 +4,10 @@ LiquidScreen::LiquidScreen(LCD &lcd, uint8_t cols, uint8_t rows) : _lcd(lcd)
 {
     this->_cols = cols;
     this->_rows = rows;
+
+    this->_lineCount = 0;
+    this->_currentLine = 0;
+    this->_prevLine = 0;
 }
 
 void LiquidScreen::append(LiquidLinePtr line)
@@ -35,7 +39,7 @@ void LiquidScreen::draw(uint8_t startLine)
     {
         LiquidLinePtr &line = _lines.at(i);
 
-        if (line)
+        if (line && !line->isHidden())
         {
             line->display(_lcd);
         }
@@ -94,6 +98,11 @@ void LiquidMenu::display()
 
 void LiquidMenu::display(bool clear)
 {
+    if (clear)
+    {
+        draw(0);
+    }
+    /*
     uint8_t startLine = _lineCount > _rows ? _lineCount - _rows : 0;
 
     _lcd.setCursor(0, _prevLine - startLine);
@@ -116,23 +125,31 @@ void LiquidMenu::display(bool clear)
     _lcd.write(_symbol);
 
     draw(_currentLine);
+    */
 }
 
 void LiquidMenu::draw(uint8_t startLine)
 {
     uint8_t lineIndex = startLine;
+    uint8_t row = 0;
 
-    for (int row = 0; row < _rows; row++)
+    while (row < _rows)
     {
-        LiquidLinePtr &ptr = _lines.at(lineIndex);
-        LiquidLine *line = ptr.get();
+        if (lineIndex > _lineCount - 1)
+        {
+            return;
+        }
 
-        if (line)
+        LiquidLinePtr &line = _lines.at(lineIndex);
+
+        if (line && !line->isHidden())
         {
             line->setRow(row);
             line->display(_lcd);
-            lineIndex++;
+            row++;
         }
+
+        lineIndex++;
     }
 }
 

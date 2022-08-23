@@ -4,6 +4,8 @@
 #include <StepperMotor.h>
 #include <SPI.h>
 
+#define LSR_PIN 13
+
 #define SW_X_PIN 36
 #define SW_Y_PIN 39
 #define SW_Z_PIN 34
@@ -31,7 +33,9 @@ LimitSwitch SW_Y(SW_Y_PIN);
 LimitSwitch SW_Z(SW_Z_PIN);
 
 Cartesian CARTESIAN;
-AutohomeCommand AUTOHOME(CARTESIAN);
+Laser LASER(LSR_PIN);
+
+AutohomeCommand AUTOHOME(CARTESIAN, LASER);
 
 void setup()
 {
@@ -60,21 +64,21 @@ void setup()
     SW_Y.setDebounceTime(10);
     SW_Z.setDebounceTime(10);
 
-    CARTESIAN.setStepperMotor(Axis::X, DRIVER_X);
-    CARTESIAN.setStepperMotor(Axis::Y, DRIVER_Y);
-    CARTESIAN.setStepperMotor(Axis::Z, DRIVER_Z);
+    CARTESIAN.setStepperMotor(Axis::X, std::make_shared<StepperMotor>(&DRIVER_X));
+    CARTESIAN.setStepperMotor(Axis::Y, std::make_shared<StepperMotor>(&DRIVER_Y));
+    CARTESIAN.setStepperMotor(Axis::Z, std::make_shared<StepperMotor>(&DRIVER_Z));
 
-    CARTESIAN.setLimitSwitch(Axis::X, SW_X);
-    CARTESIAN.setLimitSwitch(Axis::Y, SW_Y);
-    CARTESIAN.setLimitSwitch(Axis::Z, SW_Z);
+    CARTESIAN.setLimitSwitch(Axis::X, std::make_shared<LimitSwitch>(&SW_X));
+    CARTESIAN.setLimitSwitch(Axis::Y, std::make_shared<LimitSwitch>(&SW_Y));
+    CARTESIAN.setLimitSwitch(Axis::Z, std::make_shared<LimitSwitch>(&SW_Z));
 
-    CARTESIAN.setResolution(Axis::X, Resolution::FULL);
-    CARTESIAN.setResolution(Axis::Y, Resolution::FULL);
-    CARTESIAN.setResolution(Axis::Z, Resolution::FULL);
+    CARTESIAN.setMinStepsPerMillimeter(Axis::X, 5);
+    CARTESIAN.setMinStepsPerMillimeter(Axis::Y, 5);
+    CARTESIAN.setMinStepsPerMillimeter(Axis::Z, 25);
 
     CARTESIAN.setStepsPerMillimeter(Axis::X, 5);
     CARTESIAN.setStepsPerMillimeter(Axis::Y, 5);
-    CARTESIAN.setStepsPerMillimeter(Axis::Z, 5);
+    CARTESIAN.setStepsPerMillimeter(Axis::Z, 25);
 
     CARTESIAN.setDimension(Axis::X, 400);
     CARTESIAN.setDimension(Axis::Y, 420);
@@ -85,9 +89,9 @@ void setup()
 
 void loop()
 {
-    CommandStatus status = AUTOHOME.status();
+    Status status = AUTOHOME.status();
 
-    if(status == CommandStatus::CONTINUE)
+    if (status == Status::CONTINUE)
     {
         AUTOHOME.execute();
     }

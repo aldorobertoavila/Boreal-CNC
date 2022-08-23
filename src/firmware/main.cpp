@@ -883,6 +883,8 @@ void setupMainScreen()
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 14);
   startFromTF = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Start from TF", 14);
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC", 14);
+
+  startFromTF->hide();
 }
 
 void setupMoveAxesScreen()
@@ -927,7 +929,6 @@ void setupMoveZScreen()
 
 void setupPrepScreen()
 {
-
   createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 17);
   createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Move axes", 17);
   createLine(PREP_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Auto home", 17);
