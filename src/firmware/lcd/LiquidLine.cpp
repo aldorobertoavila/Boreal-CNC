@@ -40,11 +40,8 @@ void LiquidLine::unhide()
 
 void LiquidLine::display(LCD &lcd)
 {
-    if (!_text.isEmpty())
-    {
-        lcd.setCursor(_col, _row);
-        lcd.print(_text);
-    }
+    lcd.setCursor(_col, _row);
+    lcd.print(_text);
 }
 
 void LiquidLine::setColumn(uint8_t col)

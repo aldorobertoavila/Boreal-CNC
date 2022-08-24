@@ -38,7 +38,7 @@ void LiquidScreen::draw(uint8_t startLine)
 {
     for (uint8_t i = _currentLine; i < _lineCount; i++)
     {
-        LiquidLinePtr &line = _lines[i];
+        LiquidLinePtr line = _lines[i];
 
         if (line && !line->isHidden())
         {

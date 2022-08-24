@@ -423,7 +423,7 @@ void display(ScreenID screenIndex, bool forcePosition)
 
 void displayInfoScreen()
 {
-  unsigned long start = millis();
+  /*
   if (proc)
   {
     processNameValue->setText(proc->getName());
@@ -451,6 +451,9 @@ void displayInfoScreen()
     progressValue->setText("0%");
   }
 
+  display(ScreenID::INFO, true);
+  */
+  Serial.println("Print Info");
   display(ScreenID::INFO, true);
 }
 
@@ -1156,7 +1159,7 @@ void setup()
   Serial.println("mount!");
 
   Wire.begin();
-  Wire.setClock(3400000); // High Speed Mode at 3.4 Mbps
+  Wire.setClock(400000); // High Speed Mode at 3.4 Mbps
 
   lcd.init();
   lcd.backlight();
@@ -1173,9 +1176,9 @@ void setup()
 
   root = SD.open("/");
 
-  stepperX->setMaxSpeed(400);
-  stepperY->setMaxSpeed(400);
-  stepperZ->setMaxSpeed(400);
+  stepperX->setMaxSpeed(500);
+  stepperY->setMaxSpeed(500);
+  stepperZ->setMaxSpeed(500);
 
   stepperX->setAcceleration(300);
   stepperY->setAcceleration(300);
