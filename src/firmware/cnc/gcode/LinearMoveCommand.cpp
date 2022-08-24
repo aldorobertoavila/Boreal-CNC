@@ -1,10 +1,12 @@
 #include <Command.h>
 
-LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float feedRate, uint8_t power) : _cartesian(cartesian), _laser(laser), MoveCommand(cartesian, laser, feedRate, power)
+LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float feedrate, uint8_t power) : _cartesian(cartesian), _laser(laser)
 {
     this->_x = x;
     this->_y = y;
     this->_z = z;
+    this->_feedrate = feedrate;
+    this->_power = power;
 }
 
 void LinearMoveCommand::execute()
@@ -27,7 +29,15 @@ void LinearMoveCommand::execute()
     }
 }
 
-void LinearMoveCommand::setup()
+void LinearMoveCommand::finish()
+{
+    if (_power > 0)
+    {
+        _laser.turnOff();
+    }
+}
+
+void LinearMoveCommand::start()
 {
     _currentAxis = Axis::X;
     _currentStatus = Status::CONTINUE;

@@ -26,7 +26,7 @@ using namespace std;
 #define LCD_COLS 20
 #define LCD_ROWS 4
 
-#define LCD_ICON_CHAR 0
+#define LCD_ARROW_CHAR 0
 #define LCD_GAUGE_FILL_1 1
 #define LCD_GAUGE_FILL_2 2
 #define LCD_GAUGE_FILL_3 3
@@ -43,14 +43,13 @@ using namespace std;
 #define POS_VAL_Y_COL 7
 #define POS_VAL_Z_COL 13
 
-#define PROC_ICON_VAL_COL 0
-#define PROC_NAME_LBL_COL 2
+#define PROC_NAME_LBL_COL 0
 #define PROC_TIME_LBL_COL 15
 
 #define PROG_BAR_COL 0
 #define PROG_VAL_COL 15
 
-#define LCD_MENU_COL 2
+#define LCD_ARROW_COL 2
 #define LCD_ZERO_COL 0
 #define LCD_ZERO_ROW 0
 
@@ -109,10 +108,6 @@ enum MainOption
 };
 
 byte ARROW_CHAR[8] = {B00000, B00100, B00110, B11111, B11111, B00110, B00100, B00000};
-byte PLAY_CHAR[8] = {B01000, B01100, B01110, B01111, B01111, B01110, B01100, B01000};
-byte PAUSE_CHAR[8] = {B00000, B11011, B11011, B11011, B11011, B11011, B11011, B00000};
-byte STOP_CHAR[8] = {B00000, B11111, B11111, B11111, B11111, B11111, B11111, B00000};
-
 byte GAUGE_EMPTY[8] = {B11111, B00000, B00000, B00000, B00000, B00000, B00000, B11111};
 byte GAUGE_FILL_1[8] = {B11111, B10000, B10000, B10000, B10000, B10000, B10000, B11111};
 byte GAUGE_FILL_2[8] = {B11111, B11000, B11000, B11000, B11000, B11000, B11000, B11111};
@@ -129,7 +124,6 @@ byte GAUGE_MASK_RIGHT[8] = {B11110, B11111, B11111, B11111, B11111, B11111, B111
 const int CHAR_PIXEL_WIDTH = 5;
 const int EMPTY_SPACE = 255;
 const int GAUGE_SIZE = 14;
-const int ICON_SIZE = 1;
 
 String EMPTY_ROW("                    ");
 String SYSTEM_VOLUME("System Volume Information");
@@ -186,7 +180,6 @@ LiquidLinePtr positionValueX;
 LiquidLinePtr positionValueY;
 LiquidLinePtr positionValueZ;
 
-LiquidLinePtr processIconValue;
 LiquidLinePtr processNameValue;
 LiquidLinePtr processTimeValue;
 LiquidLinePtr progressBar;
@@ -430,31 +423,9 @@ void display(ScreenID screenIndex, bool forcePosition)
 
 void displayInfoScreen()
 {
-  char iconBuffer[ICON_SIZE] = {LCD_ICON_CHAR};
-
+  unsigned long start = millis();
   if (proc)
   {
-    switch (proc->status())
-    {
-    case Status::CONTINUE:
-      lcd.createChar(LCD_ICON_CHAR, PLAY_CHAR);
-      break;
-
-    case Status::PAUSED:
-      lcd.createChar(LCD_ICON_CHAR, PAUSE_CHAR);
-      break;
-
-    case Status::STOPPED:
-      lcd.createChar(LCD_ICON_CHAR, STOP_CHAR);
-      break;
-
-    default:
-      break;
-    }
-
-    lcd.createChar(LCD_ICON_CHAR, PLAY_CHAR);
-
-    processIconValue->setText(iconBuffer);
     processNameValue->setText(proc->getName());
     processTimeValue->setText(proc->getTime());
 
@@ -473,7 +444,6 @@ void displayInfoScreen()
     positionValueY->setText("0");
     positionValueZ->setText("0");
 
-    processIconValue->setText(iconBuffer);
     processNameValue->setText("Ready!");
     processTimeValue->setText("00:00");
 
@@ -579,7 +549,6 @@ void cardScreenClicked()
 
     MAIN_SCREEN.unhide(MainOption::PAUSE_PROC);
     MAIN_SCREEN.unhide(MainOption::STOP_PROC);
-    MAIN_SCREEN.hide(MainOption::PREP_MENU);
     MAIN_SCREEN.hide(MainOption::START_FROM_TF);
     MAIN_SCREEN.hide(MainOption::RESUME_PROC);
 
@@ -656,7 +625,6 @@ void mainScreenClicked()
     break;
 
   case MainOption::STOP_PROC:
-    MAIN_SCREEN.unhide(MainOption::PREP_MENU);
     MAIN_SCREEN.unhide(MainOption::START_FROM_TF);
     MAIN_SCREEN.hide(MainOption::RESUME_PROC);
     MAIN_SCREEN.hide(MainOption::PAUSE_PROC);
@@ -897,37 +865,37 @@ LiquidLinePtr createLine(LiquidScreen &screen, uint8_t lineIndex, uint8_t row, u
 
 void setupAccelScreen()
 {
-  createLine(ACCEL_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 7);
-  createLine(ACCEL_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Accel", 7);
-  createLine(ACCEL_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Travel", 7);
-  createLine(ACCEL_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Amax X", 7);
-  createLine(ACCEL_SCREEN, 4, LCD_MENU_COL, LCD_ZERO_ROW, "Amax Y", 7);
-  createLine(ACCEL_SCREEN, 5, LCD_MENU_COL, LCD_ZERO_ROW, "Amax Z", 7);
+  createLine(ACCEL_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 7);
+  createLine(ACCEL_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Accel", 7);
+  createLine(ACCEL_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel", 7);
+  createLine(ACCEL_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax X", 7);
+  createLine(ACCEL_SCREEN, 4, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Y", 7);
+  createLine(ACCEL_SCREEN, 5, LCD_ARROW_COL, LCD_ZERO_ROW, "Amax Z", 7);
 }
 
 void setupAboutScreen()
 {
-  createLine(ABOUT_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 4);
+  createLine(ABOUT_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 4);
 }
 
 void setupCardScreen()
 {
-  createLine(CARD_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 4);
+  createLine(CARD_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 4);
 
   uint8_t n = getFiles(root, filePaths, MAX_FILES_SIZE);
 
   for (uint8_t i = 0; i < n; i++)
   {
-    createLine(CARD_SCREEN, i + 1, LCD_MENU_COL, LCD_ZERO_ROW, filePaths[i].c_str(), 18);
+    createLine(CARD_SCREEN, i + 1, LCD_ARROW_COL, LCD_ZERO_ROW, filePaths[i].c_str(), 18);
   }
 }
 
 void setupCtrlScreen()
 {
-  createLine(CTRL_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 15);
-  createLine(CTRL_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 15);
-  createLine(CTRL_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Laser", 15);
-  createLine(CTRL_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Store settings", 15);
+  createLine(CTRL_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 15);
+  createLine(CTRL_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 15);
+  createLine(CTRL_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Laser", 15);
+  createLine(CTRL_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Store settings", 15);
 }
 
 void setupInfoScreen()
@@ -941,25 +909,24 @@ void setupInfoScreen()
   positionValueY = createLine(INFO_SCREEN, 5, POS_VAL_Y_COL, 1, "0", 0);
   positionValueZ = createLine(INFO_SCREEN, 6, POS_VAL_Z_COL, 1, "0", 0);
 
-  processIconValue = createLine(INFO_SCREEN, 7, PROC_ICON_VAL_COL, 2, " ", 0);
-  processNameValue = createLine(INFO_SCREEN, 8, PROC_NAME_LBL_COL, 2, "Ready!", 0);
-  processTimeValue = createLine(INFO_SCREEN, 9, PROC_TIME_LBL_COL, 2, "00:00", 0);
+  processNameValue = createLine(INFO_SCREEN, 7, PROC_NAME_LBL_COL, 2, "Ready!", 0);
+  processTimeValue = createLine(INFO_SCREEN, 8, PROC_TIME_LBL_COL, 2, "00:00", 0);
 
-  progressBar = createLine(INFO_SCREEN, 10, PROG_BAR_COL, 3, "", 0);
-  progressValue = createLine(INFO_SCREEN, 11, PROG_VAL_COL, 3, "0%", 0);
+  progressBar = createLine(INFO_SCREEN, 9, PROG_BAR_COL, 3, "", 0);
+  progressValue = createLine(INFO_SCREEN, 10, PROG_VAL_COL, 3, "0%", 0);
 }
 
 void setupMainScreen()
 {
-  createLine(MAIN_SCREEN, MainOption::INFO_MENU, LCD_MENU_COL, LCD_ZERO_ROW, "Info", 14);
-  createLine(MAIN_SCREEN, MainOption::PREP_MENU, LCD_MENU_COL, LCD_ZERO_ROW, "Prepare", 14);
-  createLine(MAIN_SCREEN, MainOption::CTRL_MENU, LCD_MENU_COL, LCD_ZERO_ROW, "Control", 14);
-  createLine(MAIN_SCREEN, MainOption::NO_TF_CARD, LCD_MENU_COL, LCD_ZERO_ROW, "No TF Card", 14);
-  createLine(MAIN_SCREEN, MainOption::START_FROM_TF, LCD_MENU_COL, LCD_ZERO_ROW, "Start from TF", 14);
-  createLine(MAIN_SCREEN, MainOption::PAUSE_PROC, LCD_MENU_COL, LCD_ZERO_ROW, "Pause", 14);
-  createLine(MAIN_SCREEN, MainOption::RESUME_PROC, LCD_MENU_COL, LCD_ZERO_ROW, "Resume", 14);
-  createLine(MAIN_SCREEN, MainOption::STOP_PROC, LCD_MENU_COL, LCD_ZERO_ROW, "Stop", 14);
-  createLine(MAIN_SCREEN, MainOption::ABOUT_CNC, LCD_MENU_COL, LCD_ZERO_ROW, "About CNC", 14);
+  createLine(MAIN_SCREEN, MainOption::INFO_MENU, LCD_ARROW_COL, LCD_ZERO_ROW, "Info", 14);
+  createLine(MAIN_SCREEN, MainOption::PREP_MENU, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 14);
+  createLine(MAIN_SCREEN, MainOption::CTRL_MENU, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 14);
+  createLine(MAIN_SCREEN, MainOption::NO_TF_CARD, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF Card", 14);
+  createLine(MAIN_SCREEN, MainOption::START_FROM_TF, LCD_ARROW_COL, LCD_ZERO_ROW, "Start from TF", 14);
+  createLine(MAIN_SCREEN, MainOption::PAUSE_PROC, LCD_ARROW_COL, LCD_ZERO_ROW, "Pause", 14);
+  createLine(MAIN_SCREEN, MainOption::RESUME_PROC, LCD_ARROW_COL, LCD_ZERO_ROW, "Resume", 14);
+  createLine(MAIN_SCREEN, MainOption::STOP_PROC, LCD_ARROW_COL, LCD_ZERO_ROW, "Stop", 14);
+  createLine(MAIN_SCREEN, MainOption::ABOUT_CNC, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC", 14);
 
   MAIN_SCREEN.hide(MainOption::NO_TF_CARD);
   MAIN_SCREEN.hide(MainOption::PAUSE_PROC);
@@ -969,10 +936,10 @@ void setupMainScreen()
 
 void setupMoveAxesScreen()
 {
-  createLine(MOVE_AXES_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Prepare", 8);
-  createLine(MOVE_AXES_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move X", 8);
-  createLine(MOVE_AXES_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y", 8);
-  createLine(MOVE_AXES_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z", 8);
+  createLine(MOVE_AXES_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 8);
+  createLine(MOVE_AXES_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X", 8);
+  createLine(MOVE_AXES_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y", 8);
+  createLine(MOVE_AXES_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z", 8);
 }
 
 void setupMoveAxisScreen()
@@ -984,62 +951,62 @@ void setupMoveAxisScreen()
 void setupMoveXScreen()
 {
 
-  createLine(MOVE_X_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Move Axes", 13);
-  createLine(MOVE_X_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move X 10mm", 13);
-  createLine(MOVE_X_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move X 1mm", 13);
-  createLine(MOVE_X_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move X 0.1mm", 13);
+  createLine(MOVE_X_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_X_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 10mm", 13);
+  createLine(MOVE_X_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 1mm", 13);
+  createLine(MOVE_X_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Move X 0.1mm", 13);
 }
 
 void setupMoveYScreen()
 {
 
-  createLine(MOVE_Y_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Move Axes", 13);
-  createLine(MOVE_Y_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y 10mm", 13);
-  createLine(MOVE_Y_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y 1mm", 13);
-  createLine(MOVE_Y_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y 0.1mm", 13);
+  createLine(MOVE_Y_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_Y_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 10mm", 13);
+  createLine(MOVE_Y_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 1mm", 13);
+  createLine(MOVE_Y_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Y 0.1mm", 13);
 }
 
 void setupMoveZScreen()
 {
-  createLine(MOVE_Z_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Move Axes", 13);
-  createLine(MOVE_Z_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z 10mm", 13);
-  createLine(MOVE_Z_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z 1mm", 13);
-  createLine(MOVE_Z_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z 0.1mm", 13);
+  createLine(MOVE_Z_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_Z_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 10mm", 13);
+  createLine(MOVE_Z_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 1mm", 13);
+  createLine(MOVE_Z_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Move Z 0.1mm", 13);
 }
 
 void setupPrepScreen()
 {
-  createLine(PREP_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 17);
-  createLine(PREP_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move axes", 17);
-  createLine(PREP_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Auto home", 17);
-  createLine(PREP_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Set home offsets", 17);
-  createLine(PREP_SCREEN, 4, LCD_MENU_COL, LCD_ZERO_ROW, "Disable steppers", 17);
+  createLine(PREP_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Main", 17);
+  createLine(PREP_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Move axes", 17);
+  createLine(PREP_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Auto home", 17);
+  createLine(PREP_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Set home offsets", 17);
+  createLine(PREP_SCREEN, 4, LCD_ARROW_COL, LCD_ZERO_ROW, "Disable steppers", 17);
 }
 
 void setupMotionScreen()
 {
-  createLine(MOTION_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Control", 13);
-  createLine(MOTION_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Acceleration", 13);
-  createLine(MOTION_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Velocity", 13);
-  createLine(MOTION_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Steps/mm", 13);
+  createLine(MOTION_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 13);
+  createLine(MOTION_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Acceleration", 13);
+  createLine(MOTION_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Velocity", 13);
+  createLine(MOTION_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Steps/mm", 13);
 }
 
 void setupStepsScreen()
 {
-  createLine(STEPS_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 11);
-  createLine(STEPS_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "X steps/mm", 11);
-  createLine(STEPS_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Y steps/mm", 11);
-  createLine(STEPS_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Z steps/mm", 11);
+  createLine(STEPS_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 11);
+  createLine(STEPS_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "X steps/mm", 11);
+  createLine(STEPS_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Y steps/mm", 11);
+  createLine(STEPS_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Z steps/mm", 11);
 }
 
 void setupVelocityScreen()
 {
-  createLine(VELOCITY_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 7);
-  createLine(VELOCITY_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Vel", 7);
-  createLine(VELOCITY_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Travel", 7);
-  createLine(VELOCITY_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Vmax X", 7);
-  createLine(VELOCITY_SCREEN, 4, LCD_MENU_COL, LCD_ZERO_ROW, "Vmax Y", 7);
-  createLine(VELOCITY_SCREEN, 5, LCD_MENU_COL, LCD_ZERO_ROW, "Vmax Z", 7);
+  createLine(VELOCITY_SCREEN, 0, LCD_ARROW_COL, LCD_ZERO_ROW, "Motion", 7);
+  createLine(VELOCITY_SCREEN, 1, LCD_ARROW_COL, LCD_ZERO_ROW, "Vel", 7);
+  createLine(VELOCITY_SCREEN, 2, LCD_ARROW_COL, LCD_ZERO_ROW, "Travel", 7);
+  createLine(VELOCITY_SCREEN, 3, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax X", 7);
+  createLine(VELOCITY_SCREEN, 4, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Y", 7);
+  createLine(VELOCITY_SCREEN, 5, LCD_ARROW_COL, LCD_ZERO_ROW, "Vmax Z", 7);
 }
 
 void parseNextCommand()
@@ -1107,7 +1074,7 @@ void parseNextCommand()
   }
 }
 
-void onCompleted()
+void completeProcess()
 {
   if (commands.empty())
   {
@@ -1118,25 +1085,18 @@ void onCompleted()
   }
 }
 
-void onContinue()
+void executeProcess()
 {
-  if (cmd && cmd->status() == Status::STOPPED)
-  {
-    cmd->setup();
-  }
-  else
-  {
-    parseNextCommand();
+  parseNextCommand();
 
-    if (!commands.empty() && !cmd)
+  if (!commands.empty() && !cmd)
+  {
+    cmd = commands.front();
+    commands.pop();
+
+    if (cmd)
     {
-      cmd = commands.front();
-      commands.pop();
-
-      if (cmd)
-      {
-        cmd->setup();
-      }
+      cmd->start();
     }
   }
 
@@ -1147,36 +1107,24 @@ void onContinue()
     switch (status)
     {
     case Status::COMPLETED:
+      cmd->finish();
       cmd = nullptr;
       break;
 
     case Status::CONTINUE:
-      cmd->execute();
+      if (proc->status() == Status::CONTINUE)
+      {
+        cmd->execute();
+      }
       break;
 
     case Status::ERROR:
       cmd = nullptr;
       break;
-
     default:
       break;
     }
   }
-}
-
-void onError()
-{
-  proc = nullptr;
-}
-
-void onPaused()
-{
-  cmd->stop();
-}
-
-void onStopped()
-{
-  cmd->stop();
 }
 
 void setup()
@@ -1214,7 +1162,7 @@ void setup()
   lcd.backlight();
   lcd.clear();
 
-  lcd.createChar(LCD_ICON_CHAR, ARROW_CHAR);
+  lcd.createChar(LCD_ARROW_CHAR, ARROW_CHAR);
   lcd.createChar(LCD_GAUGE_FILL_1, GAUGE_FILL_1);
   lcd.createChar(LCD_GAUGE_FILL_2, GAUGE_FILL_2);
   lcd.createChar(LCD_GAUGE_FILL_3, GAUGE_FILL_3);
@@ -1296,7 +1244,7 @@ void loop()
 
     if (proc)
     {
-      proc->setup();
+      proc->start();
 
       processNameValue->setText(proc->getName());
       processNameValue->display(lcd);
@@ -1310,25 +1258,16 @@ void loop()
     switch (proc->status())
     {
     case Status::COMPLETED:
-      onCompleted();
+      completeProcess();
       break;
 
     case Status::CONTINUE:
-      onContinue();
+      executeProcess();
       break;
 
     case Status::ERROR:
-      onError();
+      proc = nullptr;
       break;
-
-    case Status::PAUSED:
-      onPaused();
-      break;
-
-    case Status::STOPPED:
-      onStopped();
-      break;
-
     default:
       break;
     }

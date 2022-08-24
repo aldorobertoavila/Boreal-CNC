@@ -45,31 +45,30 @@ String Process::getName()
 
 String Process::readNextLine()
 {
-    if (_status != Status::CONTINUE || !_file)
+    if (_file)
     {
-        return "";
+        if (!_file.available())
+        {
+            _status = Status::COMPLETED;
+        }
+
+        String line = _file.readStringUntil('\n');
+        int comment = line.indexOf(";");
+
+        if (comment == 0)
+        {
+            return "";
+        }
+
+        if (comment > 0)
+        {
+            line = line.substring(0, comment);
+        }
+
+        return line;
     }
 
-    if (!_file.available())
-    {
-        _status = Status::COMPLETED;
-        return "";
-    }
-
-    String line = _file.readStringUntil('\n');
-    int comment = line.indexOf(";");
-
-    if (comment == 0)
-    {
-        return "";
-    }
-
-    if (comment > 0)
-    {
-        line = line.substring(0, comment);
-    }
-
-    return line;
+    return "";
 }
 
 void Process::pause()
@@ -88,7 +87,7 @@ void Process::resume()
     }
 }
 
-void Process::setup()
+void Process::start()
 {
     _rtc.setTime();
     _file = _fs.open(_path + _filename);

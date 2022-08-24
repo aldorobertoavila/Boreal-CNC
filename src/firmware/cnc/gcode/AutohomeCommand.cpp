@@ -1,6 +1,6 @@
 #include <Command.h>
 
-AutohomeCommand::AutohomeCommand(Cartesian &cartesian, Laser &laser) : _cartesian(cartesian), _laser(laser), MoveCommand(cartesian, laser, 0, 0)
+AutohomeCommand::AutohomeCommand(Cartesian &cartesian, Laser &laser) : _cartesian(cartesian), _laser(laser)
 {
 }
 
@@ -59,7 +59,7 @@ void AutohomeCommand::execute()
 
             if (_currentAxis == Axis::Z)
             {
-                complete();
+                _currentStatus = Status::COMPLETED;
                 return;
             }
 
@@ -75,7 +75,17 @@ void AutohomeCommand::execute()
     }
 }
 
-void AutohomeCommand::setup()
+void AutohomeCommand::finish()
+{
+    for (uint8_t i = 0; i < AXES; i++)
+    {
+        Axis axis = static_cast<Axis>(i);
+
+        _cartesian.setTargetPosition(axis, 0);
+    }
+}
+
+void AutohomeCommand::start()
 {
     _laser.turnOff();
 

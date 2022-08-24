@@ -14,74 +14,68 @@ enum AutohomeState
 class Command
 {
 public:
-    virtual void complete() = 0;
-
     virtual void execute() = 0;
 
-    virtual Status status() { return _currentStatus; };
+    virtual void finish() = 0;
 
-    virtual void setup() = 0;
+    virtual void start() = 0;
 
-    virtual void stop() = 0;
-
-protected:
-    Status _currentStatus;
+    virtual Status status() = 0;
 };
 
 class InstantCommand : public Command
 {
 public:
-    void complete() override{};
+    void start() override{};
 
-    Status status() override { return Status::COMPLETED; };
+    void finish() override{};
 
-    void setup() override{};
-
-    void stop() override{};
+    Status status() override { return COMPLETED; };
 };
 
-class MoveCommand : public Command
+class CancelableCommand : public Command
 {
 public:
-    MoveCommand(Cartesian &cartesian, Laser &laser, float feedRate, uint8_t power);
-
-    void complete() override;
-
-    void stop() override;
+    Status status() override { return _currentStatus; };
 
 protected:
-    Cartesian &_cartesian;
-    Laser &_laser;
-    float _feedRate;
-    uint8_t _power;
+    Status _currentStatus;
 };
 
-class ArcMoveCommand : public MoveCommand
+class ArcMoveCommand : public CancelableCommand
 {
 public:
-    ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, float feedRate, uint8_t power);
+    ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, float feedrate, uint8_t power);
 
     void execute() override;
 
-    void setup() override;
+    void finish() override;
+
+    void start() override;
 
 private:
+    Cartesian &_cartesian;
+    Laser &_laser;
     float _x;
     float _y;
     float _z;
     float _i;
     float _j;
     float _k;
+    float _feedrate;
+    uint8_t _power;
 };
 
-class AutohomeCommand : public MoveCommand
+class AutohomeCommand : public CancelableCommand
 {
 public:
     AutohomeCommand(Cartesian &cartesian, Laser &laser);
 
     void execute() override;
 
-    void setup() override;
+    void finish() override;
+
+    void start() override;
 
 private:
     Cartesian &_cartesian;
@@ -90,14 +84,16 @@ private:
     AutohomeState _currentState;
 };
 
-class CircleMoveCommand : public MoveCommand
+class CircleMoveCommand : public CancelableCommand
 {
 public:
-    CircleMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float r, float feedRate, uint8_t power);
+    CircleMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float r, float feedrate, uint8_t power);
 
     void execute() override;
 
-    void setup() override;
+    void finish() override;
+
+    void start() override;
 
 private:
     Cartesian &_cartesian;
@@ -106,36 +102,36 @@ private:
     float _y;
     float _z;
     float _r;
-    float _feedRate;
+    float _feedrate;
     uint8_t _power;
 };
 
-class DwellCommand : public Command
+class DwellCommand : public CancelableCommand
 {
 public:
     DwellCommand(unsigned long remainTime);
 
-    void complete() override;
-
     void execute() override;
 
-    void setup() override;
+    void finish() override;
 
-    void stop() override;
+    void start() override;
 
 private:
     unsigned long _remainTime; // ms
     unsigned long _startTime;
 };
 
-class LinearMoveCommand : public MoveCommand
+class LinearMoveCommand : public CancelableCommand
 {
 public:
-    LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float feedRate, uint8_t power);
+    LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float feedrate, uint8_t power);
 
     void execute() override;
 
-    void setup() override;
+    void finish() override;
+
+    void start() override;
 
 private:
     Cartesian &_cartesian;
@@ -144,7 +140,7 @@ private:
     float _x;
     float _y;
     float _z;
-    float _feedRate;
+    float _feedrate;
     uint8_t _power;
 };
 
