@@ -544,7 +544,7 @@ void cardScreenClicked()
 
   if (index > 0)
   {
-    processes.push(std::make_shared<Process>(SD, rtc, "/" + filePaths[index - 1]));
+    processes.push(std::make_shared<Process>(SD, rtc, "/", filePaths[index - 1]));
     cartesian.enableSteppers();
 
     MAIN_SCREEN.unhide(MainOption::PAUSE_PROC);
@@ -1074,6 +1074,59 @@ void parseNextCommand()
   }
 }
 
+void completeProcess()
+{
+  if (commands.empty())
+  {
+    cartesian.disableSteppers();
+    proc = nullptr;
+
+    displayInfoScreen();
+  }
+}
+
+void executeProcess()
+{
+  parseNextCommand();
+
+  if (!commands.empty() && !cmd)
+  {
+    cmd = commands.front();
+    commands.pop();
+
+    if (cmd)
+    {
+      cmd->start();
+    }
+  }
+
+  if (cmd)
+  {
+    Status status = cmd->status();
+
+    switch (status)
+    {
+    case Status::COMPLETED:
+      cmd->finish();
+      cmd = nullptr;
+      break;
+
+    case Status::CONTINUE:
+      if (proc->status() == Status::CONTINUE)
+      {
+        cmd->execute();
+      }
+      break;
+
+    case Status::ERROR:
+      cmd = nullptr;
+      break;
+    default:
+      break;
+    }
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -1205,55 +1258,15 @@ void loop()
     switch (proc->status())
     {
     case Status::COMPLETED:
-      if (commands.empty())
-      {
-        cartesian.disableSteppers();
-        proc = nullptr;
-
-        displayInfoScreen();
-      }
+      completeProcess();
       break;
 
     case Status::CONTINUE:
-      parseNextCommand();
+      executeProcess();
       break;
 
     case Status::ERROR:
       proc = nullptr;
-      break;
-    default:
-      break;
-    }
-  }
-
-  if (!commands.empty() && !cmd)
-  {
-    cmd = commands.front();
-    commands.pop();
-
-    if (cmd)
-    {
-      cmd->start();
-    }
-  }
-
-  if (cmd)
-  {
-    Status status = cmd->status();
-
-    switch (status)
-    {
-    case Status::COMPLETED:
-      cmd->finish();
-      cmd = nullptr;
-      break;
-
-    case Status::CONTINUE:
-      cmd->execute();
-      break;
-
-    case Status::ERROR:
-      cmd = nullptr;
       break;
     default:
       break;

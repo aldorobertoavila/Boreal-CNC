@@ -14,7 +14,7 @@ using RTC = ESP32Time;
 class Process
 {
 public:
-    Process(fs::FS &fs, RTC &rtc, String path);
+    Process(fs::FS &fs, RTC &rtc, String path, String filename);
 
     uint8_t getPreviousProgress();
 
@@ -42,6 +42,7 @@ private:
     fs::FS &_fs;
     RTC _rtc;
     fs::File _file;
+    String _filename;
     String _path;
     Status _status;
     uint8_t _previousProgress;
