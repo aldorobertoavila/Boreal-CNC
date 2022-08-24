@@ -114,29 +114,28 @@ void LiquidMenu::display()
 
 void LiquidMenu::display(bool clear)
 {
-    uint8_t hiddenCount = 0;
+    uint8_t visibleCount = 0;
 
     for (uint8_t i = 0; i < _lineCount; i++)
     {
         LiquidLinePtr line = _lines[i];
 
-        if (line && line->isHidden())
+        if (line && !line->isHidden())
         {
-            hiddenCount++;
+            visibleCount++;
         }
     }
 
-    uint8_t visibleCount = _lineCount - hiddenCount;
     uint8_t startLine = visibleCount > _rows ? visibleCount - _rows : 0;
 
     _lcd.setCursor(0, _lines[_prevLine]->getRow());
     _lcd.print(" ");
 
-    if (_currentLine + _rows - hiddenCount > visibleCount)
+    if (_currentLine + _rows > visibleCount)
     {
         if (clear)
         {
-            draw(startLine + hiddenCount);
+            draw(startLine);
         }
 
         _lcd.setCursor(0, _lines[_currentLine]->getRow());
