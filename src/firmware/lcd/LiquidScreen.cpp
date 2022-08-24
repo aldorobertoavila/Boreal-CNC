@@ -16,6 +16,7 @@ void LiquidScreen::append(uint8_t lineIndex, LiquidLinePtr line)
     {
         _lines[lineIndex] = line;
         _lineCount++;
+        _visibleCount++;
     }
 }
 
