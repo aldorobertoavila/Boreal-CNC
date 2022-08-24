@@ -1,11 +1,6 @@
 #include <LiquidCrystal_I2C.h>
 
-#include <Printable.h>
-
-#define BUFFER_SIZE 20
-
 using LCD = LiquidCrystal_I2C;
-
 class LiquidLine
 {
 public:

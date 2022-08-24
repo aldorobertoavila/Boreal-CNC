@@ -10,7 +10,6 @@
 using namespace std;
 
 using LiquidLinePtr = std::shared_ptr<LiquidLine>;
-using LineArray = std::array<LiquidLinePtr, MAX_LINES>;
 
 class ILiquidScreen
 {
@@ -65,7 +64,7 @@ protected:
     uint8_t _cols;
     uint8_t _rows;
     LCD &_lcd;
-    LineArray _lines;
+    LiquidLinePtr _lines[MAX_LINES];
 };
 
 class LiquidMenu : public LiquidScreen

@@ -9,8 +9,8 @@ Rotary::Rotary(uint8_t clkPin, uint8_t dtPin, uint8_t swPin)
   this->_defaultDirection = Rotation::CLOCKWISE;
   this->_previousStateClk = digitalRead(_clkPin);
 
-  this->_lowerBound = INT16_MIN;
-  this->_upperBound = INT16_MAX;
+  this->_lowerBound = 0;
+  this->_upperBound = 1;
 
   pinMode(_clkPin, INPUT);
   pinMode(_dtPin, INPUT);

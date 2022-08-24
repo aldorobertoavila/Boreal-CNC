@@ -407,11 +407,7 @@ void display(ScreenID screenIndex, bool forcePosition)
 
   if (screen)
   {
-    uint8_t lineIndex = screen->getCurrentLineIndex();
-    uint8_t lineCount = screen->getLineCount();
-
-    rotary.setBoundaries(0, lineCount);
-    rotary.setPosition(forcePosition ? lineIndex : 0);
+    rotary.setPosition(forcePosition ? screen->getCurrentLineIndex() : 0);
 
     currentScreen = screenIndex;
     screen->display();
@@ -881,10 +877,17 @@ void setupMainScreen()
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Info", 14);
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Prepare", 14);
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Control", 14);
+  noTFCard = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "No TF Card", 14);
   startFromTF = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Start from TF", 14);
+  pauseOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Pause", 14);
+  resumeOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Resume", 14);
+  stopOption = createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "Stop", 14);
   createLine(MAIN_SCREEN, LCD_ARROW_COL, LCD_ZERO_ROW, "About CNC", 14);
 
-  startFromTF->hide();
+  noTFCard->hide();
+  pauseOption->hide();
+  resumeOption->hide();
+  stopOption->hide();
 }
 
 void setupMoveAxesScreen()
