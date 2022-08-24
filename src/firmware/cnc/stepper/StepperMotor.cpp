@@ -290,6 +290,11 @@ void StepperMotor::step()
     _motorInterface.step();
 }
 
+void StepperMotor::stop()
+{
+    setCurrentPosition(_currentPos);
+}
+
 void StepperMotor::sleep()
 {
     _motorInterface.setSleep(LOW);

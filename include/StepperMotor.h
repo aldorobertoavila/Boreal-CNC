@@ -52,6 +52,8 @@ public:
 
     void sleep();
 
+    void stop();
+
     void wakeUp();
 
 protected:

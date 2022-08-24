@@ -32,6 +32,19 @@ void Cartesian::enableSteppers()
   }
 }
 
+void Cartesian::stopSteppers()
+{
+  for (uint8_t i = 0; i < AXES; i++)
+  {
+    StepperMotorPtr stepper = getStepperMotor(static_cast<Axis>(i));
+
+    if (stepper)
+    {
+      stepper->stop();
+    }
+  }
+}
+
 long Cartesian::getDimension(Axis axis)
 {
     return _dimensions[axis];
