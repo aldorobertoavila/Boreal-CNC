@@ -23,6 +23,8 @@ public:
 
     void enableSteppers();
 
+    void stopSteppers();
+
     long getDimension(Axis axis);
 
     long getHomeOffset(Axis axis);

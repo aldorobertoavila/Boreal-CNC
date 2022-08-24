@@ -32,7 +32,7 @@ public:
 
     void resume();
 
-    void start();
+    void setup();
 
     Status status();
 
