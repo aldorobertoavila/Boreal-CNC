@@ -10,11 +10,11 @@ LiquidScreen::LiquidScreen(LCD &lcd, uint8_t cols, uint8_t rows) : _lcd(lcd)
     this->_prevLine = 0;
 }
 
-void LiquidScreen::append(LiquidLinePtr line)
+void LiquidScreen::append(uint8_t lineIndex, LiquidLinePtr line)
 {
-    if (_lineCount < MAX_LINES)
+    if (_lineCount < MAX_LINES && lineIndex < MAX_LINES)
     {
-        _lines[_lineCount] = line;
+        _lines[lineIndex] = line;
         _lineCount++;
     }
 }
@@ -54,6 +54,34 @@ uint8_t LiquidScreen::getCurrentLineIndex()
 uint8_t LiquidScreen::getLineCount()
 {
     return _lineCount;
+}
+
+void LiquidScreen::hide(uint8_t lineIndex)
+{
+    if (lineIndex < _lineCount)
+    {
+        LiquidLinePtr line = _lines[lineIndex];
+
+        if (line && !line->isHidden())
+        {
+            line->hide();
+            _visibleCount--;
+        }
+    }
+}
+
+void LiquidScreen::unhide(uint8_t lineIndex)
+{
+    if (lineIndex < _lineCount)
+    {
+        LiquidLinePtr line = _lines[lineIndex];
+
+        if (line && line->isHidden())
+        {
+            line->unhide();
+            _visibleCount++;
+        }
+    }
 }
 
 void LiquidScreen::nextLine()
@@ -114,32 +142,30 @@ void LiquidMenu::display()
 
 void LiquidMenu::display(bool clear)
 {
-    uint8_t visibleCount = 0;
+    uint8_t startLine = _visibleCount > _rows ? _visibleCount - _rows : 0;
 
-    for (uint8_t i = 0; i < _lineCount; i++)
+    LiquidLinePtr previousLine = _lines[_prevLine];
+
+    if (previousLine)
     {
-        LiquidLinePtr line = _lines[i];
-
-        if (line && !line->isHidden())
-        {
-            visibleCount++;
-        }
+        _lcd.setCursor(0, previousLine->getRow());
+        _lcd.print(" ");
     }
 
-    uint8_t startLine = visibleCount > _rows ? visibleCount - _rows : 0;
-
-    _lcd.setCursor(0, _lines[_prevLine]->getRow());
-    _lcd.print(" ");
-
-    if (_currentLine + _rows > visibleCount)
+    if (_currentLine + _rows > _visibleCount)
     {
         if (clear)
         {
             draw(startLine);
         }
 
-        _lcd.setCursor(0, _lines[_currentLine]->getRow());
-        _lcd.write(_symbol);
+        LiquidLinePtr currentLine = _lines[_currentLine];
+
+        if (currentLine)
+        {
+            _lcd.setCursor(0, currentLine->getRow());
+            _lcd.write(_symbol);
+        }
 
         return;
     }

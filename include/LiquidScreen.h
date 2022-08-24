@@ -11,55 +11,37 @@ using namespace std;
 
 using LiquidLinePtr = std::shared_ptr<LiquidLine>;
 
-class ILiquidScreen
-{
-public:
-
-    virtual void append(LiquidLinePtr line) = 0;
-
-    virtual void display() = 0;
-
-    virtual void display(bool clear) = 0;
-
-    virtual void draw(uint8_t startLine) = 0;
-
-    virtual uint8_t getCurrentLineIndex() = 0;
-
-    virtual uint8_t getLineCount() = 0;
-
-    virtual void nextLine() = 0;
-
-    virtual void previousLine() = 0;
-
-    virtual void setCurrentLine(uint8_t id) = 0;
-};
-
-class LiquidScreen : public ILiquidScreen
+class LiquidScreen
 {
 public:
     LiquidScreen(LCD &lcd, uint8_t cols, uint8_t rows);
 
-    void append(LiquidLinePtr line) override;
+    void append(uint8_t lineIndex, LiquidLinePtr line);
 
-    void display() override;
+    virtual void display();
 
-    void display(bool clear) override;
-    
-    void draw(uint8_t startLine) override;
+    virtual void display(bool clear);
 
-    uint8_t getCurrentLineIndex() override;
+    virtual void draw(uint8_t startLine);
 
-    uint8_t getLineCount() override;
+    uint8_t getCurrentLineIndex();
 
-    void nextLine() override;
+    uint8_t getLineCount();
 
-    void previousLine() override;
+    void hide(uint8_t lineIndex);
 
-    void setCurrentLine(uint8_t id) override;
+    void unhide(uint8_t lineIndex);
+
+    void nextLine();
+
+    void previousLine();
+
+    void setCurrentLine(uint8_t id);
 
 protected:
     uint8_t _currentLine;
     uint8_t _prevLine;
+    uint8_t _visibleCount;
     uint8_t _lineCount;
     uint8_t _cols;
     uint8_t _rows;
