@@ -6,7 +6,6 @@
 #include <Rotary.h>
 #include <StepperMotor.h>
 
-#include <LiquidCrystal_I2C.h>
 #include <SD.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -431,6 +430,7 @@ void display(ScreenID screenIndex, bool forcePosition)
 void displayInfoScreen()
 {
   char iconBuffer[ICON_SIZE] = {LCD_ICON_CHAR};
+  unsigned long start = millis();
 
   if (proc)
   {
@@ -481,10 +481,9 @@ void displayInfoScreen()
     progressValue->setText("0%");
   }
 
-  display(ScreenID::INFO, true);
-
   Serial.println("Print Info");
   display(ScreenID::INFO, true);
+  Serial.println(millis() - start);
 }
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
@@ -1211,7 +1210,7 @@ void setup()
   Serial.println("mount!");
 
   Wire.begin();
-  Wire.setClock(400000); // High Speed Mode at 3.4 Mbps
+  Wire.setClock(800000);
 
   lcd.init();
   lcd.backlight();

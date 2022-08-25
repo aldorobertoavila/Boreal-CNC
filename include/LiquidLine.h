@@ -1,6 +1,7 @@
-#include <LiquidCrystal_I2C.h>
+#include <hd44780ioClass/hd44780_I2Cexp.h>
 
-using LCD = LiquidCrystal_I2C;
+using LCD = hd44780_I2Cexp;
+
 class LiquidLine
 {
 public:
