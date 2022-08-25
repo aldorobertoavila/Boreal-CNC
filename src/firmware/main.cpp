@@ -108,9 +108,9 @@ enum MainOption
 };
 
 byte ARROW_CHAR[8] = {B00000, B00100, B00110, B11111, B11111, B00110, B00100, B00000};
-byte PLAY_CHAR[8] = {B01000, B01100, B01110, B01111, B01111, B01110, B01100, B01000};
+byte PLAY_CHAR[8] = {B00000, B10000, B11000, B11100, B11110, B11100, B11000, B10000};
 byte PAUSE_CHAR[8] = {B00000, B11011, B11011, B11011, B11011, B11011, B11011, B00000};
-byte STOP_CHAR[8] = {B00000, B11111, B11111, B11111, B11111, B11111, B11111, B00000};
+byte STOP_CHAR[8] = {B00000, B00000, B11110, B11110, B11110, B11110, B00000, B00000};
 
 byte GAUGE_EMPTY[8] = {B11111, B00000, B00000, B00000, B00000, B00000, B00000, B11111};
 byte GAUGE_FILL_1[8] = {B11111, B10000, B10000, B10000, B10000, B10000, B10000, B11111};
@@ -125,6 +125,7 @@ byte GAUGE_RIGHT[8] = {B11110, B00001, B00001, B00001, B00001, B00001, B00001, B
 byte GAUGE_MASK_LEFT[8] = {B01111, B11111, B11111, B11111, B11111, B11111, B11111, B01111};
 byte GAUGE_MASK_RIGHT[8] = {B11110, B11111, B11111, B11111, B11111, B11111, B11111, B11110};
 
+const int PROCESS_EXPIRED = 3000;
 const int CHAR_PIXEL_WIDTH = 5;
 const int EMPTY_SPACE = 255;
 const int GAUGE_SIZE = 14;
@@ -420,75 +421,72 @@ void display(ScreenID screenIndex, bool forcePosition)
 
   if (screen)
   {
-    rotary.setPosition(forcePosition ? screen->getCurrentLineIndex() : 0);
+    if (forcePosition)
+    {
+      rotary.setPosition(screen->getCurrentLineIndex());
+    }
+    else
+    {
+      screen->setCurrentLine(0);
+      rotary.setPosition(0);
+    }
 
     currentScreen = screenIndex;
     screen->display();
   }
 }
 
+void displayMenu(ScreenID screenIndex, bool forcePosition)
+{
+  lcd.createChar(LCD_ICON_CHAR, ARROW_CHAR);
+
+  display(screenIndex, forcePosition);
+}
+
 void displayInfoScreen()
 {
-  char iconBuffer[ICON_SIZE] = {LCD_ICON_CHAR};
-  unsigned long start = millis();
-
   if (proc)
   {
-    switch (proc->status())
-    {
-    case Status::CONTINUE:
-      lcd.createChar(LCD_ICON_CHAR, PLAY_CHAR);
-      break;
-
-    case Status::PAUSED:
-      lcd.createChar(LCD_ICON_CHAR, PAUSE_CHAR);
-      break;
-
-    case Status::STOPPED:
-      lcd.createChar(LCD_ICON_CHAR, STOP_CHAR);
-      break;
-
-    default:
-      break;
-    }
-
-    lcd.createChar(LCD_ICON_CHAR, PLAY_CHAR);
-
-    processIconValue->setText(iconBuffer);
     processNameValue->setText(proc->getName());
     processTimeValue->setText(proc->getTime());
 
-    positionValueX->setText(formatPosition(Axis::X));
-    positionValueY->setText(formatPosition(Axis::Y));
-    positionValueZ->setText(formatPosition(Axis::Z));
+    Status status = proc->status();
 
-    uint8_t progress = proc->getProgress();
+    if (status != Status::STOPPED)
+    {
+      positionValueX->setText(formatPosition(Axis::X));
+      positionValueY->setText(formatPosition(Axis::Y));
+      positionValueZ->setText(formatPosition(Axis::Z));
 
-    updateProgressBar(progress);
-    progressValue->setText(formatProgress(progress));
+      uint8_t progress = proc->getProgress();
+
+      updateProgressBar(progress);
+      progressValue->setText(formatProgress(progress));
+
+      display(ScreenID::INFO, false);
+      return;
+    }
   }
   else
   {
-    positionValueX->setText("0");
-    positionValueY->setText("0");
-    positionValueZ->setText("0");
-
-    processIconValue->setText(iconBuffer);
+    processIconValue->setText("");
     processNameValue->setText("Ready!");
     processTimeValue->setText("00:00");
-
-    updateProgressBar(0);
-    progressValue->setText("0%");
   }
 
-  Serial.println("Print Info");
-  display(ScreenID::INFO, true);
-  Serial.println(millis() - start);
+  positionValueX->setText("0");
+  positionValueY->setText("0");
+  positionValueZ->setText("0");
+
+  updateProgressBar(0);
+  progressValue->setText("0%");
+
+  display(ScreenID::INFO, false);
 }
 
 void setMoveAxisScreen(Axis axis, uint8_t unit)
 {
-  display(ScreenID::MOVE_AXIS, false);
+  displayMenu(ScreenID::MOVE_AXIS, false);
 }
 
 void autohome()
@@ -561,7 +559,7 @@ void accelerationScreenClicked()
   switch (ACCEL_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    display(ScreenID::MOTION, true);
+    displayMenu(ScreenID::MOTION, true);
     break;
   case 1:
     break;
@@ -589,7 +587,7 @@ void cardScreenClicked()
   }
   else
   {
-    display(ScreenID::MAIN, true);
+    displayMenu(ScreenID::MAIN, true);
   }
 }
 
@@ -598,13 +596,13 @@ void ctrlScreenClicked()
   switch (CTRL_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    display(ScreenID::MAIN, true);
+    displayMenu(ScreenID::MAIN, true);
     break;
   case 1:
-    display(ScreenID::MOTION, false);
+    displayMenu(ScreenID::MOTION, false);
     break;
   case 2:
-    display(ScreenID::LASER, false);
+    displayMenu(ScreenID::LASER, false);
     break;
   case 3:
     storeSettings();
@@ -616,7 +614,45 @@ void ctrlScreenClicked()
 
 void infoScreenClicked()
 {
-  display(ScreenID::MAIN, false);
+  displayMenu(ScreenID::MAIN, false);
+}
+
+void displayChar(byte charValue[])
+{
+  lcd.createChar(LCD_ICON_CHAR, charValue);
+  processIconValue->setText(LCD_ICON_CHAR);
+  processIconValue->displayAsChar(lcd);
+}
+
+void pauseProcess()
+{
+  MAIN_SCREEN.unhide(MainOption::RESUME_PROC);
+  MAIN_SCREEN.hide(MainOption::PAUSE_PROC);
+
+  proc->pause();
+  displayInfoScreen();
+  displayChar(PAUSE_CHAR);
+}
+
+void resumeProcess()
+{
+  MAIN_SCREEN.unhide(MainOption::PAUSE_PROC);
+  MAIN_SCREEN.hide(MainOption::RESUME_PROC);
+
+  proc->resume();
+  displayInfoScreen();
+  displayChar(PLAY_CHAR);
+}
+
+void stopProcess()
+{
+  MAIN_SCREEN.hide(MainOption::RESUME_PROC);
+  MAIN_SCREEN.hide(MainOption::PAUSE_PROC);
+  MAIN_SCREEN.hide(MainOption::STOP_PROC);
+
+  proc->stop();
+  displayInfoScreen();
+  displayChar(STOP_CHAR);
 }
 
 void mainScreenClicked()
@@ -628,11 +664,11 @@ void mainScreenClicked()
     break;
 
   case MainOption::PREP_MENU:
-    display(ScreenID::PREP, false);
+    displayMenu(ScreenID::PREP, false);
     break;
 
   case MainOption::CTRL_MENU:
-    display(ScreenID::CTRL, false);
+    displayMenu(ScreenID::CTRL, false);
     break;
 
   case MainOption::NO_TF_CARD:
@@ -640,31 +676,19 @@ void mainScreenClicked()
     break;
 
   case MainOption::START_FROM_TF:
-    display(ScreenID::CARD, false);
+    displayMenu(ScreenID::CARD, false);
     break;
 
   case MainOption::PAUSE_PROC:
-    MAIN_SCREEN.unhide(MainOption::RESUME_PROC);
-    MAIN_SCREEN.hide(MainOption::PAUSE_PROC);
-    displayInfoScreen();
-    proc->pause();
+    pauseProcess();
     break;
 
   case MainOption::RESUME_PROC:
-    MAIN_SCREEN.unhide(MainOption::PAUSE_PROC);
-    MAIN_SCREEN.hide(MainOption::RESUME_PROC);
-    displayInfoScreen();
-    proc->resume();
+    resumeProcess();
     break;
 
   case MainOption::STOP_PROC:
-    MAIN_SCREEN.unhide(MainOption::PREP_MENU);
-    MAIN_SCREEN.unhide(MainOption::START_FROM_TF);
-    MAIN_SCREEN.hide(MainOption::RESUME_PROC);
-    MAIN_SCREEN.hide(MainOption::PAUSE_PROC);
-    MAIN_SCREEN.hide(MainOption::STOP_PROC);
-    displayInfoScreen();
-    proc->stop();
+    stopProcess();
     break;
 
   case MainOption::ABOUT_CNC:
@@ -681,16 +705,16 @@ void motionScreenClicked()
   switch (MOTION_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    display(ScreenID::CTRL, true);
+    displayMenu(ScreenID::CTRL, true);
     break;
   case 1:
-    display(ScreenID::ACCELERATION, false);
+    displayMenu(ScreenID::ACCELERATION, false);
     break;
   case 2:
-    display(ScreenID::VELOCITY, false);
+    displayMenu(ScreenID::VELOCITY, false);
     break;
   case 3:
-    display(ScreenID::STEPS, false);
+    displayMenu(ScreenID::STEPS, false);
     break;
   default:
     break;
@@ -702,16 +726,16 @@ void moveAxesScreenClicked()
   switch (MOVE_AXES_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    display(PREP, true);
+    displayMenu(PREP, true);
     break;
   case 1:
-    display(ScreenID::MOVE_X, false);
+    displayMenu(ScreenID::MOVE_X, false);
     break;
   case 2:
-    display(ScreenID::MOVE_Y, false);
+    displayMenu(ScreenID::MOVE_Y, false);
     break;
   case 3:
-    display(ScreenID::MOVE_Z, false);
+    displayMenu(ScreenID::MOVE_Z, false);
     break;
   default:
     break;
@@ -739,10 +763,10 @@ void prepScreenClicked()
   switch (PREP_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    display(ScreenID::MAIN, true);
+    displayMenu(ScreenID::MAIN, true);
     break;
   case 1:
-    display(MOVE_AXES, false);
+    displayMenu(MOVE_AXES, false);
     break;
   case 2:
     autohome();
@@ -1179,6 +1203,18 @@ void onPaused()
 void onStopped()
 {
   cmd->stop();
+
+  if(millis() - proc->getLastStopTime() > PROCESS_EXPIRED)
+  {
+    commands = {};
+    cmd = nullptr;
+    proc = nullptr;
+
+    MAIN_SCREEN.unhide(MainOption::PREP_MENU);
+    MAIN_SCREEN.unhide(MainOption::START_FROM_TF);
+
+    displayInfoScreen();
+  }
 }
 
 void setup()
@@ -1231,9 +1267,9 @@ void setup()
   stepperY->setMaxSpeed(500);
   stepperZ->setMaxSpeed(500);
 
-  stepperX->setAcceleration(300);
-  stepperY->setAcceleration(300);
-  stepperZ->setAcceleration(300);
+  stepperX->setAcceleration(400);
+  stepperY->setAcceleration(400);
+  stepperZ->setAcceleration(400);
 
   switchX->setDebounceTime(10);
   switchY->setDebounceTime(10);

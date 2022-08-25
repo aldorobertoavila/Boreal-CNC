@@ -16,12 +16,15 @@ void MoveCommand::complete()
     }
 
     _currentStatus = Status::COMPLETED;
-};
+}
 
 void MoveCommand::stop()
 {
-    _cartesian.stopSteppers();
-    _laser.turnOff();
+    if (_currentStatus != Status::STOPPED)
+    {
+        _cartesian.stopSteppers();
+        _laser.turnOff();
 
-    _currentStatus = Status::STOPPED;
-};
+        _currentStatus = Status::STOPPED;
+    }
+}

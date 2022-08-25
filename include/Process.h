@@ -16,6 +16,8 @@ class Process
 public:
     Process(fs::FS &fs, RTC &rtc, String path, String filename);
 
+    unsigned long getLastStopTime();
+
     uint8_t getPreviousProgress();
 
     String getPreviousTime();
@@ -40,13 +42,14 @@ public:
 
 private:
     fs::FS &_fs;
-    RTC _rtc;
     fs::File _file;
+    RTC _rtc;
     String _filename;
     String _path;
+    String _previousTime;
     Status _status;
+    String _time;
     uint8_t _previousProgress;
     uint8_t _progress;
-    String _previousTime;
-    String _time;
+    unsigned long _lastStopTime;
 };

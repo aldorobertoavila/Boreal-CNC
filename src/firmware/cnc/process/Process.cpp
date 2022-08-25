@@ -6,6 +6,11 @@ Process::Process(fs::FS &fs, RTC &rtc, String path, String filename) : _fs(fs), 
     this->_path = path;
 }
 
+unsigned long Process::getLastStopTime()
+{
+    return _lastStopTime;
+}
+
 uint8_t Process::getPreviousProgress()
 {
     return _previousProgress;
@@ -108,7 +113,8 @@ void Process::stop()
         {
             _file.close();
         }
-
+        
+        _lastStopTime = millis();
         _status = Status::STOPPED;
     }
 }

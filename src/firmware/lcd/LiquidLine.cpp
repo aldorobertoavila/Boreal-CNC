@@ -40,8 +40,22 @@ void LiquidLine::unhide()
 
 void LiquidLine::display(LCD &lcd)
 {
-    lcd.setCursor(_col, _row);
-    lcd.print(_text);
+    if (!_text.isEmpty())
+    {
+        lcd.setCursor(_col, _row);
+        lcd.print(_text);
+    }
+}
+
+void LiquidLine::displayAsChar(LCD &lcd)
+{
+    if (!_text.isEmpty())
+    {
+        int charValue = atoi(_text.c_str());
+
+        lcd.setCursor(_col, _row);
+        lcd.write(charValue);
+    }
 }
 
 void LiquidLine::setColumn(uint8_t col)
@@ -57,4 +71,9 @@ void LiquidLine::setRow(uint8_t row)
 void LiquidLine::setText(String text)
 {
     _text = text;
+}
+
+void LiquidLine::setText(uint8_t symbol)
+{
+    _text = String(symbol);
 }
