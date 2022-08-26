@@ -1085,10 +1085,20 @@ void moveAxesScreenClicked()
 
 void moveAxisScreenClicked()
 {
-  cartesian.setCurrentAxis(Axis::X);
-  cartesian.setUnit(Unit::MILLIMETER);
+  Axis axis = cartesian.getCurrentAxis();
 
-  display(ScreenID::MOVE_AXES, true);
+  switch (axis)
+  {
+  case Axis::X:
+    display(ScreenID::MOVE_X, true);
+    break;
+  case Axis::Y:
+    display(ScreenID::MOVE_Y, true);
+    break;
+  case Axis::Z:
+    display(ScreenID::MOVE_Z, true);
+    break;
+  }
 }
 
 void moveXScreenClicked()
@@ -1097,6 +1107,8 @@ void moveXScreenClicked()
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
+    cartesian.setCurrentAxis(Axis::X);
+    cartesian.setUnit(Unit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::X);
@@ -1124,6 +1136,8 @@ void moveYScreenClicked()
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
+    cartesian.setCurrentAxis(Axis::X);
+    cartesian.setUnit(Unit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::Y);
@@ -1151,6 +1165,8 @@ void moveZScreenClicked()
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
+    cartesian.setCurrentAxis(Axis::X);
+    cartesian.setUnit(Unit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::Z);
