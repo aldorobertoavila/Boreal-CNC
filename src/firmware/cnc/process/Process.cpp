@@ -50,7 +50,12 @@ String Process::getName()
 
 String Process::readNextLine()
 {
-    if (_status != Status::CONTINUE || !_file)
+    if (!_file)
+    {
+        return "";
+    }
+
+    if (_status != Status::CONTINUE)
     {
         return "";
     }
@@ -61,7 +66,10 @@ String Process::readNextLine()
         return "";
     }
 
-    String line = _file.readStringUntil('\n');
+    String line = _file.readStringUntil('\r');
+
+    line.trim();
+
     int comment = line.indexOf(";");
 
     if (comment == 0)
@@ -113,7 +121,7 @@ void Process::stop()
         {
             _file.close();
         }
-        
+
         _lastStopTime = millis();
         _status = Status::STOPPED;
     }

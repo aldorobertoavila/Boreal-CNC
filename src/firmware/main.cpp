@@ -352,8 +352,7 @@ String formatPosition(Axis axis)
   case Unit::INCH:
     snprintf(buf, POS_VAL_SIZE, "%.1f", u);
     break;
-
-  case Unit::MILLIMETER:
+  default:
     snprintf(buf, POS_VAL_SIZE, "%i", (int)u);
     break;
   }
@@ -854,7 +853,7 @@ void setHomeOffsets()
 
 void moveAxis(Rotation direction)
 {
-  unsigned long u = cartesian.getUnit() == Unit::MICROMETER ? 100 : 1; // move 0.1mm if unit micron
+  float u = cartesian.getUnit() == Unit::MICROMETER ? 100 : 1; // move 0.1mm if unit micron
 
   if (direction == Rotation::COUNTERCLOCKWISE)
   {
@@ -1409,7 +1408,7 @@ void rotateCallback(Rotation rotation)
 
 float parseNumber(String line, int index, char arg, float val)
 {
-  if (index < 0)
+  if (index == -1)
   {
     return val;
   }
@@ -1418,7 +1417,7 @@ float parseNumber(String line, int index, char arg, float val)
   index = sub.indexOf(' ');
   sub = sub.substring(0, index);
 
-  return atof(sub.c_str());
+  return sub.toInt();
 }
 
 float parseNumber(String line, char arg, float val)
@@ -1626,7 +1625,6 @@ void parseNextCommand()
   case 3:
     if (line.indexOf('I') > 0 || line.indexOf('J') > 0)
     {
-      // TODO: invalid arc
       if (line.indexOf('R') > 0)
       {
         return;
@@ -1636,7 +1634,6 @@ void parseNextCommand()
     }
     else
     {
-      // TODO: invalid circle
       if (line.indexOf('X') < 0 && line.indexOf('Y') < 0)
       {
         return;

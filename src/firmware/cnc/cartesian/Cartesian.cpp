@@ -4,6 +4,8 @@ using namespace std;
 
 Cartesian::Cartesian()
 {
+    this->_positioning = Positioning::ABSOLUTE;
+    this->_unit = Unit::MILLIMETER;
 }
 
 void Cartesian::disableSteppers()
