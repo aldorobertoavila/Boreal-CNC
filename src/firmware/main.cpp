@@ -1085,6 +1085,9 @@ void moveAxesScreenClicked()
 
 void moveAxisScreenClicked()
 {
+  cartesian.setCurrentAxis(Axis::X);
+  cartesian.setUnit(Unit::MILLIMETER);
+
   display(ScreenID::MOVE_AXES, true);
 }
 
