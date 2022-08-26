@@ -8,7 +8,8 @@ enum AutohomeState
 {
     PRESS,
     RELEASE,
-    RETURN
+    RETURN,
+    OFFSET
 };
 
 class Command

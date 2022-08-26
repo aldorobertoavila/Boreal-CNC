@@ -38,6 +38,22 @@ void Rotary::setClickDebounceTime(unsigned long debounceTime)
   _clickDebounceTime = debounceTime;
 }
 
+void Rotary::setDefaultDirection(Rotation direction)
+{
+  _defaultDirection = direction;
+}
+
+void Rotary::setInterval(unsigned long interval)
+{
+  _interval = interval;
+}
+
+void Rotary::setPosition(long position)
+{
+  _prevPosition = _position;
+  _position = constrain(position, _lowerBound, _upperBound);
+}
+
 void Rotary::setOnClicked(onClicked callback)
 {
   _onClicked = callback;
@@ -48,20 +64,9 @@ void Rotary::setOnRotation(onRotation callback)
   _onRotation = callback;
 }
 
-void Rotary::setDefaultDirection(Rotation direction)
-{
-  _defaultDirection = direction;
-}
-
 void Rotary::setRotationDebounceTime(unsigned long debounceTime)
 {
   _rotationDebounceTime = debounceTime;
-}
-
-void Rotary::setPosition(long position)
-{
-  _prevPosition = _position;
-  _position = constrain(position, _lowerBound, _upperBound);
 }
 
 void Rotary::tick()
@@ -78,11 +83,11 @@ void Rotary::tick()
       {
         if (_defaultDirection == Rotation::CLOCKWISE)
         {
-          setPosition(_position - 1);
+          setPosition(_position - _interval);
         }
         else
         {
-          setPosition(_position + 1);
+          setPosition(_position + _interval);
         }
 
         _onRotation(Rotation::COUNTERCLOCKWISE);
@@ -91,11 +96,11 @@ void Rotary::tick()
       {
         if (_defaultDirection == Rotation::CLOCKWISE)
         {
-          setPosition(_position + 1);
+          setPosition(_position + _interval);
         }
         else
         {
-          setPosition(_position - 1);
+          setPosition(_position - _interval);
         }
 
         _onRotation(Rotation::CLOCKWISE);

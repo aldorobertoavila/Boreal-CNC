@@ -29,7 +29,7 @@ public:
 
     void setText(String text);
 
-    void setText(uint8_t symbol);
+    void setSymbol(uint8_t symbol);
 
 protected:
     uint8_t _col;

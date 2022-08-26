@@ -7,7 +7,6 @@ typedef void (*onRotation)(Rotation);
 class Rotary
 {
 public:
-
     Rotary(uint8_t clkPin, uint8_t dtPin, uint8_t swPin);
 
     long getPosition();
@@ -18,15 +17,17 @@ public:
 
     void setClickDebounceTime(unsigned long debounceTime);
 
-    void setRotationDebounceTime(unsigned long debounceTime);
-
     void setDefaultDirection(Rotation direction);
 
-    void setPosition(long position);
+    void setInterval(unsigned long interval);
 
     void setOnClicked(onClicked callback);
 
     void setOnRotation(onRotation callback);
+
+    void setPosition(long position);
+
+    void setRotationDebounceTime(unsigned long debounceTime);
 
     void tick();
 
@@ -37,6 +38,7 @@ private:
     unsigned long _lastClickTime;
     unsigned long _lastRotationTime;
     unsigned long _rotationDebounceTime;
+    unsigned long _interval;
     bool _previousStateClk;
     uint8_t _dtPin;
     uint8_t _clkPin;

@@ -2,6 +2,8 @@
 
 enum Unit
 {
+    CENTIMETER,
     MILLIMETER,
+    MICROMETER,
     INCH
 };

@@ -73,7 +73,7 @@ void LiquidLine::setText(String text)
     _text = text;
 }
 
-void LiquidLine::setText(uint8_t symbol)
+void LiquidLine::setSymbol(uint8_t symbol)
 {
     _text = String(symbol);
 }

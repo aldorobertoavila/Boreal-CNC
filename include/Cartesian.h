@@ -25,9 +25,15 @@ public:
 
     void stopSteppers();
 
-    long getDimension(Axis axis);
+    float getAcceleration(Axis axis);
 
-    long getHomeOffset(Axis axis);
+    Axis getCurrentAxis();
+
+    float getDimension(Axis axis);
+
+    float getHomeOffset(Axis axis);
+
+    float getMaxSpeed(Axis axis);
 
     LimitSwitchPtr getLimitSwitch(Axis axis);
 
@@ -43,15 +49,15 @@ public:
 
     Unit getUnit();
 
-    void setTargetPosition(Axis axis, float u);
+    void setAcceleration(Axis axis, Unit unit, float u);
 
-    void setTargetPosition(Axis axis, Unit unit, float u);
-
-    void setTargetPosition(float x, float y, float z);
+    void setCurrentAxis(Axis axis);
 
     void setDimension(Axis axis, float u);
 
     void setHomeOffset(Axis axis, float u);
+
+    void setMaxSpeed(Axis axis, Unit unit, float u);
 
     void setMinStepsPerMillimeter(Axis axis, long steps);
 
@@ -65,12 +71,20 @@ public:
 
     void setStepsPerMillimeter(Axis axis, long steps);
 
+    void setTargetPosition(Axis axis, float u);
+
+    void setTargetPosition(Axis axis, Unit unit, float u);
+
+    void setTargetPosition(float x, float y, float z);
+
     void setUnit(Unit unit);
+
+    long toSteps(Axis axis, Unit unit, float u);
+
+    float toUnit(Axis axis, Unit unit);
 
 protected:
     Resolution toResolution(float factor);
-
-    long toSteps(Axis axis, Unit unit, float u);
 
 private:
     StepperMotorPtr _steppers[AXES];
@@ -78,9 +92,12 @@ private:
     Resolution _resolutions[AXES];
     Positioning _positioning;
     Unit _unit;
-    long _dimensions[AXES];
-    long _homeOffset[AXES];
+    Axis _currentAxis;
+    float _acceleration[AXES];
+    float _dimensions[AXES];
+    float _homeOffset[AXES];
+    float _maxSpeed[AXES];
+    float _targetPosition[AXES];
     long _minStepsPerMillimeter[AXES];
     long _stepsPerMillimeter[AXES];
-    float _targetPosition[AXES];
 };
