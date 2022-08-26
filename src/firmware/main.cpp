@@ -213,32 +213,34 @@ LimitSwitchPtr SWITCH_X = std::make_shared<LimitSwitch>(SW_X_PIN);
 LimitSwitchPtr SWITCH_Y = std::make_shared<LimitSwitch>(SW_Y_PIN);
 LimitSwitchPtr SWITCH_Z = std::make_shared<LimitSwitch>(SW_Z_PIN);
 
-LiquidScreen INFO_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
-LiquidScreen ABOUT_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
+using LiquidScreenPtr = LiquidScreen *;
 
-LiquidScreen MOVE_AXIS_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidScreen SET_ACCEL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidScreen SET_POWER_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidScreen SET_STEPS_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidScreen SET_VEL_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreenPtr INFO_SCREEN;
+LiquidScreenPtr ABOUT_SCREEN;
 
-LiquidMenu MAIN_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu PREP_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu CTRL_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu CARD_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreenPtr MOVE_AXIS_SCREEN;
+LiquidScreenPtr SET_ACCEL_SCREEN;
+LiquidScreenPtr SET_POWER_SCREEN;
+LiquidScreenPtr SET_STEPS_SCREEN;
+LiquidScreenPtr SET_VEL_SCREEN;
 
-LiquidMenu MOVE_AXES_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu HOME_OFFSETS_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreenPtr MAIN_MENU_SCREEN;
+LiquidScreenPtr PREP_MENU_SCREEN;
+LiquidScreenPtr CTRL_MENU_SCREEN;
+LiquidScreenPtr CARD_MENU_SCREEN;
 
-LiquidMenu MOVE_X_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu MOVE_Y_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu MOVE_Z_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreenPtr MOVE_AXES_MENU_SCREEN;
+LiquidScreenPtr HOME_OFFSETS_MENU_SCREEN;
 
-LiquidMenu ACCEL_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu VEL_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreenPtr MOVE_X_MENU_SCREEN;
+LiquidScreenPtr MOVE_Y_MENU_SCREEN;
+LiquidScreenPtr MOVE_Z_MENU_SCREEN;
 
-LiquidMenu MOTION_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
-LiquidMenu STEPS_MENU_SCREEN = LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+LiquidScreenPtr ACCEL_MENU_SCREEN;
+LiquidScreenPtr VEL_MENU_SCREEN;
+
+LiquidScreenPtr MOTION_MENU_SCREEN;
+LiquidScreenPtr STEPS_MENU_SCREEN;
 
 LiquidLinePtr moveAxisText;
 LiquidLinePtr moveAxisValue;
@@ -286,45 +288,45 @@ LiquidScreen *getScreen(ScreenID screenIndex)
   switch (screenIndex)
   {
   case ScreenID::ABOUT:
-    return &ABOUT_SCREEN;
+    return ABOUT_SCREEN;
   case ScreenID::ACCEL:
-    return &ACCEL_MENU_SCREEN;
+    return ACCEL_MENU_SCREEN;
   case ScreenID::CARD:
-    return &CARD_MENU_SCREEN;
+    return CARD_MENU_SCREEN;
   case ScreenID::CTRL:
-    return &CTRL_MENU_SCREEN;
+    return CTRL_MENU_SCREEN;
   case ScreenID::HOME_OFFSETS:
-    return &HOME_OFFSETS_MENU_SCREEN;
+    return HOME_OFFSETS_MENU_SCREEN;
   case ScreenID::INFO:
-    return &INFO_SCREEN;
+    return INFO_SCREEN;
   case ScreenID::MAIN:
-    return &MAIN_MENU_SCREEN;
+    return MAIN_MENU_SCREEN;
   case ScreenID::MOTION:
-    return &MOTION_MENU_SCREEN;
+    return MOTION_MENU_SCREEN;
   case ScreenID::MOVE_AXES:
-    return &MOVE_AXES_MENU_SCREEN;
+    return MOVE_AXES_MENU_SCREEN;
   case ScreenID::MOVE_AXIS:
-    return &MOVE_AXIS_SCREEN;
+    return MOVE_AXIS_SCREEN;
   case ScreenID::MOVE_X:
-    return &MOVE_X_MENU_SCREEN;
+    return MOVE_X_MENU_SCREEN;
   case ScreenID::MOVE_Y:
-    return &MOVE_Y_MENU_SCREEN;
+    return MOVE_Y_MENU_SCREEN;
   case ScreenID::MOVE_Z:
-    return &MOVE_Z_MENU_SCREEN;
+    return MOVE_Z_MENU_SCREEN;
   case ScreenID::PREP:
-    return &PREP_MENU_SCREEN;
+    return PREP_MENU_SCREEN;
   case ScreenID::SET_ACCEL:
-    return &SET_ACCEL_SCREEN;
+    return SET_ACCEL_SCREEN;
   case ScreenID::SET_POWER:
-    return &SET_POWER_SCREEN;
+    return SET_POWER_SCREEN;
   case ScreenID::SET_STEPS:
-    return &SET_STEPS_SCREEN;
+    return SET_STEPS_SCREEN;
   case ScreenID::SET_VEL:
-    return &SET_VEL_SCREEN;
+    return SET_VEL_SCREEN;
   case ScreenID::STEPS:
-    return &STEPS_MENU_SCREEN;
+    return STEPS_MENU_SCREEN;
   case ScreenID::VEL:
-    return &VEL_MENU_SCREEN;
+    return VEL_MENU_SCREEN;
   default:
     return nullptr;
   }
@@ -765,8 +767,8 @@ void displayChar(byte charValue[])
 
 void pauseProcess()
 {
-  MAIN_MENU_SCREEN.unhide(MainOption::RESUME_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainOption::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN->unhide(MainOption::RESUME_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::PAUSE_PROC_OP);
 
   proc->pause();
   displayInfoScreen();
@@ -775,8 +777,8 @@ void pauseProcess()
 
 void resumeProcess()
 {
-  MAIN_MENU_SCREEN.unhide(MainOption::PAUSE_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainOption::RESUME_PROC_OP);
+  MAIN_MENU_SCREEN->unhide(MainOption::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::RESUME_PROC_OP);
 
   proc->resume();
   displayInfoScreen();
@@ -785,9 +787,9 @@ void resumeProcess()
 
 void stopProcess()
 {
-  MAIN_MENU_SCREEN.hide(MainOption::RESUME_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainOption::PAUSE_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainOption::STOP_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::RESUME_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::STOP_PROC_OP);
 
   proc->stop();
   displayInfoScreen();
@@ -919,7 +921,7 @@ void aboutScreenClicked()
 
 void accelerationScreenClicked()
 {
-  switch (ACCEL_MENU_SCREEN.getCurrentLineIndex())
+  switch (ACCEL_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::MOTION, true);
@@ -948,18 +950,18 @@ void storeSettings()
 
 void cardScreenClicked()
 {
-  uint8_t index = CARD_MENU_SCREEN.getCurrentLineIndex();
+  uint8_t index = CARD_MENU_SCREEN->getCurrentLineIndex();
 
   if (index > 0)
   {
-    processes.push(std::make_shared<Process>(SD, rtc, "/", filePaths[index - 1]));
+    processes.push(std::make_shared<Process>(SD, rtc, "/", filePaths[0]));
     cartesian.enableSteppers();
 
-    MAIN_MENU_SCREEN.unhide(MainOption::PAUSE_PROC_OP);
-    MAIN_MENU_SCREEN.unhide(MainOption::STOP_PROC_OP);
-    MAIN_MENU_SCREEN.hide(MainOption::PREP_MENU_RTN);
-    MAIN_MENU_SCREEN.hide(MainOption::START_FROM_TF_OP);
-    MAIN_MENU_SCREEN.hide(MainOption::RESUME_PROC_OP);
+    MAIN_MENU_SCREEN->unhide(MainOption::PAUSE_PROC_OP);
+    MAIN_MENU_SCREEN->unhide(MainOption::STOP_PROC_OP);
+    MAIN_MENU_SCREEN->hide(MainOption::PREP_MENU_RTN);
+    MAIN_MENU_SCREEN->hide(MainOption::START_FROM_TF_OP);
+    MAIN_MENU_SCREEN->hide(MainOption::RESUME_PROC_OP);
 
     displayInfoScreen();
   }
@@ -971,7 +973,7 @@ void cardScreenClicked()
 
 void ctrlScreenClicked()
 {
-  switch (CTRL_MENU_SCREEN.getCurrentLineIndex())
+  switch (CTRL_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::MAIN, true);
@@ -997,7 +999,7 @@ void infoScreenClicked()
 
 void mainScreenClicked()
 {
-  switch (MAIN_MENU_SCREEN.getCurrentLineIndex())
+  switch (MAIN_MENU_SCREEN->getCurrentLineIndex())
   {
   case MainOption::INFO_MENU_RTN:
     displayInfoScreen();
@@ -1016,6 +1018,7 @@ void mainScreenClicked()
     break;
 
   case MainOption::START_FROM_TF_OP:
+    rotary.setBoundaries(0, 1);
     displayMenu(ScreenID::CARD, false);
     break;
 
@@ -1042,7 +1045,7 @@ void mainScreenClicked()
 
 void motionScreenClicked()
 {
-  switch (MOTION_MENU_SCREEN.getCurrentLineIndex())
+  switch (MOTION_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::CTRL, true);
@@ -1063,7 +1066,7 @@ void motionScreenClicked()
 
 void moveAxesScreenClicked()
 {
-  switch (MOVE_AXES_MENU_SCREEN.getCurrentLineIndex())
+  switch (MOVE_AXES_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::PREP, true);
@@ -1102,7 +1105,7 @@ void moveAxisScreenClicked()
 
 void moveXScreenClicked()
 {
-  switch (MOVE_X_MENU_SCREEN.getCurrentLineIndex())
+  switch (MOVE_X_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
@@ -1131,7 +1134,7 @@ void moveXScreenClicked()
 
 void moveYScreenClicked()
 {
-  switch (MOVE_Y_MENU_SCREEN.getCurrentLineIndex())
+  switch (MOVE_Y_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
@@ -1160,7 +1163,7 @@ void moveYScreenClicked()
 
 void moveZScreenClicked()
 {
-  switch (MOVE_Z_MENU_SCREEN.getCurrentLineIndex())
+  switch (MOVE_Z_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
@@ -1189,7 +1192,7 @@ void moveZScreenClicked()
 
 void prepScreenClicked()
 {
-  switch (PREP_MENU_SCREEN.getCurrentLineIndex())
+  switch (PREP_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::MAIN, true);
@@ -1252,7 +1255,7 @@ void setVelScreenClicked()
 
 void stepsScreenClicked()
 {
-  switch (STEPS_MENU_SCREEN.getCurrentLineIndex())
+  switch (STEPS_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     display(ScreenID::MOTION, true);
@@ -1276,7 +1279,7 @@ void stepsScreenClicked()
 
 void velocityScreenClicked()
 {
-  switch (VEL_MENU_SCREEN.getCurrentLineIndex())
+  switch (VEL_MENU_SCREEN->getCurrentLineIndex())
   {
   case 0:
     displayMenu(ScreenID::MOTION, true);
@@ -1433,13 +1436,25 @@ LiquidLinePtr createLine(LiquidScreen &screen, uint8_t lineIndex, uint8_t col, u
   return ptr;
 }
 
+LiquidLinePtr createLine(LiquidScreenPtr screen, uint8_t lineIndex, uint8_t col, uint8_t row, String text, size_t textLength)
+{
+  LiquidLinePtr ptr = std::make_shared<LiquidLine>(col, row, pad_right(text.c_str(), textLength).c_str());
+
+  screen->append(lineIndex, ptr);
+  return ptr;
+}
+
 void setupAboutScreen()
 {
+  ABOUT_SCREEN = new LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(ABOUT_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 4);
 }
 
 void setupAccelerationScreen()
 {
+  ACCEL_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(ACCEL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 8);
   createLine(ACCEL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Accel X"), 8);
   createLine(ACCEL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Accel Y"), 8);
@@ -1448,6 +1463,8 @@ void setupAccelerationScreen()
 
 void setupCardScreen()
 {
+  CARD_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(CARD_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 4);
 
   uint8_t n = getFiles(root, filePaths, MAX_FILES_SIZE);
@@ -1460,6 +1477,8 @@ void setupCardScreen()
 
 void setupCtrlScreen()
 {
+  CTRL_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(CTRL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 15);
   createLine(CTRL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 15);
   createLine(CTRL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Laser"), 15);
@@ -1468,6 +1487,8 @@ void setupCtrlScreen()
 
 void setupInfoScreen()
 {
+  INFO_SCREEN = new LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(INFO_SCREEN, 0, LCD_ZERO_COL, 0, F("Boreal CNC"), 0);
   createLine(INFO_SCREEN, 1, POS_LBL_X_COL, 1, F("X"), 0);
   createLine(INFO_SCREEN, 2, POS_LBL_Y_COL, 1, F("Y"), 0);
@@ -1487,6 +1508,8 @@ void setupInfoScreen()
 
 void setupMainScreen()
 {
+  MAIN_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(MAIN_MENU_SCREEN, MainOption::INFO_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, F("Info"), 14);
   createLine(MAIN_MENU_SCREEN, MainOption::PREP_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, F("Prepare"), 14);
   createLine(MAIN_MENU_SCREEN, MainOption::CTRL_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, F("Control"), 14);
@@ -1497,20 +1520,24 @@ void setupMainScreen()
   createLine(MAIN_MENU_SCREEN, MainOption::STOP_PROC_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("Stop"), 14);
   createLine(MAIN_MENU_SCREEN, MainOption::ABOUT_CNC_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("About CNC"), 14);
 
-  MAIN_MENU_SCREEN.hide(MainOption::NO_TF_CARD_OP);
-  MAIN_MENU_SCREEN.hide(MainOption::PAUSE_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainOption::RESUME_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainOption::STOP_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::NO_TF_CARD_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::RESUME_PROC_OP);
+  MAIN_MENU_SCREEN->hide(MainOption::STOP_PROC_OP);
 }
 
 void setupMoveAxisScreen()
 {
+  MOVE_AXIS_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   moveAxisText = createLine(MOVE_AXIS_SCREEN, 0, LCD_ZERO_COL, 1, F("Move X 1mm"), 0);
   moveAxisValue = createLine(MOVE_AXIS_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
 }
 
 void setupMoveAxesScreen()
 {
+  MOVE_AXES_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(MOVE_AXES_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Prepare"), 8);
   createLine(MOVE_AXES_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move X"), 8);
   createLine(MOVE_AXES_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Y"), 8);
@@ -1519,6 +1546,8 @@ void setupMoveAxesScreen()
 
 void setupMoveXScreen()
 {
+  MOVE_X_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(MOVE_X_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Axes"), 13);
   createLine(MOVE_X_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move X 10mm"), 13);
   createLine(MOVE_X_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Move X 1mm"), 13);
@@ -1527,6 +1556,7 @@ void setupMoveXScreen()
 
 void setupMoveYScreen()
 {
+  MOVE_Y_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
   createLine(MOVE_Y_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Axes"), 13);
   createLine(MOVE_Y_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Y 10mm"), 13);
@@ -1536,6 +1566,8 @@ void setupMoveYScreen()
 
 void setupMoveZScreen()
 {
+  MOVE_Z_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(MOVE_Z_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Axes"), 13);
   createLine(MOVE_Z_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Z 10mm"), 13);
   createLine(MOVE_Z_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Z 1mm"), 13);
@@ -1544,6 +1576,8 @@ void setupMoveZScreen()
 
 void setupPrepScreen()
 {
+  PREP_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(PREP_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 17);
   createLine(PREP_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move axes"), 17);
   createLine(PREP_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Auto home"), 17);
@@ -1553,6 +1587,8 @@ void setupPrepScreen()
 
 void setupMotionScreen()
 {
+  MOTION_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(MOTION_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Control"), 13);
   createLine(MOTION_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Acceleration"), 13);
   createLine(MOTION_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Velocity"), 13);
@@ -1561,30 +1597,40 @@ void setupMotionScreen()
 
 void setupSetAccelerationScreen()
 {
+  SET_ACCEL_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   setAccelerationText = createLine(SET_ACCEL_SCREEN, 0, LCD_ZERO_COL, 1, F("Set X Accel"), 0);
   setAccelerationValue = createLine(SET_ACCEL_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
 }
 
 void setupSetPowerScreen()
 {
+  SET_POWER_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   setPowerText = createLine(SET_POWER_SCREEN, 0, LCD_ZERO_COL, 1, F("Set Laser PWM"), 0);
   setPowerValue = createLine(SET_POWER_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
 }
 
 void setupSetStepsScreen()
 {
+  SET_STEPS_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   setStepsText = createLine(SET_STEPS_SCREEN, 0, LCD_ZERO_COL, 1, F("Set X steps/mm"), 0);
   setStepsValue = createLine(SET_STEPS_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
 }
 
 void setupSetVelocityScreen()
 {
+  SET_VEL_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   setVelocityText = createLine(SET_VEL_SCREEN, 0, LCD_ZERO_COL, 1, F("Set X Velocity"), 0);
   setVelocityValue = createLine(SET_VEL_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
 }
 
 void setupStepsScreen()
 {
+  STEPS_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(STEPS_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 11);
   createLine(STEPS_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("X steps/mm"), 11);
   createLine(STEPS_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Y steps/mm"), 11);
@@ -1593,6 +1639,8 @@ void setupStepsScreen()
 
 void setupVelocityScreen()
 {
+  ACCEL_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
+
   createLine(ACCEL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 7);
   createLine(ACCEL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Vel X"), 7);
   createLine(ACCEL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Vel Y"), 7);
@@ -1739,8 +1787,8 @@ void onStopped()
     cmd = nullptr;
     proc = nullptr;
 
-    MAIN_MENU_SCREEN.unhide(MainOption::PREP_MENU_RTN);
-    MAIN_MENU_SCREEN.unhide(MainOption::START_FROM_TF_OP);
+    MAIN_MENU_SCREEN->unhide(MainOption::PREP_MENU_RTN);
+    MAIN_MENU_SCREEN->unhide(MainOption::START_FROM_TF_OP);
 
     displayInfoScreen();
   }
