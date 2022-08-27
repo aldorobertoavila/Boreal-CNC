@@ -219,7 +219,7 @@ LimitSwitchPtr SWITCH_X = std::make_shared<LimitSwitch>(SW_X_PIN);
 LimitSwitchPtr SWITCH_Y = std::make_shared<LimitSwitch>(SW_Y_PIN);
 LimitSwitchPtr SWITCH_Z = std::make_shared<LimitSwitch>(SW_Z_PIN);
 
-using LiquidScreenPtr = LiquidScreen *;
+using LiquidScreenPtr = LiquidScreen*;
 
 LiquidScreenPtr INFO_SCREEN;
 LiquidScreenPtr ABOUT_SCREEN;
@@ -997,7 +997,7 @@ void cardScreenClicked()
   if (index > 0)
   {
     const char *filename = filePaths[index - 1];
-    char *path = "/";
+    char path[] = "/";
 
     strcat(path, filename);
 
