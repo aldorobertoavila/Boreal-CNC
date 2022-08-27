@@ -42,7 +42,7 @@ void LiquidScreen::draw(uint8_t startLine)
 
         if (line && !line->isHidden())
         {
-            line->display(_lcd);
+            line->displayText(_lcd);
         }
     }
 }
@@ -194,7 +194,7 @@ void LiquidMenu::draw(uint8_t startLine)
         if (line && !line->isHidden())
         {
             line->setRow(row);
-            line->display(_lcd);
+            line->displayText(_lcd);
             row++;
         }
 

@@ -16,7 +16,7 @@
 using namespace std;
 
 #define CMD_QUEUE_SIZE 10
-#define MAX_FILES_SIZE 20
+#define MAX_FILES_SIZE 10
 
 #define EN_CLICK_DEBOUNCE 800
 #define EN_ROT_DEBOUNCE 25
@@ -70,9 +70,16 @@ using namespace std;
 #define VELOCITY_LBL_COL 4
 #define VELOCITY_VAL_COL 8
 
+#define MOVE_AXES_LBL_SIZE 14
+
+#define ACCEL_VAL_SIZE 3
 #define MOVE_AXES_VAL_SIZE 4
 #define PROG_VAL_SIZE 4
 #define POS_VAL_SIZE 4
+#define POWER_VAL_SIZE 3
+#define STEPS_VAL_SIZE 3
+#define TIME_VAL_SIZE 5
+#define VEL_VAL_SIZE 3
 
 #define EN_CLK_PIN 4
 #define EN_DT_PIN 2
@@ -184,11 +191,10 @@ const int EMPTY_SPACE = 255;
 const int GAUGE_SIZE = 14;
 const int ICON_SIZE = 1;
 
-String EMPTY_ROW(F("                    "));
-String SYSTEM_VOLUME(F("System Volume Information"));
-
 char INTERNAL_FILE_EXT = '~';
-String GCODE_FILE_EXT(F(".gcode"));
+const char *EMPTY_ROW = "                    ";
+const char *SYSTEM_VOLUME = "System Volume Information";
+const char *GCODE_FILE_EXT = ".gcode";
 
 Cartesian cartesian;
 RTC rtc;
@@ -271,7 +277,7 @@ LiquidLinePtr positionValueZ;
 byte gauge_left_dynamic[8];
 byte gauge_right_dynamic[8];
 
-String filePaths[MAX_FILES_SIZE];
+const char *filePaths[MAX_FILES_SIZE];
 File root;
 
 ScreenID currentScreen;
@@ -342,7 +348,7 @@ std::string pad_right(std::string str, size_t s)
   return str;
 }
 
-String formatPosition(Axis axis)
+const char *formatPosition(Axis axis)
 {
   float u = cartesian.getTargetPosition(axis);
 
@@ -362,7 +368,7 @@ String formatPosition(Axis axis)
   return pad_right(buf, POS_VAL_SIZE).c_str();
 }
 
-String formatProgress(uint8_t progress)
+const char *formatProgress(uint8_t progress)
 {
   char buf[PROG_VAL_SIZE];
   snprintf(buf, PROG_VAL_SIZE, "%i%%", progress);
@@ -437,7 +443,18 @@ void updateProgressBar(uint8_t progress)
   }
 
   progressBar->setText(gaugeBuffer);
-  progressBar->display(lcd);
+  progressBar->displayText(lcd);
+}
+
+void updateProcessTime()
+{
+  char timeBuffer[TIME_VAL_SIZE];
+  tm time = rtc.getTimeStruct();
+
+  snprintf(timeBuffer, TIME_VAL_SIZE, "%i:%i", time.tm_hour, time.tm_min);
+
+  processTimeValue->setText(timeBuffer);
+  processTimeValue->displayText(lcd);
 }
 
 void updateInfoScreen()
@@ -447,38 +464,38 @@ void updateInfoScreen()
     return;
   }
 
-  String xText = formatPosition(Axis::X);
+  const char *xText = formatPosition(Axis::X);
 
   if (positionValueX->getText() != xText)
   {
     positionValueX->setText(xText);
-    positionValueX->display(lcd);
+    positionValueX->displayText(lcd);
     return;
   }
-  String yText = formatPosition(Axis::Y);
+  const char *yText = formatPosition(Axis::Y);
 
   if (positionValueY->getText() != yText)
   {
     positionValueY->setText(yText);
-    positionValueY->display(lcd);
+    positionValueY->displayText(lcd);
     return;
   }
 
-  String zText = formatPosition(Axis::Z);
+  const char *zText = formatPosition(Axis::Z);
 
   if (positionValueZ->getText() != zText)
   {
     positionValueZ->setText(zText);
-    positionValueZ->display(lcd);
+    positionValueZ->displayText(lcd);
     return;
   }
 
-  String time = proc->getTime();
+  tm prevTime = proc->getPreviousTime();
+  tm time = proc->getTime();
 
-  if (proc->getPreviousTime() != time)
+  if (prevTime.tm_hour != time.tm_hour || prevTime.tm_min != time.tm_min)
   {
-    processTimeValue->setText(time);
-    processTimeValue->display(lcd);
+    updateProcessTime();
     return;
   }
 
@@ -487,12 +504,12 @@ void updateInfoScreen()
 
   if (progress != prevProgress)
   {
-    String formatted = formatProgress(progress);
+    const char *formatted = formatProgress(progress);
 
     if (progressValue->getText() != formatted)
     {
       progressValue->setText(formatted);
-      progressValue->display(lcd);
+      progressValue->displayText(lcd);
 
       updateProgressBar(progress);
       return;
@@ -533,21 +550,20 @@ void displayInfoScreen()
 {
   if (proc)
   {
-    processNameValue->setText(proc->getName());
-    processTimeValue->setText(proc->getTime());
-
     Status status = proc->status();
+
+    processNameValue->setText(proc->getName());
+    updateProcessTime();
 
     if (status != Status::STOPPED)
     {
+      uint8_t progress = proc->getProgress();
+
       positionValueX->setText(formatPosition(Axis::X));
       positionValueY->setText(formatPosition(Axis::Y));
       positionValueZ->setText(formatPosition(Axis::Z));
-
-      uint8_t progress = proc->getProgress();
-
-      updateProgressBar(progress);
       progressValue->setText(formatProgress(progress));
+      updateProgressBar(progress);
 
       display(ScreenID::INFO, false);
       return;
@@ -563,38 +579,37 @@ void displayInfoScreen()
   positionValueX->setText("0");
   positionValueY->setText("0");
   positionValueZ->setText("0");
-
-  updateProgressBar(0);
   progressValue->setText("0%");
+  updateProgressBar(0);
 
   display(ScreenID::INFO, false);
 }
 
 void displayAccelerationScreen()
 {
+  char buffer[ACCEL_VAL_SIZE];
   Axis axis = cartesian.getCurrentAxis();
   int accel = cartesian.getAcceleration(axis);
-  String newText = String(accel);
 
   switch (axis)
   {
   case Axis::X:
     setAccelerationText->setText("Set X mm/s^2");
-    setAccelerationValue->setText(newText);
+    setAccelerationValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_ACCEL_X, DEFAULT_MAX_ACCEL_X);
     rotary.setPosition(accel);
     break;
 
   case Axis::Y:
     setAccelerationText->setText("Set Y mm/s^2");
-    setAccelerationValue->setText(newText);
+    setAccelerationValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_ACCEL_Y, DEFAULT_MAX_ACCEL_Y);
     rotary.setPosition(accel);
     break;
 
   case Axis::Z:
     setAccelerationText->setText("Set Z mm/s^2");
-    setAccelerationValue->setText(newText);
+    setAccelerationValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_ACCEL_Z, DEFAULT_MAX_ACCEL_Z);
     rotary.setPosition(accel);
     break;
@@ -608,51 +623,72 @@ void displayAccelerationScreen()
 
 void displayMoveAxisScreen()
 {
-  char newField[MOVE_AXES_VAL_SIZE];
+  char textBuffer[MOVE_AXES_LBL_SIZE];
+  char valueBuffer[MOVE_AXES_VAL_SIZE];
 
   Axis axis = cartesian.getCurrentAxis();
-  int pos = cartesian.getTargetPosition(axis);
   Unit unit = cartesian.getUnit();
-
-  std::string newText = "Move";
 
   switch (axis)
   {
   case Axis::X:
-    newText.append(" X");
+    switch (unit)
+    {
+    case Unit::CENTIMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 10mm", "X");
+      break;
+    case Unit::MICROMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 0.1mm", "X");
+      break;
+    case Unit::MILLIMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 1mm", "X");
+      break;
+    }
     break;
 
   case Axis::Y:
-    newText.append(" Y");
+    switch (unit)
+    {
+    case Unit::CENTIMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 10mm", "Y");
+      break;
+    case Unit::MICROMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 0.1mm", "Y");
+      break;
+    case Unit::MILLIMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 1mm", "Y");
+      break;
+    }
     break;
 
   case Axis::Z:
-    newText.append(" Z");
+    switch (unit)
+    {
+    case Unit::CENTIMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 10mm", "Z");
+      break;
+    case Unit::MICROMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 0.1mm", "Z");
+      break;
+    case Unit::MILLIMETER:
+      snprintf(textBuffer, MOVE_AXES_LBL_SIZE, "Move %s 1mm", "Z");
+      break;
+    }
     break;
   }
 
-  snprintf(newField, MOVE_AXES_VAL_SIZE, "%.1f", pos / 1000);
+  long dimension = cartesian.getDimension(axis);
+  float pos = cartesian.getTargetPosition(axis);
 
-  switch (unit)
-  {
-  case Unit::CENTIMETER:
-    newText.append(" 10mm");
-    break;
-  case Unit::MICROMETER:
-    newText.append(" 0.1mm");
-    break;
-  case Unit::MILLIMETER:
-    newText.append(" 1mm");
-    break;
-  }
+  snprintf(valueBuffer, MOVE_AXES_VAL_SIZE, "%.1f", pos / 1000);
 
-  moveAxisText->setText(newText.c_str());
-  moveAxisValue->setText(newField);
+  moveAxisText->setText(textBuffer);
+  moveAxisValue->setText(valueBuffer);
 
   moveAxisText->setColumn(MOVE_LBL_COL);
   moveAxisValue->setColumn(MOVE_VAL_COL);
 
-  rotary.setBoundaries(INT16_MIN, INT16_MAX);
+  rotary.setBoundaries(-dimension, dimension);
   rotary.setPosition(pos);
   rotary.setInterval(100);
 
@@ -661,13 +697,15 @@ void displayMoveAxisScreen()
 
 void displayLaserScreen()
 {
+  char powerBuffer[POWER_VAL_SIZE];
   uint8_t maxPower = laser.getMaxPower();
-  String newText = String(maxPower);
+
+  snprintf(powerBuffer, POWER_VAL_SIZE, "%i", maxPower);
 
   setPowerText->setText("Set Laser PWM");
   setPowerValue->setColumn(LSR_LBL_COL);
 
-  setPowerText->setText(newText);
+  setPowerText->setText(powerBuffer);
   setPowerValue->setColumn(LSR_VAL_COL);
 
   rotary.setBoundaries(LSR_MIN_POWER, LSR_MAX_POWER);
@@ -678,29 +716,31 @@ void displayLaserScreen()
 
 void displayStepsScreen()
 {
+  char buffer[STEPS_VAL_SIZE];
   Axis axis = cartesian.getCurrentAxis();
   long stepsPer = cartesian.getStepsPerMillimeter(axis);
-  String newText = String(stepsPer);
+
+  snprintf(buffer, STEPS_VAL_SIZE, "%i", stepsPer);
 
   switch (axis)
   {
   case Axis::X:
     setStepsText->setText("Set X Steps/mm");
-    setStepsValue->setText(newText);
+    setStepsValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_STEPS_X, DEFAULT_MAX_STEPS_X);
     rotary.setPosition(stepsPer);
     break;
 
   case Axis::Y:
     setStepsText->setText("Set Y Steps/mm");
-    setStepsValue->setText(newText);
+    setStepsValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_STEPS_Y, DEFAULT_MAX_STEPS_Y);
     rotary.setPosition(stepsPer);
     break;
 
   case Axis::Z:
     setStepsText->setText("Set Z Steps/mm");
-    setStepsValue->setText(newText);
+    setStepsValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_STEPS_Z, DEFAULT_MAX_STEPS_Z);
     rotary.setPosition(stepsPer);
     break;
@@ -714,29 +754,31 @@ void displayStepsScreen()
 
 void displayVelocityScreen()
 {
+  char buffer[VEL_VAL_SIZE];
   Axis axis = cartesian.getCurrentAxis();
   int maxSpeed = cartesian.getMaxSpeed(axis);
-  String newText = String(maxSpeed);
+
+  snprintf(buffer, VEL_VAL_SIZE, "%i", maxSpeed);
 
   switch (axis)
   {
   case Axis::X:
     setVelocityText->setText("Set X mm/s");
-    setVelocityValue->setText(newText);
+    setVelocityValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_STEPS_X, DEFAULT_MAX_SPEED_X);
     rotary.setPosition(maxSpeed);
     break;
 
   case Axis::Y:
     setVelocityText->setText("Set Y mm/s");
-    setVelocityValue->setText(newText);
+    setVelocityValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_STEPS_Y, DEFAULT_MAX_SPEED_Y);
     rotary.setPosition(maxSpeed);
     break;
 
   case Axis::Z:
     setVelocityText->setText("Set Z mm/s");
-    setVelocityValue->setText(newText);
+    setVelocityValue->setText(buffer);
     rotary.setBoundaries(DEFAULT_MIN_STEPS_Z, DEFAULT_MAX_SPEED_Z);
     rotary.setPosition(maxSpeed);
     break;
@@ -762,7 +804,7 @@ void displayChar(byte charValue[])
 {
   lcd.createChar(LCD_ICON_CHAR, charValue);
   processIconValue->setSymbol(LCD_ICON_CHAR);
-  processIconValue->displayAsChar(lcd);
+  processIconValue->displaySymbol(lcd);
 }
 
 void pauseProcess()
@@ -808,11 +850,11 @@ bool isHiddenFile(String filename)
   return filename.indexOf(INTERNAL_FILE_EXT) > 0 || filename == SYSTEM_VOLUME;
 }
 
-uint8_t getFiles(File &root, String paths[], uint8_t maxFilePaths)
+uint8_t getFiles(File &root, const char *paths[], uint8_t maxFilePaths)
 {
+  const char *path;
   File file;
   uint8_t i;
-  String path;
 
   while (i < maxFilePaths)
   {
@@ -954,7 +996,12 @@ void cardScreenClicked()
 
   if (index > 0)
   {
-    processes.push(std::make_shared<Process>(SD, rtc, "/", filePaths[0]));
+    const char *filename = filePaths[index - 1];
+    char *path = "/";
+
+    strcat(path, filename);
+
+    processes.push(std::make_shared<Process>(SD, rtc, path, filename));
     cartesian.enableSteppers();
 
     MAIN_MENU_SCREEN->unhide(MainOption::PAUSE_PROC_OP);
@@ -1428,17 +1475,9 @@ float parseNumber(String line, char arg, float val)
   return parseNumber(line, line.indexOf(arg), arg, val);
 }
 
-LiquidLinePtr createLine(LiquidScreen &screen, uint8_t lineIndex, uint8_t col, uint8_t row, String text, size_t textLength)
+LiquidLinePtr createLine(LiquidScreenPtr screen, uint8_t lineIndex, uint8_t col, uint8_t row, const char *text, size_t textLength)
 {
-  LiquidLinePtr ptr = std::make_shared<LiquidLine>(col, row, pad_right(text.c_str(), textLength).c_str());
-
-  screen.append(lineIndex, ptr);
-  return ptr;
-}
-
-LiquidLinePtr createLine(LiquidScreenPtr screen, uint8_t lineIndex, uint8_t col, uint8_t row, String text, size_t textLength)
-{
-  LiquidLinePtr ptr = std::make_shared<LiquidLine>(col, row, pad_right(text.c_str(), textLength).c_str());
+  LiquidLinePtr ptr = std::make_shared<LiquidLine>(col, row, pad_right(text, textLength).c_str());
 
   screen->append(lineIndex, ptr);
   return ptr;
@@ -1448,30 +1487,30 @@ void setupAboutScreen()
 {
   ABOUT_SCREEN = new LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(ABOUT_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 4);
+  createLine(ABOUT_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 4);
 }
 
 void setupAccelerationScreen()
 {
   ACCEL_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(ACCEL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 8);
-  createLine(ACCEL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Accel X"), 8);
-  createLine(ACCEL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Accel Y"), 8);
-  createLine(ACCEL_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Accel Z"), 8);
+  createLine(ACCEL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 8);
+  createLine(ACCEL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Accel X", 8);
+  createLine(ACCEL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Accel Y", 8);
+  createLine(ACCEL_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Accel Z", 8);
 }
 
 void setupCardScreen()
 {
   CARD_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(CARD_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 4);
+  createLine(CARD_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 4);
 
   uint8_t n = getFiles(root, filePaths, MAX_FILES_SIZE);
 
   for (uint8_t i = 0; i < n; i++)
   {
-    createLine(CARD_MENU_SCREEN, i + 1, LCD_MENU_COL, LCD_ZERO_ROW, filePaths[i].c_str(), 18);
+    createLine(CARD_MENU_SCREEN, i + 1, LCD_MENU_COL, LCD_ZERO_ROW, filePaths[i], 18);
   }
 }
 
@@ -1479,46 +1518,46 @@ void setupCtrlScreen()
 {
   CTRL_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(CTRL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 15);
-  createLine(CTRL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 15);
-  createLine(CTRL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Laser"), 15);
-  createLine(CTRL_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Store settings"), 15);
+  createLine(CTRL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 15);
+  createLine(CTRL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 15);
+  createLine(CTRL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Laser", 15);
+  createLine(CTRL_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Store settings", 15);
 }
 
 void setupInfoScreen()
 {
   INFO_SCREEN = new LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(INFO_SCREEN, 0, LCD_ZERO_COL, 0, F("Boreal CNC"), 0);
-  createLine(INFO_SCREEN, 1, POS_LBL_X_COL, 1, F("X"), 0);
-  createLine(INFO_SCREEN, 2, POS_LBL_Y_COL, 1, F("Y"), 0);
-  createLine(INFO_SCREEN, 3, POS_LBL_Z_COL, 1, F("Z"), 0);
+  createLine(INFO_SCREEN, 0, LCD_ZERO_COL, 0, "Boreal CNC", 0);
+  createLine(INFO_SCREEN, 1, POS_LBL_X_COL, 1, "X", 0);
+  createLine(INFO_SCREEN, 2, POS_LBL_Y_COL, 1, "Y", 0);
+  createLine(INFO_SCREEN, 3, POS_LBL_Z_COL, 1, "Z", 0);
 
-  positionValueX = createLine(INFO_SCREEN, 4, POS_VAL_X_COL, 1, F("0"), 0);
-  positionValueY = createLine(INFO_SCREEN, 5, POS_VAL_Y_COL, 1, F("0"), 0);
-  positionValueZ = createLine(INFO_SCREEN, 6, POS_VAL_Z_COL, 1, F("0"), 0);
+  positionValueX = createLine(INFO_SCREEN, 4, POS_VAL_X_COL, 1, "0", 0);
+  positionValueY = createLine(INFO_SCREEN, 5, POS_VAL_Y_COL, 1, "0", 0);
+  positionValueZ = createLine(INFO_SCREEN, 6, POS_VAL_Z_COL, 1, "0", 0);
 
-  processIconValue = createLine(INFO_SCREEN, 7, PROC_ICON_VAL_COL, 2, F(" "), 0);
-  processNameValue = createLine(INFO_SCREEN, 8, PROC_NAME_LBL_COL, 2, F("Ready!"), 0);
-  processTimeValue = createLine(INFO_SCREEN, 9, PROC_TIME_LBL_COL, 2, F("00:00"), 0);
+  processIconValue = createLine(INFO_SCREEN, 7, PROC_ICON_VAL_COL, 2, " ", 0);
+  processNameValue = createLine(INFO_SCREEN, 8, PROC_NAME_LBL_COL, 2, "Ready!", 0);
+  processTimeValue = createLine(INFO_SCREEN, 9, PROC_TIME_LBL_COL, 2, "00:00", 0);
 
-  progressBar = createLine(INFO_SCREEN, 10, PROG_BAR_COL, 3, F(""), 0);
-  progressValue = createLine(INFO_SCREEN, 11, PROG_VAL_COL, 3, F("0%"), 0);
+  progressBar = createLine(INFO_SCREEN, 10, PROG_BAR_COL, 3, "", 0);
+  progressValue = createLine(INFO_SCREEN, 11, PROG_VAL_COL, 3, "0%", 0);
 }
 
 void setupMainScreen()
 {
   MAIN_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(MAIN_MENU_SCREEN, MainOption::INFO_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, F("Info"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::PREP_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, F("Prepare"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::CTRL_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, F("Control"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::NO_TF_CARD_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("No TF Card"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::START_FROM_TF_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("Start from TF"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::PAUSE_PROC_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("Pause"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::RESUME_PROC_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("Resume"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::STOP_PROC_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("Stop"), 14);
-  createLine(MAIN_MENU_SCREEN, MainOption::ABOUT_CNC_OP, LCD_MENU_COL, LCD_ZERO_ROW, F("About CNC"), 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::INFO_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, "Info", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::PREP_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, "Prepare", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::CTRL_MENU_RTN, LCD_MENU_COL, LCD_ZERO_ROW, "Control", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::NO_TF_CARD_OP, LCD_MENU_COL, LCD_ZERO_ROW, "No TF Card", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::START_FROM_TF_OP, LCD_MENU_COL, LCD_ZERO_ROW, "Start from TF", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::PAUSE_PROC_OP, LCD_MENU_COL, LCD_ZERO_ROW, "Pause", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::RESUME_PROC_OP, LCD_MENU_COL, LCD_ZERO_ROW, "Resume", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::STOP_PROC_OP, LCD_MENU_COL, LCD_ZERO_ROW, "Stop", 14);
+  createLine(MAIN_MENU_SCREEN, MainOption::ABOUT_CNC_OP, LCD_MENU_COL, LCD_ZERO_ROW, "About CNC", 14);
 
   MAIN_MENU_SCREEN->hide(MainOption::NO_TF_CARD_OP);
   MAIN_MENU_SCREEN->hide(MainOption::PAUSE_PROC_OP);
@@ -1530,121 +1569,121 @@ void setupMoveAxisScreen()
 {
   MOVE_AXIS_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  moveAxisText = createLine(MOVE_AXIS_SCREEN, 0, LCD_ZERO_COL, 1, F("Move X 1mm"), 0);
-  moveAxisValue = createLine(MOVE_AXIS_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
+  moveAxisText = createLine(MOVE_AXIS_SCREEN, 0, LCD_ZERO_COL, 1, "Move X 1mm", 0);
+  moveAxisValue = createLine(MOVE_AXIS_SCREEN, 1, LCD_ZERO_COL, 2, "0", 0);
 }
 
 void setupMoveAxesScreen()
 {
   MOVE_AXES_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(MOVE_AXES_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Prepare"), 8);
-  createLine(MOVE_AXES_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move X"), 8);
-  createLine(MOVE_AXES_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Y"), 8);
-  createLine(MOVE_AXES_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Z"), 8);
+  createLine(MOVE_AXES_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Prepare", 8);
+  createLine(MOVE_AXES_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move X", 8);
+  createLine(MOVE_AXES_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y", 8);
+  createLine(MOVE_AXES_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z", 8);
 }
 
 void setupMoveXScreen()
 {
   MOVE_X_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(MOVE_X_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Axes"), 13);
-  createLine(MOVE_X_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move X 10mm"), 13);
-  createLine(MOVE_X_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Move X 1mm"), 13);
-  createLine(MOVE_X_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Move X 0.1mm"), 13);
+  createLine(MOVE_X_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_X_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move X 10mm", 13);
+  createLine(MOVE_X_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move X 1mm", 13);
+  createLine(MOVE_X_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move X 0.1mm", 13);
 }
 
 void setupMoveYScreen()
 {
   MOVE_Y_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(MOVE_Y_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Axes"), 13);
-  createLine(MOVE_Y_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Y 10mm"), 13);
-  createLine(MOVE_Y_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Y 1mm"), 13);
-  createLine(MOVE_Y_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Y 0.1mm"), 13);
+  createLine(MOVE_Y_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_Y_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y 10mm", 13);
+  createLine(MOVE_Y_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y 1mm", 13);
+  createLine(MOVE_Y_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move Y 0.1mm", 13);
 }
 
 void setupMoveZScreen()
 {
   MOVE_Z_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(MOVE_Z_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Axes"), 13);
-  createLine(MOVE_Z_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Z 10mm"), 13);
-  createLine(MOVE_Z_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Z 1mm"), 13);
-  createLine(MOVE_Z_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Move Z 0.1mm"), 13);
+  createLine(MOVE_Z_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Move Axes", 13);
+  createLine(MOVE_Z_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z 10mm", 13);
+  createLine(MOVE_Z_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z 1mm", 13);
+  createLine(MOVE_Z_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Move Z 0.1mm", 13);
 }
 
 void setupPrepScreen()
 {
   PREP_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(PREP_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Main"), 17);
-  createLine(PREP_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Move axes"), 17);
-  createLine(PREP_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Auto home"), 17);
-  createLine(PREP_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Set home offsets"), 17);
-  createLine(PREP_MENU_SCREEN, 4, LCD_MENU_COL, LCD_ZERO_ROW, F("Disable steppers"), 17);
+  createLine(PREP_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Main", 17);
+  createLine(PREP_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Move axes", 17);
+  createLine(PREP_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Auto home", 17);
+  createLine(PREP_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Set home offsets", 17);
+  createLine(PREP_MENU_SCREEN, 4, LCD_MENU_COL, LCD_ZERO_ROW, "Disable steppers", 17);
 }
 
 void setupMotionScreen()
 {
   MOTION_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(MOTION_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Control"), 13);
-  createLine(MOTION_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Acceleration"), 13);
-  createLine(MOTION_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Velocity"), 13);
-  createLine(MOTION_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Steps/mm"), 13);
+  createLine(MOTION_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Control", 13);
+  createLine(MOTION_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Acceleration", 13);
+  createLine(MOTION_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Velocity", 13);
+  createLine(MOTION_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Steps/mm", 13);
 }
 
 void setupSetAccelerationScreen()
 {
   SET_ACCEL_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  setAccelerationText = createLine(SET_ACCEL_SCREEN, 0, LCD_ZERO_COL, 1, F("Set X Accel"), 0);
-  setAccelerationValue = createLine(SET_ACCEL_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
+  setAccelerationText = createLine(SET_ACCEL_SCREEN, 0, LCD_ZERO_COL, 1, "Set X Accel", 0);
+  setAccelerationValue = createLine(SET_ACCEL_SCREEN, 1, LCD_ZERO_COL, 2, "0", 0);
 }
 
 void setupSetPowerScreen()
 {
   SET_POWER_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  setPowerText = createLine(SET_POWER_SCREEN, 0, LCD_ZERO_COL, 1, F("Set Laser PWM"), 0);
-  setPowerValue = createLine(SET_POWER_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
+  setPowerText = createLine(SET_POWER_SCREEN, 0, LCD_ZERO_COL, 1, "Set Laser PWM", 0);
+  setPowerValue = createLine(SET_POWER_SCREEN, 1, LCD_ZERO_COL, 2, "0", 0);
 }
 
 void setupSetStepsScreen()
 {
   SET_STEPS_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  setStepsText = createLine(SET_STEPS_SCREEN, 0, LCD_ZERO_COL, 1, F("Set X steps/mm"), 0);
-  setStepsValue = createLine(SET_STEPS_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
+  setStepsText = createLine(SET_STEPS_SCREEN, 0, LCD_ZERO_COL, 1, "Set X steps/mm", 0);
+  setStepsValue = createLine(SET_STEPS_SCREEN, 1, LCD_ZERO_COL, 2, "0", 0);
 }
 
 void setupSetVelocityScreen()
 {
   SET_VEL_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  setVelocityText = createLine(SET_VEL_SCREEN, 0, LCD_ZERO_COL, 1, F("Set X Velocity"), 0);
-  setVelocityValue = createLine(SET_VEL_SCREEN, 1, LCD_ZERO_COL, 2, F("0"), 0);
+  setVelocityText = createLine(SET_VEL_SCREEN, 0, LCD_ZERO_COL, 1, "Set X Velocity", 0);
+  setVelocityValue = createLine(SET_VEL_SCREEN, 1, LCD_ZERO_COL, 2, "0", 0);
 }
 
 void setupStepsScreen()
 {
   STEPS_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(STEPS_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 11);
-  createLine(STEPS_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("X steps/mm"), 11);
-  createLine(STEPS_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Y steps/mm"), 11);
-  createLine(STEPS_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Z steps/mm"), 11);
+  createLine(STEPS_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 11);
+  createLine(STEPS_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "X steps/mm", 11);
+  createLine(STEPS_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Y steps/mm", 11);
+  createLine(STEPS_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Z steps/mm", 11);
 }
 
 void setupVelocityScreen()
 {
   ACCEL_MENU_SCREEN = new LiquidMenu(lcd, LCD_COLS, LCD_ROWS);
 
-  createLine(ACCEL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, F("Motion"), 7);
-  createLine(ACCEL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, F("Vel X"), 7);
-  createLine(ACCEL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, F("Vel Y"), 7);
-  createLine(ACCEL_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, F("Vel Z"), 7);
+  createLine(ACCEL_MENU_SCREEN, 0, LCD_MENU_COL, LCD_ZERO_ROW, "Motion", 7);
+  createLine(ACCEL_MENU_SCREEN, 1, LCD_MENU_COL, LCD_ZERO_ROW, "Vel X", 7);
+  createLine(ACCEL_MENU_SCREEN, 2, LCD_MENU_COL, LCD_ZERO_ROW, "Vel Y", 7);
+  createLine(ACCEL_MENU_SCREEN, 3, LCD_MENU_COL, LCD_ZERO_ROW, "Vel Z", 7);
 }
 
 void parseNextCommand()
@@ -1812,15 +1851,15 @@ void setup()
 
   spi.begin();
 
-  Serial.print(F("SD "));
+  Serial.print("SD ");
 
   if (!SD.begin(SS))
   {
-    Serial.println(F("failed to mount!"));
+    Serial.println("failed to mount!");
     return;
   }
 
-  Serial.println(F("mount!"));
+  Serial.println("mount!");
 
   Wire.begin();
   Wire.setClock(800000);
@@ -1838,7 +1877,7 @@ void setup()
   lcd.createChar(LCD_GAUGE_RIGHT, GAUGE_RIGHT);
   lcd.createChar(LCD_GAUGE_EMPTY, GAUGE_EMPTY);
 
-  root = SD.open(F("/"));
+  root = SD.open("/");
 
   cartesian.setAcceleration(Axis::X, Unit::MILLIMETER, DEFAULT_MIN_ACCEL_X);
   cartesian.setAcceleration(Axis::Y, Unit::MILLIMETER, DEFAULT_MIN_ACCEL_Y);
@@ -1918,7 +1957,7 @@ void loop()
       proc->setup();
 
       processNameValue->setText(proc->getName());
-      processNameValue->display(lcd);
+      processNameValue->displayText(lcd);
     }
   }
 

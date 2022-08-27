@@ -1,6 +1,6 @@
 #include <Process.h>
 
-Process::Process(fs::FS &fs, RTC &rtc, String path, String filename) : _fs(fs), _rtc(rtc)
+Process::Process(fs::FS &fs, RTC &rtc, const char *path, const char *filename) : _fs(fs), _rtc(rtc)
 {
     this->_filename = filename;
     this->_path = path;
@@ -16,7 +16,7 @@ uint8_t Process::getPreviousProgress()
     return _previousProgress;
 }
 
-String Process::getPreviousTime()
+tm Process::getPreviousTime()
 {
     return _previousTime;
 }
@@ -32,23 +32,23 @@ uint8_t Process::getProgress()
     return _progress;
 }
 
-String Process::getTime()
+tm Process::getTime()
 {
     if (_file)
     {
         _previousTime = _time;
-        _time = _rtc.getTime("%H:%M");
+        _time = _rtc.getTimeStruct();
     }
 
     return _time;
 }
 
-String Process::getName()
+const char *Process::getName()
 {
     return _filename;
 }
 
-String Process::readNextLine()
+const char *Process::readNextLine()
 {
     if (!_file)
     {
@@ -66,7 +66,7 @@ String Process::readNextLine()
         return "";
     }
 
-    String line = _file.readStringUntil('\r');
+    String line = _file.readStringUntil('\n');
 
     line.trim();
 
@@ -82,7 +82,7 @@ String Process::readNextLine()
         line = line.substring(0, comment);
     }
 
-    return line;
+    return line.c_str();
 }
 
 void Process::pause()
@@ -104,7 +104,7 @@ void Process::resume()
 void Process::setup()
 {
     _rtc.setTime();
-    _file = _fs.open(_path + _filename);
+    _file = _fs.open(_path);
     _status = Status::CONTINUE;
 }
 

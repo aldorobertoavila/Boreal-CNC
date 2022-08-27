@@ -14,21 +14,21 @@ using RTC = ESP32Time;
 class Process
 {
 public:
-    Process(fs::FS &fs, RTC &rtc, String path, String filename);
+    Process(fs::FS &fs, RTC &rtc, const char *path, const char *filename);
 
     unsigned long getLastStopTime();
 
     uint8_t getPreviousProgress();
 
-    String getPreviousTime();
+    tm getPreviousTime();
 
     uint8_t getProgress();
 
-    String getTime();
+    tm getTime();
 
-    String getName();
+    const char *getName();
 
-    String readNextLine();
+    const char *readNextLine();
 
     void pause();
 
@@ -44,11 +44,11 @@ private:
     fs::FS &_fs;
     fs::File _file;
     RTC _rtc;
-    String _filename;
-    String _path;
-    String _previousTime;
     Status _status;
-    String _time;
+    tm _previousTime;
+    tm _time;
+    const char *_filename;
+    const char *_path;
     uint8_t _previousProgress;
     uint8_t _progress;
     unsigned long _lastStopTime;

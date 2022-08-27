@@ -1,6 +1,6 @@
 #include <LiquidScreen.h>
 
-LiquidLine::LiquidLine(uint8_t col, uint8_t row, String text)
+LiquidLine::LiquidLine(uint8_t col, uint8_t row, const char *text)
 {
     this->_col = col;
     this->_row = row;
@@ -18,7 +18,7 @@ uint8_t LiquidLine::getRow()
     return _row;
 }
 
-String LiquidLine::getText()
+const char *LiquidLine::getText()
 {
     return _text;
 }
@@ -38,24 +38,16 @@ void LiquidLine::unhide()
     _hidden = false;
 }
 
-void LiquidLine::display(LCD &lcd)
+void LiquidLine::displayText(LCD &lcd)
 {
-    if (!_text.isEmpty())
-    {
-        lcd.setCursor(_col, _row);
-        lcd.print(_text);
-    }
+    lcd.setCursor(_col, _row);
+    lcd.print(_text);
 }
 
-void LiquidLine::displayAsChar(LCD &lcd)
+void LiquidLine::displaySymbol(LCD &lcd)
 {
-    if (!_text.isEmpty())
-    {
-        int charValue = atoi(_text.c_str());
-
-        lcd.setCursor(_col, _row);
-        lcd.write(charValue);
-    }
+    lcd.setCursor(_col, _row);
+    lcd.write(_symbol);
 }
 
 void LiquidLine::setColumn(uint8_t col)
@@ -68,12 +60,12 @@ void LiquidLine::setRow(uint8_t row)
     _row = row;
 }
 
-void LiquidLine::setText(String text)
+void LiquidLine::setText(const char *text)
 {
     _text = text;
 }
 
 void LiquidLine::setSymbol(uint8_t symbol)
 {
-    _text = String(symbol);
+    _symbol = symbol;
 }
