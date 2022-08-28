@@ -1,80 +1,97 @@
 #include <Process.h>
 
-Process::Process(fs::FS &fs, RTC &rtc, const char *path, const char *filename) : _fs(fs), _rtc(rtc)
+TFProcess::TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, const char *path, const char *filename) : _fs(fs), _rtc(rtc), _cartesian(cartesian), _laser(laser)
 {
     this->_filename = filename;
     this->_path = path;
 }
 
-unsigned long Process::getLastStopTime()
+uint8_t TFProcess::getPrevProgress()
 {
-    return _lastStopTime;
+    return _prevProgress;
 }
 
-uint8_t Process::getPreviousProgress()
+tm TFProcess::getPrevTime()
 {
-    return _previousProgress;
+    return _prevTime;
 }
 
-tm Process::getPreviousTime()
-{
-    return _previousTime;
-}
-
-uint8_t Process::getProgress()
+uint8_t TFProcess::getProgress()
 {
     if (_file)
     {
-        _previousProgress = _progress;
+        _prevProgress = _progress;
         _progress = map(_file.position(), 0, _file.size(), 0, 100);
     }
 
     return _progress;
 }
 
-tm Process::getTime()
+tm TFProcess::getTime()
 {
     if (_file)
     {
-        _previousTime = _time;
+        _prevTime = _time;
         _time = _rtc.getTimeStruct();
     }
 
     return _time;
 }
 
-const char *Process::getName()
+const char *TFProcess::getName()
 {
     return _filename;
 }
 
-const char *Process::readNextLine()
+float TFProcess::parseNumber(String &line, char arg, float val)
 {
-    if (!_file)
+    int index = line.indexOf(arg);
+
+    if (index == -1)
     {
-        return "";
+        return val;
     }
 
-    if (_status != Status::CONTINUE)
+    line = line.substring(index + 1);
+    index = line.indexOf(' ');
+    line = line.substring(0, index);
+
+    return line.toInt();
+}
+
+void TFProcess::nextCommand(CommandQueue &commands)
+{
+    if (!_file || _status != Status::CONTINUE)
     {
-        return "";
+        return;
+    }
+
+    if (commands.size() >= CMD_QUEUE_SIZE)
+    {
+        return;
     }
 
     if (!_file.available())
     {
         _status = Status::COMPLETED;
-        return "";
+        // TODO push update lcd
+        return;
     }
 
     String line = _file.readStringUntil('\n');
 
-    line.trim();
+    Serial.println(line);
+
+    if (line.isEmpty())
+    {
+        return;
+    }
 
     int comment = line.indexOf(";");
 
     if (comment == 0)
     {
-        return "";
+        return;
     }
 
     if (comment > 0)
@@ -82,10 +99,55 @@ const char *Process::readNextLine()
         line = line.substring(0, comment);
     }
 
-    return line.c_str();
+    int code = parseNumber(line, 'G', -1);
+
+    switch (code)
+    {
+    case 0:
+    case 1:
+        commands.push(std::make_shared<LinearMoveCommand>(_cartesian, _laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'F', 0), parseNumber(line, 'S', 0)));
+    case 2:
+    case 3:
+        if (line.indexOf('I') > 0 || line.indexOf('J') > 0)
+        {
+            if (line.indexOf('R') > 0)
+            {
+                return;
+            }
+
+            commands.push(std::make_shared<ArcMoveCommand>(_cartesian, _laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'I', 0), parseNumber(line, 'J', 0), parseNumber(line, 'K', 0), parseNumber(line, 'F', 0), parseNumber(line, 'S', 0)));
+        }
+        else
+        {
+            if (line.indexOf('X') < 0 && line.indexOf('Y') < 0)
+            {
+                return;
+            }
+
+            commands.push(std::make_shared<CircleMoveCommand>(_cartesian, _laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'R', 0), parseNumber(line, 'F', 0), parseNumber(line, 'S', 0)));
+        }
+
+        break;
+    case 4:
+        if (line.indexOf('S') > 0)
+        {
+            commands.push(std::make_shared<DwellCommand>(parseNumber(line, 'S', 0) * 1000));
+        }
+        else
+        {
+            commands.push(std::make_shared<DwellCommand>(parseNumber(line, 'P', 0)));
+        }
+        break;
+
+    case 28:
+        commands.push(std::make_shared<AutohomeCommand>(_cartesian, _laser));
+        break;
+    default:
+        break;
+    }
 }
 
-void Process::pause()
+void TFProcess::pause()
 {
     if (_status == Status::CONTINUE)
     {
@@ -93,7 +155,7 @@ void Process::pause()
     }
 }
 
-void Process::resume()
+void TFProcess::resume()
 {
     if (_status == Status::PAUSED)
     {
@@ -101,19 +163,19 @@ void Process::resume()
     }
 }
 
-void Process::setup()
+void TFProcess::setup()
 {
     _rtc.setTime();
     _file = _fs.open(_path);
     _status = Status::CONTINUE;
 }
 
-Status Process::status()
+Status TFProcess::status()
 {
     return _status;
 }
 
-void Process::stop()
+void TFProcess::stop()
 {
     if (_status == Status::CONTINUE || _status == Status::PAUSED)
     {
@@ -122,7 +184,6 @@ void Process::stop()
             _file.close();
         }
 
-        _lastStopTime = millis();
         _status = Status::STOPPED;
     }
 }

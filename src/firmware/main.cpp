@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <Wire.h>
 
+#include <Command.h>
 #include <LimitSwitch.h>
 #include <LiquidScreen.h>
 #include <Process.h>
@@ -47,6 +48,8 @@
 #define POS_VAL_Y_COL 7
 #define POS_VAL_Z_COL 13
 
+#define LSR_PIN 13
+
 enum MainOption
 {
   INFO_MENU_RTN,
@@ -83,7 +86,10 @@ enum ScreenID
   VEL
 };
 
+Laser laser(LSR_PIN);
 LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
+
+Cartesian cartesian;
 RTC rtc;
 
 LiquidScreen ABOUT_SCREEN = LiquidScreen(lcd, LCD_COLS, LCD_ROWS);
@@ -250,6 +256,11 @@ LiquidLine VEL_LINES[VEL_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Vel X"),
     LiquidLine(MENU_COL, FIRST_ROW, "Vel Y"),
     LiquidLine(MENU_COL, FIRST_ROW, "Vel Z")};
+
+CommandQueue commands;
+ProcessQueue processes;
+CommandPtr cmd;
+ProcessPtr proc;
 
 const char *paths[MAX_FILES_SIZE];
 uint8_t nFiles;
@@ -509,8 +520,6 @@ void setupVelocityScreen()
   }
 }
 
-Process proc = Process(SD, rtc, "/star.gcode", "star.gcode");
-
 void setup()
 {
   Serial.begin(115200);
@@ -561,10 +570,90 @@ void setup()
 
   CARD_MENU_SCREEN.display();
 
-  proc.setup();
+  processes.push(std::make_shared<TFProcess>(SD, rtc, cartesian, laser, "/star.gcode", "star.gcode"));
+}
+
+void onContinue()
+{
+  if (cmd && cmd->status() == Status::STOPPED)
+  {
+    cmd->setup();
+  }
+  else
+  {
+    proc->nextCommand(commands);
+
+    if (!commands.empty() && !cmd)
+    {
+      cmd = commands.front();
+      commands.pop();
+
+      if (cmd)
+      {
+        cmd->setup();
+      }
+    }
+  }
+
+  if (cmd)
+  {
+    Status status = cmd->status();
+
+    switch (status)
+    {
+    case Status::COMPLETED:
+      cmd = nullptr;
+      break;
+
+    case Status::CONTINUE:
+      cmd->execute();
+      break;
+
+    case Status::ERROR:
+      cmd = nullptr;
+      break;
+
+    default:
+      break;
+    }
+  }
 }
 
 void loop()
 {
-  proc.readNextLine();
+  if (!processes.empty() && !proc)
+  {
+    proc = processes.front();
+    processes.pop();
+
+    if (proc)
+    {
+      proc->setup();
+    }
+  }
+
+  if (proc)
+  {
+    switch (proc->status())
+    {
+    case Status::COMPLETED:
+      break;
+
+    case Status::CONTINUE:
+      onContinue();
+      break;
+
+    case Status::ERROR:
+      break;
+
+    case Status::PAUSED:
+      break;
+
+    case Status::STOPPED:
+      break;
+
+    default:
+      break;
+    }
+  }
 }
