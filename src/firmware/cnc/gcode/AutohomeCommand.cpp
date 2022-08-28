@@ -6,6 +6,7 @@ AutohomeCommand::AutohomeCommand(Cartesian &cartesian, Laser &laser) : _cartesia
 
 bool AutohomeCommand::continues()
 {
+    /*
     Axis axis = _cartesian.getCurrentAxis();
 
     if (axis == Axis::Z && _currentState == AutohomeState::OFFSET)
@@ -21,10 +22,13 @@ bool AutohomeCommand::continues()
     }
 
     return true;
+    */
+    return false;
 }
 
 void AutohomeCommand::execute()
 {
+    /*
     Axis axis = _cartesian.getCurrentAxis();
 
     StepperMotorPtr stepper = _cartesian.getStepperMotor(axis);
@@ -111,10 +115,12 @@ void AutohomeCommand::execute()
     default:
         break;
     }
+    */
 }
 
 void AutohomeCommand::setup()
 {
+    /*
     _cartesian.setCurrentAxis(Axis::X);
     _laser.turnOff();
 
@@ -123,6 +129,7 @@ void AutohomeCommand::setup()
     long dimension = _cartesian.getDimension(Axis::X);
 
     _cartesian.setTargetPosition(Axis::X, Unit::MILLIMETER, -dimension);
+    */
 }
 
 void AutohomeCommand::stop()

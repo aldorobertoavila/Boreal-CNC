@@ -31,6 +31,8 @@ public:
 
     float getDimension(Axis axis);
 
+    float getFeedRate(Axis axis);
+
     float getHomeOffset(Axis axis);
 
     float getMaxSpeed(Axis axis);
@@ -55,6 +57,8 @@ public:
 
     void setDimension(Axis axis, float u);
 
+    void setFeedRate(Axis axis, float feedRate);
+
     void setHomeOffset(Axis axis, float u);
 
     void setMaxSpeed(Axis axis, Unit unit, float u);
@@ -71,11 +75,9 @@ public:
 
     void setStepsPerMillimeter(Axis axis, long steps);
 
-    void setTargetPosition(Axis axis, float u);
+    void setTargetPosition(Axis axis, float u, float feedRate);
 
-    void setTargetPosition(Axis axis, Unit unit, float u);
-
-    void setTargetPosition(float x, float y, float z);
+    void setTargetPosition(Axis axis, Unit unit, float u, float feedRate);
 
     void setUnit(Unit unit);
 
@@ -95,6 +97,7 @@ private:
     Axis _currentAxis;
     float _acceleration[AXES];
     float _dimensions[AXES];
+    float _feedRates[AXES];
     float _homeOffset[AXES];
     float _maxSpeed[AXES];
     float _targetPosition[AXES];

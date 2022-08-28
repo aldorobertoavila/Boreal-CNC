@@ -1,7 +1,5 @@
 #include <Cartesian.h>
 
-using namespace std;
-
 Cartesian::Cartesian()
 {
     this->_positioning = Positioning::ABSOLUTE;
@@ -60,6 +58,11 @@ Axis Cartesian::getCurrentAxis()
 float Cartesian::getDimension(Axis axis)
 {
     return _dimensions[axis];
+}
+
+float Cartesian::getFeedRate(Axis axis)
+{
+    return _feedRates[axis];
 }
 
 float Cartesian::getHomeOffset(Axis axis)
@@ -130,6 +133,12 @@ void Cartesian::setDimension(Axis axis, float u)
     _dimensions[axis] = u;
 }
 
+void Cartesian::setFeedRate(Axis axis, float feedRate)
+{
+    // Conversion from mm/min to steps/s
+    _feedRates[axis] = toSteps(axis, Unit::MILLIMETER, feedRate / 60);
+}
+
 void Cartesian::setHomeOffset(Axis axis, float u)
 {
     _homeOffset[axis] = -abs(u);
@@ -179,12 +188,12 @@ void Cartesian::setStepsPerMillimeter(Axis axis, long steps)
     _stepsPerMillimeter[axis] = steps;
 }
 
-void Cartesian::setTargetPosition(Axis axis, float u)
+void Cartesian::setTargetPosition(Axis axis, float u, float feedRate)
 {
-    setTargetPosition(axis, _unit, u);
+    setTargetPosition(axis, _unit, u, feedRate);
 }
 
-void Cartesian::setTargetPosition(Axis axis, Unit unit, float u)
+void Cartesian::setTargetPosition(Axis axis, Unit unit, float u, float feedRate)
 {
     StepperMotorPtr stepper = _steppers[axis];
 
@@ -203,15 +212,9 @@ void Cartesian::setTargetPosition(Axis axis, Unit unit, float u)
 
         _targetPosition[axis] = u;
 
+        stepper->setMaxSpeed(_feedRates[axis]);
         stepper->setResolution(_resolutions[axis]);
     }
-}
-
-void Cartesian::setTargetPosition(float x, float y, float z)
-{
-    setTargetPosition(Axis::X, x);
-    setTargetPosition(Axis::Y, y);
-    setTargetPosition(Axis::Z, z);
 }
 
 void Cartesian::setUnit(Unit unit)
@@ -268,13 +271,24 @@ float Cartesian::toUnit(Axis axis, Unit unit)
 Resolution Cartesian::toResolution(float factor)
 {
     if (factor <= 1)
-        return FULL;
+    {
+        return Resolution::FULL;
+    }
+
     if (factor <= 2)
-        return HALF;
+    {
+        return Resolution::HALF;
+    }
+
     if (factor <= 4)
-        return QUARTER;
+    {
+        return Resolution::QUARTER;
+    }
+
     if (factor <= 8)
-        return EIGHTH;
+    {
+        return Resolution::EIGHTH;
+    }
 
     return Resolution::SIXTEENTH;
 }

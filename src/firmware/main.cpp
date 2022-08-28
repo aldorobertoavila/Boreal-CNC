@@ -122,6 +122,7 @@ const char *EMPTY_ROW = "                    ";
 const char *SYSTEM_VOLUME = "System Volume Information";
 const char *GCODE_FILE_EXT = ".gcode";
 
+const uint16_t DEFAULT_FEED_RATE = 3000;
 const uint8_t DEFAULT_MAX_POWER = 100;
 
 const uint8_t ABOUT_SIZE = 4;
@@ -549,6 +550,10 @@ void setup()
   lcd.createChar(ICON_CHAR, ARROW_CHAR);
 
   laser.setMaxPower(DEFAULT_MAX_POWER);
+  cartesian.setFeedRate(Axis::X, DEFAULT_FEED_RATE);
+  cartesian.setFeedRate(Axis::Y, DEFAULT_FEED_RATE);
+  cartesian.setFeedRate(Axis::Z, DEFAULT_FEED_RATE);
+  cartesian.disableSteppers();
 
   root = SD.open("/");
 
@@ -596,6 +601,10 @@ void loop()
     {
       proc->stop();
       // pops next process
+      // TODO: reset
+      // disable steppers
+      // set feed rate to default
+      // set power to 0
       proc = nullptr;
       return;
     }

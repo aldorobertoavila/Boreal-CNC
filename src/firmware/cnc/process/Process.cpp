@@ -159,11 +159,11 @@ void TFProcess::nextCommand(CommandQueue &commands)
     case 4:
         if (line.indexOf('I') > 0)
         {
-            commands.push(std::make_shared<LaserOnCommand>(_laser, parseNumber(line, 'O', _laser.getMaxPower()), InlineMode::ON));
+            commands.push(std::make_shared<LaserOnCommand>(_laser, parseNumber(line, 'S', _laser.getMaxPower()), InlineMode::ON));
         }
         else
         {
-            commands.push(std::make_shared<LaserOnCommand>(_laser, parseNumber(line, 'O', _laser.getMaxPower()), InlineMode::OFF));
+            commands.push(std::make_shared<LaserOnCommand>(_laser, parseNumber(line, 'S', _laser.getMaxPower()), InlineMode::OFF));
         }
         break;
     case 5:
