@@ -8,13 +8,14 @@ LiquidScreen::LiquidScreen(LCD &lcd, uint8_t cols, uint8_t rows) : _lcd(lcd)
     this->_lineCount = 0;
     this->_currentLine = 0;
     this->_prevLine = 0;
+    this->_visibleCount = 0;
 }
 
-void LiquidScreen::append(uint8_t lineIndex, LiquidLinePtr line)
+void LiquidScreen::append(uint8_t lineIndex, LiquidLine &line)
 {
     if (_lineCount < MAX_LINES && lineIndex < MAX_LINES)
     {
-        _lines[lineIndex] = line;
+        _lines[lineIndex] = &line;
         _lineCount++;
         _visibleCount++;
     }
@@ -38,7 +39,7 @@ void LiquidScreen::draw(uint8_t startLine)
 {
     for (uint8_t i = _currentLine; i < _lineCount; i++)
     {
-        LiquidLinePtr line = _lines[i];
+        LiquidLine *line = _lines[i];
 
         if (line && !line->isHidden())
         {
@@ -61,7 +62,7 @@ void LiquidScreen::hide(uint8_t lineIndex)
 {
     if (lineIndex < _lineCount)
     {
-        LiquidLinePtr line = _lines[lineIndex];
+        LiquidLine *line = _lines[lineIndex];
 
         if (line && !line->isHidden())
         {
@@ -75,7 +76,7 @@ void LiquidScreen::unhide(uint8_t lineIndex)
 {
     if (lineIndex < _lineCount)
     {
-        LiquidLinePtr line = _lines[lineIndex];
+        LiquidLine *line = _lines[lineIndex];
 
         if (line && line->isHidden())
         {
@@ -93,7 +94,7 @@ void LiquidScreen::nextLine()
     {
         lineIndex++;
 
-        LiquidLinePtr line = _lines[lineIndex];
+        LiquidLine *line = _lines[lineIndex];
 
         if (line && !line->isHidden())
         {
@@ -113,7 +114,7 @@ void LiquidScreen::previousLine()
     {
         lineIndex--;
 
-        LiquidLinePtr line = _lines[lineIndex];
+        LiquidLine *line = _lines[lineIndex];
 
         if (line && !line->isHidden())
         {
@@ -144,8 +145,7 @@ void LiquidMenu::display()
 void LiquidMenu::display(bool clear)
 {
     uint8_t startLine = _visibleCount > _rows ? _visibleCount - _rows : 0;
-
-    LiquidLinePtr previousLine = _lines[_prevLine];
+    LiquidLine *previousLine = _lines[_prevLine];
 
     if (previousLine)
     {
@@ -160,7 +160,7 @@ void LiquidMenu::display(bool clear)
             draw(startLine);
         }
 
-        LiquidLinePtr currentLine = _lines[_currentLine];
+        LiquidLine *currentLine = _lines[_currentLine];
 
         if (currentLine)
         {
@@ -189,7 +189,7 @@ void LiquidMenu::draw(uint8_t startLine)
             return;
         }
 
-        LiquidLinePtr line = _lines[lineIndex];
+        LiquidLine *line = _lines[lineIndex];
 
         if (line && !line->isHidden())
         {

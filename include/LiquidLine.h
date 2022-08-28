@@ -7,6 +7,8 @@ class LiquidLine
 public:
     LiquidLine(uint8_t col, uint8_t row, const char *text);
 
+    LiquidLine();
+
     uint8_t getColumn();
 
     uint8_t getRow();

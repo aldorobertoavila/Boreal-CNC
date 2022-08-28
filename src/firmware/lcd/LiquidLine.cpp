@@ -5,7 +5,18 @@ LiquidLine::LiquidLine(uint8_t col, uint8_t row, const char *text)
     this->_col = col;
     this->_row = row;
     this->_text = text;
+
     this->_hidden = false;
+    this->_symbol = 0;
+}
+
+LiquidLine::LiquidLine()
+{
+    this->_col = 0;
+    this->_row = 0;
+    this->_text = "";
+    this->_hidden = false;
+    this->_symbol = 0;
 }
 
 uint8_t LiquidLine::getColumn()

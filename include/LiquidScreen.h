@@ -9,14 +9,12 @@
 
 using namespace std;
 
-using LiquidLinePtr = std::shared_ptr<LiquidLine>;
-
 class LiquidScreen
 {
 public:
     LiquidScreen(LCD &lcd, uint8_t cols, uint8_t rows);
 
-    void append(uint8_t lineIndex, LiquidLinePtr line);
+    void append(uint8_t lineIndex, LiquidLine &line);
 
     virtual void display();
 
@@ -46,7 +44,7 @@ protected:
     uint8_t _cols;
     uint8_t _rows;
     LCD &_lcd;
-    LiquidLinePtr _lines[MAX_LINES];
+    LiquidLine *_lines[MAX_LINES];
 };
 
 class LiquidMenu : public LiquidScreen
