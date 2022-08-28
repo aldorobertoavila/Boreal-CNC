@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Command.h>
-#include <Status.h>
 
 #include <Arduino.h>
 #include <ESP32Time.h>
@@ -21,34 +20,29 @@ using CommandQueue = queue<CommandPtr>;
 class Process
 {
 public:
+    virtual bool continues();
+
     virtual uint8_t getPrevProgress() = 0;
 
     virtual tm getPrevTime() = 0;
+
+    virtual const char *getName() = 0;
 
     virtual uint8_t getProgress() = 0;
 
     virtual tm getTime() = 0;
 
-    virtual const char *getName() = 0;
-
     virtual void nextCommand(CommandQueue &commands) = 0;
 
-    virtual void pause() = 0;
-
-    virtual void resume() = 0;
-
     virtual void setup() = 0;
-
-    virtual Status status() = 0;
 
     virtual void stop() = 0;
 
 protected:
     tm _prevTime;
-    tm _time;
     uint8_t _prevProgress;
     uint8_t _progress;
-    Status _status;
+    tm _time;
 };
 
 using ProcessPtr = std::shared_ptr<Process>;
@@ -59,25 +53,21 @@ class TFProcess : public Process
 public:
     TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, const char *path, const char *filename);
 
+    bool continues() override;
+
     uint8_t getPrevProgress() override;
 
     tm getPrevTime() override;
+
+    const char *getName() override;
 
     uint8_t getProgress() override;
 
     tm getTime() override;
 
-    const char *getName() override;
-
     void nextCommand(CommandQueue &commands) override;
 
-    void pause() override;
-
-    void resume() override;
-
     void setup() override;
-
-    Status status() override;
 
     void stop() override;
 
@@ -91,4 +81,5 @@ protected:
     fs::File _file;
     const char *_filename;
     const char *_path;
+    size_t _position;
 };

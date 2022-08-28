@@ -21,6 +21,11 @@ uint8_t Laser::getPower()
     return _power;
 }
 
+bool Laser::isTurnOn()
+{
+    return _turnOn;
+}
+
 void Laser::setInlineMode(InlineMode mode)
 {
     _mode = mode;
@@ -40,12 +45,14 @@ void Laser::turnOn()
 {
     if (_power > 0)
     {
+        _turnOn = true;
         analogWrite(_pwmPin, _power);
     }
 }
 
 void Laser::turnOff()
 {
+    _turnOn = false;
     setPower(0);
     analogWrite(_pwmPin, 0);
 }

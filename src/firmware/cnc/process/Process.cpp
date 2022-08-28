@@ -4,6 +4,12 @@ TFProcess::TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, c
 {
     this->_filename = filename;
     this->_path = path;
+    this->_position = 0;
+}
+
+bool TFProcess::continues()
+{
+    return _file && _file.available();
 }
 
 uint8_t TFProcess::getPrevProgress()
@@ -16,17 +22,22 @@ tm TFProcess::getPrevTime()
     return _prevTime;
 }
 
+const char *TFProcess::getName()
+{
+    return _filename;
+}
+
 uint8_t TFProcess::getProgress()
 {
     if (_file)
     {
         _prevProgress = _progress;
-        _progress = map(_file.position(), 0, _file.size(), 0, 100);
+        _position = _file.position();
+        _progress = map(_position, 0, _file.size(), 0, 100);
     }
 
     return _progress;
 }
-
 tm TFProcess::getTime()
 {
     if (_file)
@@ -36,11 +47,6 @@ tm TFProcess::getTime()
     }
 
     return _time;
-}
-
-const char *TFProcess::getName()
-{
-    return _filename;
 }
 
 float TFProcess::parseNumber(String &line, char arg, float val)
@@ -61,7 +67,7 @@ float TFProcess::parseNumber(String &line, char arg, float val)
 
 void TFProcess::nextCommand(CommandQueue &commands)
 {
-    if (!_file || _status != Status::CONTINUE)
+    if (!_file)
     {
         return;
     }
@@ -71,15 +77,9 @@ void TFProcess::nextCommand(CommandQueue &commands)
         return;
     }
 
-    if (!_file.available())
-    {
-        _status = Status::COMPLETED;
-        // TODO push update lcd
-        return;
-    }
-
     String line = _file.readStringUntil('\n');
 
+    // TODO: remove
     Serial.println(line);
 
     if (line.isEmpty())
@@ -99,13 +99,20 @@ void TFProcess::nextCommand(CommandQueue &commands)
         line = line.substring(0, comment);
     }
 
-    int code = parseNumber(line, 'G', -1);
+    int gcode = parseNumber(line, 'G', -1);
+    int mcode = parseNumber(line, 'M', -1);
 
-    switch (code)
+    if (gcode >= 0 && mcode >= 0)
+    {
+        return;
+    }
+
+    switch (gcode)
     {
     case 0:
     case 1:
         commands.push(std::make_shared<LinearMoveCommand>(_cartesian, _laser, parseNumber(line, 'X', 0), parseNumber(line, 'Y', 0), parseNumber(line, 'Z', 0), parseNumber(line, 'F', 0), parseNumber(line, 'S', 0)));
+        break;
     case 2:
     case 3:
         if (line.indexOf('I') > 0 || line.indexOf('J') > 0)
@@ -144,22 +151,27 @@ void TFProcess::nextCommand(CommandQueue &commands)
         break;
     default:
         break;
-    }
-}
+    };
 
-void TFProcess::pause()
-{
-    if (_status == Status::CONTINUE)
+    switch (mcode)
     {
-        _status = Status::PAUSED;
-    }
-}
+    case 3:
+    case 4:
+        if (line.indexOf('I') > 0)
+        {
+            commands.push(std::make_shared<LaserOnCommand>(_laser, parseNumber(line, 'O', _laser.getMaxPower()), InlineMode::ON));
+        }
+        else
+        {
+            commands.push(std::make_shared<LaserOnCommand>(_laser, parseNumber(line, 'O', _laser.getMaxPower()), InlineMode::OFF));
+        }
+        break;
+    case 5:
+        commands.push(std::make_shared<LaserOffCommand>(_laser));
+        break;
 
-void TFProcess::resume()
-{
-    if (_status == Status::PAUSED)
-    {
-        _status = Status::CONTINUE;
+    default:
+        break;
     }
 }
 
@@ -167,23 +179,17 @@ void TFProcess::setup()
 {
     _rtc.setTime();
     _file = _fs.open(_path);
-    _status = Status::CONTINUE;
-}
 
-Status TFProcess::status()
-{
-    return _status;
+    if (_file)
+    {
+        _file.seek(_position);
+    }
 }
 
 void TFProcess::stop()
 {
-    if (_status == Status::CONTINUE || _status == Status::PAUSED)
+    if (_file)
     {
-        if (_file)
-        {
-            _file.close();
-        }
-
-        _status = Status::STOPPED;
+        _file.close();
     }
 }

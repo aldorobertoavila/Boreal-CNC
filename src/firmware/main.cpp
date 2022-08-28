@@ -48,7 +48,7 @@
 #define POS_VAL_Y_COL 7
 #define POS_VAL_Z_COL 13
 
-#define LSR_PIN 13
+#define LSR_PIN 32 // TODO: use GPIO 13
 
 enum MainOption
 {
@@ -121,6 +121,8 @@ char INTERNAL_FILE_EXT = '~';
 const char *EMPTY_ROW = "                    ";
 const char *SYSTEM_VOLUME = "System Volume Information";
 const char *GCODE_FILE_EXT = ".gcode";
+
+const uint8_t DEFAULT_MAX_POWER = 100;
 
 const uint8_t ABOUT_SIZE = 4;
 const uint8_t ACCEL_SIZE = 4;
@@ -546,6 +548,8 @@ void setup()
 
   lcd.createChar(ICON_CHAR, ARROW_CHAR);
 
+  laser.setMaxPower(DEFAULT_MAX_POWER);
+
   root = SD.open("/");
 
   setupAboutScreen();
@@ -573,52 +577,6 @@ void setup()
   processes.push(std::make_shared<TFProcess>(SD, rtc, cartesian, laser, "/star.gcode", "star.gcode"));
 }
 
-void onContinue()
-{
-  if (cmd && cmd->status() == Status::STOPPED)
-  {
-    cmd->setup();
-  }
-  else
-  {
-    proc->nextCommand(commands);
-
-    if (!commands.empty() && !cmd)
-    {
-      cmd = commands.front();
-      commands.pop();
-
-      if (cmd)
-      {
-        cmd->setup();
-      }
-    }
-  }
-
-  if (cmd)
-  {
-    Status status = cmd->status();
-
-    switch (status)
-    {
-    case Status::COMPLETED:
-      cmd = nullptr;
-      break;
-
-    case Status::CONTINUE:
-      cmd->execute();
-      break;
-
-    case Status::ERROR:
-      cmd = nullptr;
-      break;
-
-    default:
-      break;
-    }
-  }
-}
-
 void loop()
 {
   if (!processes.empty() && !proc)
@@ -634,26 +592,40 @@ void loop()
 
   if (proc)
   {
-    switch (proc->status())
+    if (!proc->continues())
     {
-    case Status::COMPLETED:
-      break;
+      proc->stop();
+      // pops next process
+      proc = nullptr;
+      return;
+    }
 
-    case Status::CONTINUE:
-      onContinue();
-      break;
+    proc->nextCommand(commands);
 
-    case Status::ERROR:
-      break;
+    if (!commands.empty() && !cmd)
+    {
+      cmd = commands.front();
+      commands.pop();
 
-    case Status::PAUSED:
-      break;
+      if (cmd)
+      {
+        cmd->setup();
+        // TODO: remove
+        delay(200);
+      }
+    }
 
-    case Status::STOPPED:
-      break;
+    if (cmd)
+    {
+      if (!cmd->continues())
+      {
+        cmd->stop();
+        // pops next command
+        cmd = nullptr;
+        return;
+      }
 
-    default:
-      break;
+      cmd->execute();
     }
   }
 }

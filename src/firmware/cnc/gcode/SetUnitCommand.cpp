@@ -6,6 +6,12 @@ SetUnitCommand::SetUnitCommand(Cartesian &cartesian, Unit unit) : _cartesian(car
     this->_unit = unit;
 }
 
+bool SetUnitCommand::continues()
+{
+    return _cartesian.getUnit() != _unit;
+}
+
+
 void SetUnitCommand::execute()
 {
     _cartesian.setUnit(_unit);

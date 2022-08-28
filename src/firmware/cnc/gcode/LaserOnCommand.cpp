@@ -6,6 +6,11 @@ LaserOnCommand::LaserOnCommand(Laser &laser, uint8_t power, InlineMode mode) : _
     this->_mode = mode;
 }
 
+bool LaserOnCommand::continues()
+{
+    return !_laser.isTurnOn();
+}
+
 void LaserOnCommand::execute()
 {
     _laser.setInlineMode(_mode);
