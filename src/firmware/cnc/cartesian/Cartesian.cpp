@@ -102,7 +102,7 @@ float Cartesian::getTargetPosition(Axis axis)
 
 float Cartesian::getMaxSpeed(Axis axis)
 {
-    return _maxSpeed[axis];
+    return _maxSpeeds[axis];
 }
 
 Unit Cartesian::getUnit()
@@ -136,7 +136,9 @@ void Cartesian::setDimension(Axis axis, float u)
 void Cartesian::setFeedRate(Axis axis, float feedRate)
 {
     // Conversion from mm/min to steps/s
-    _feedRates[axis] = toSteps(axis, Unit::MILLIMETER, feedRate / 60);
+    float perMin = constrain(feedRate / 60, 0, _maxSpeeds[axis]);
+
+    _feedRates[axis] = toSteps(axis, Unit::MILLIMETER, perMin);
 }
 
 void Cartesian::setHomeOffset(Axis axis, float u)
@@ -144,9 +146,9 @@ void Cartesian::setHomeOffset(Axis axis, float u)
     _homeOffset[axis] = -abs(u);
 }
 
-void Cartesian::setLimitSwitch(Axis axis, LimitSwitchPtr sw)
+void Cartesian::setLimitSwitch(Axis axis, LimitSwitch &sw)
 {
-    _switches[axis] = sw;
+    _switches[axis] = &sw;
 }
 
 void Cartesian::setMaxSpeed(Axis axis, Unit unit, float u)
@@ -157,7 +159,7 @@ void Cartesian::setMaxSpeed(Axis axis, Unit unit, float u)
     {
         long maxSpeed = toSteps(axis, unit, u);
 
-        _maxSpeed[axis] = maxSpeed;
+        _maxSpeeds[axis] = maxSpeed;
         stepper->setMaxSpeed(maxSpeed);
     }
 }
@@ -177,9 +179,9 @@ void Cartesian::setResolution(Axis axis, Resolution res)
     _resolutions[axis] = res;
 }
 
-void Cartesian::setStepperMotor(Axis axis, StepperMotorPtr stepper)
+void Cartesian::setStepperMotor(Axis axis, StepperMotor &stepper)
 {
-    _steppers[axis] = stepper;
+    _steppers[axis] = &stepper;
 }
 
 void Cartesian::setStepsPerMillimeter(Axis axis, long steps)
