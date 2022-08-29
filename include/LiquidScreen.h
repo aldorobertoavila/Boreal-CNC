@@ -26,6 +26,8 @@ public:
 
     uint8_t getLineCount();
 
+    uint8_t getVisibleLineCount();
+
     void hide(uint8_t lineIndex);
 
     void unhide(uint8_t lineIndex);

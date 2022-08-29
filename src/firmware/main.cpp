@@ -2,6 +2,8 @@
 #include <SPI.h>
 #include <Wire.h>
 
+#include <string.h>
+
 #include <Command.h>
 #include <LimitSwitch.h>
 #include <LiquidScreen.h>
@@ -315,25 +317,25 @@ LiquidLine INFO_LINES[INFO_SIZE] = {
     LiquidLine(PROG_VAL_COL, FOURTH_ROW, "0%")};
 
 LiquidLine MAIN_LINES[MAIN_SIZE] = {
-    LiquidLine(MENU_COL, FIRST_ROW, "Info"),
+    LiquidLine(MENU_COL, FIRST_ROW, "Info   "),
     LiquidLine(MENU_COL, FIRST_ROW, "Prepare"),
-    LiquidLine(MENU_COL, FIRST_ROW, "Control"),
-    LiquidLine(MENU_COL, FIRST_ROW, "No TF Card"),
+    LiquidLine(MENU_COL, FIRST_ROW, "Control      "),
+    LiquidLine(MENU_COL, FIRST_ROW, "No TF Card   "),
     LiquidLine(MENU_COL, FIRST_ROW, "Start from TF"),
-    LiquidLine(MENU_COL, FIRST_ROW, "Pause"),
+    LiquidLine(MENU_COL, FIRST_ROW, "Pause "),
     LiquidLine(MENU_COL, FIRST_ROW, "Resume"),
-    LiquidLine(MENU_COL, FIRST_ROW, "Stop"),
-    LiquidLine(MENU_COL, FIRST_ROW, "About CNC")};
+    LiquidLine(MENU_COL, FIRST_ROW, "Stop  "),
+    LiquidLine(MENU_COL, FIRST_ROW, "About CNC     ")};
 
 LiquidLine MOVE_AXES_LINES[MOVE_AXES_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Prepare"),
-    LiquidLine(MENU_COL, FIRST_ROW, "Move X"),
-    LiquidLine(MENU_COL, FIRST_ROW, "Move Y"),
-    LiquidLine(MENU_COL, FIRST_ROW, "Move Z")};
+    LiquidLine(MENU_COL, FIRST_ROW, "Move X "),
+    LiquidLine(MENU_COL, FIRST_ROW, "Move Y "),
+    LiquidLine(MENU_COL, FIRST_ROW, "Move Z ")};
 
 LiquidLine MOVE_AXIS_LINES[MOVE_AXIS_SIZE] = {
-    LiquidLine(SIXTH_COL, SECOND_ROW, "Move X 1mm"),
-    LiquidLine(SIXTH_COL, THIRD_ROW, "0")};
+    LiquidLine(FIFTH_COL, SECOND_ROW, "Move X 1mm"),
+    LiquidLine(FIFTH_COL, THIRD_ROW, "0")};
 
 LiquidLine MOVE_X_LINES[MOVE_X_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Move Axes"),
@@ -360,9 +362,9 @@ LiquidLine MOTION_LINES[MOTION_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Steps/mm")};
 
 LiquidLine PREP_LINES[PREP_SIZE] = {
-    LiquidLine(MENU_COL, FIRST_ROW, "Main"),
+    LiquidLine(MENU_COL, FIRST_ROW, "Main     "),
     LiquidLine(MENU_COL, FIRST_ROW, "Move axes"),
-    LiquidLine(MENU_COL, FIRST_ROW, "Auto home"),
+    LiquidLine(MENU_COL, FIRST_ROW, "Auto home       "),
     LiquidLine(MENU_COL, FIRST_ROW, "Set home offsets"),
     LiquidLine(MENU_COL, FIRST_ROW, "Disable steppers")};
 
@@ -379,8 +381,8 @@ LiquidLine SET_STEPS_LINES[SET_STEPS_SIZE] = {
     LiquidLine(FOURTH_COL, THIRD_ROW, "0")};
 
 LiquidLine SET_VEL_LINES[SET_VEL_SIZE] = {
-    LiquidLine(FOURTH_COL, SECOND_ROW, "Set X Velocity"),
-    LiquidLine(FOURTH_COL, THIRD_ROW, "0")};
+    LiquidLine(SIXTH_COL, SECOND_ROW, "Set X mm/s"),
+    LiquidLine(SIXTH_COL, THIRD_ROW, "0")};
 
 LiquidLine STEPS_LINES[STEPS_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Motion"),
@@ -526,30 +528,22 @@ LiquidScreen *getScreen(ScreenID screenIndex)
   }
 }
 
-void display(ScreenID screenIndex, bool forcePosition)
+void display(ScreenID screenIndex)
 {
   LiquidScreen *screen = getScreen(screenIndex);
 
   if (screen)
   {
-    if (forcePosition)
-    {
-      rotary.setPosition(screen->getCurrentLineIndex());
-    }
-    else
-    {
-      screen->setCurrentLine(0);
-      rotary.setPosition(0);
-    }
+    screen->setCurrentLine(0);
 
     currentScreen = screenIndex;
     screen->display();
   }
 }
 
-void displayChar(const byte *charValue)
+void displayIcon(const byte *icon)
 {
-  lcd.createChar(LCD_ICON_CHAR, charValue);
+  lcd.createChar(LCD_ICON_CHAR, icon);
 
   INFO_LINES[InfoLine::PROC_ICON_VAL].setSymbol(LCD_ICON_CHAR);
   INFO_LINES[InfoLine::PROC_ICON_VAL].displaySymbol(lcd);
@@ -557,15 +551,31 @@ void displayChar(const byte *charValue)
 
 void displayMenu(ScreenID screenIndex, bool forcePosition)
 {
-  lcd.createChar(LCD_ICON_CHAR, ARROW_CHAR);
+  LiquidScreen *screen = getScreen(screenIndex);
 
-  display(screenIndex, forcePosition);
+  if (screen)
+  {
+    lcd.createChar(LCD_ICON_CHAR, ARROW_CHAR);
+
+    rotary.setBoundaries(0, screen->getVisibleLineCount());
+
+    if (forcePosition)
+    {
+      rotary.setPosition(screen->getCurrentLineIndex());
+    }
+    else
+    {
+      screen->setCurrentLine(0);
+    }
+
+    currentScreen = screenIndex;
+    screen->display();
+  }
 }
 
 void clearBuffer(char *buffer, uint8_t size)
 {
   memset(buffer, ' ', size);
-  progressValueBuffer[size - 1] = '\0';
 }
 
 void formatPosition(Axis axis, char *buffer)
@@ -594,8 +604,6 @@ void formatProcessTime(tm time)
 
 void formatProgressBar(uint8_t progress)
 {
-  char progressBarBuffer[GAUGE_SIZE];
-
   float unitsPerPixel = (GAUGE_SIZE * CHAR_PIXEL_WIDTH) / 100.0;
   int valueInPixels = round(progress * unitsPerPixel);
   int moveOffset = (CHAR_PIXEL_WIDTH - 1) - ((valueInPixels - 1) % CHAR_PIXEL_WIDTH);
@@ -665,8 +673,19 @@ void formatProgressValue(uint8_t progress)
   snprintf(progressValueBuffer, PROG_VAL_SIZE, "%i%%", progress);
 }
 
+void displayAboutScreen()
+{
+  rotary.setBoundaries(0, 1);
+  rotary.setPosition(0);
+
+  display(ScreenID::ABOUT);
+}
+
 void displayInfoScreen()
 {
+  rotary.setBoundaries(0, 1);
+  rotary.setPosition(0);
+
   if (proc)
   {
     uint8_t progress = proc->getProgress();
@@ -689,10 +708,12 @@ void displayInfoScreen()
     INFO_LINES[InfoLine::PROG_BAR].setText(progressBarBuffer);
     INFO_LINES[InfoLine::PROG_VAL].setText(progressValueBuffer);
 
-    display(ScreenID::INFO, false);
+    display(ScreenID::INFO);
   }
   else
   {
+    formatProgressBar(0);
+
     INFO_LINES[InfoLine::POS_LBL_X_VAL].setText("0");
     INFO_LINES[InfoLine::POS_LBL_Y_VAL].setText("0");
     INFO_LINES[InfoLine::POS_LBL_Z_VAL].setText("0");
@@ -701,10 +722,10 @@ void displayInfoScreen()
     INFO_LINES[InfoLine::PROC_NAME_LBL].setText("Ready!");
     INFO_LINES[InfoLine::PROC_TIME_LBL].setText("00:00");
 
-    formatProgressBar(0);
+    INFO_LINES[InfoLine::PROG_BAR].setText(progressBarBuffer);
     INFO_LINES[InfoLine::PROG_VAL].setText("0%");
 
-    display(ScreenID::INFO, false);
+    display(ScreenID::INFO);
   }
 }
 
@@ -788,183 +809,243 @@ void updateInfoScreen()
   }
 }
 
-void displayAccelerationScreen()
+void displayAccelerationScreen(bool clear)
 {
   Axis axis = cartesian.getCurrentAxis();
 
-  switch (axis)
+  if (clear)
   {
-  case Axis::X:
-    SET_ACCEL_LINES[SetAccelerationLine::SET_ACCELERATION_LBL].setText("Set X mm/s^2");
-    rotary.setBoundaries(DEFAULT_MIN_ACCEL_X, DEFAULT_MAX_ACCEL_X);
-    break;
+    LiquidLine *setAccelText = &SET_ACCEL_LINES[SetAccelerationLine::SET_ACCELERATION_LBL];
 
-  case Axis::Y:
-    SET_ACCEL_LINES[SetAccelerationLine::SET_ACCELERATION_LBL].setText("Set Y mm/s^2");
-    rotary.setBoundaries(DEFAULT_MIN_ACCEL_Y, DEFAULT_MAX_ACCEL_Y);
-    break;
+    switch (axis)
+    {
+    case Axis::X:
+      rotary.setBoundaries(DEFAULT_MIN_ACCEL_X, DEFAULT_MAX_ACCEL_X);
+      setAccelText->setText("Set X mm/s^2");
+      break;
 
-  case Axis::Z:
-    SET_ACCEL_LINES[SetAccelerationLine::SET_ACCELERATION_LBL].setText("Set Z mm/s^2");
-    rotary.setBoundaries(DEFAULT_MIN_ACCEL_Z, DEFAULT_MAX_ACCEL_Z);
-    break;
+    case Axis::Y:
+      rotary.setBoundaries(DEFAULT_MIN_ACCEL_Y, DEFAULT_MAX_ACCEL_Y);
+      setAccelText->setText("Set Y mm/s^2");
+      break;
+
+    case Axis::Z:
+      rotary.setBoundaries(DEFAULT_MIN_ACCEL_Z, DEFAULT_MAX_ACCEL_Z);
+      setAccelText->setText("Set Z mm/s^2");
+      break;
+    }
   }
 
+  LiquidLine *setAccelValue = &SET_ACCEL_LINES[SetAccelerationLine::SET_ACCELERATION_VAL];
   int accel = cartesian.getAcceleration(axis);
 
   clearBuffer(accelBuffer, ACCEL_VAL_SIZE);
-  snprintf(accelBuffer, ACCEL_VAL_SIZE, "%i", accel);
+  snprintf(accelBuffer, ACCEL_VAL_SIZE, "%-3i", accel);
 
-  SET_ACCEL_LINES[SetAccelerationLine::SET_ACCELERATION_VAL].setText(accelBuffer);
+  setAccelValue->setText(accelBuffer);
 
   rotary.setPosition(accel);
-  display(ScreenID::SET_ACCEL, false);
+
+  if (clear)
+  {
+    display(ScreenID::SET_ACCEL);
+  }
+  else
+  {
+    setAccelValue->displayText(lcd);
+  }
 }
 
-void displayMoveAxisScreen()
+void displayMoveAxisScreen(bool clear)
 {
   Axis axis = cartesian.getCurrentAxis();
   Unit unit = cartesian.getUnit();
 
-  switch (axis)
+  if (clear)
   {
-  case Axis::X:
-    switch (unit)
-    {
-    case Unit::CENTIMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move X 10mm");
-      break;
-    case Unit::MICROMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move X 0.1mm");
-      break;
-    case Unit::MILLIMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move X 1mm");
-      break;
-    }
-    break;
-  case Axis::Y:
-    switch (unit)
-    {
-    case Unit::CENTIMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move Y 10mm");
-      break;
-    case Unit::MICROMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move Y 0.1mm");
-      break;
-    case Unit::MILLIMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move Y 1mm");
-      break;
-    }
-    break;
+    LiquidLine *moveAxisText = &MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL];
 
-  case Axis::Z:
-    switch (unit)
+    switch (axis)
     {
-    case Unit::CENTIMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move Z 10mm");
+    case Axis::X:
+      switch (unit)
+      {
+      case Unit::CENTIMETER:
+        moveAxisText->setText("Move X 10mm");
+        break;
+      case Unit::MICROMETER:
+        moveAxisText->setText("Move X 0.1mm");
+        break;
+      case Unit::MILLIMETER:
+        moveAxisText->setText("Move X 1mm");
+        break;
+      }
       break;
-    case Unit::MICROMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move Z 0.1mm");
+    case Axis::Y:
+      switch (unit)
+      {
+      case Unit::CENTIMETER:
+        moveAxisText->setText("Move Y 10mm");
+        break;
+      case Unit::MICROMETER:
+        moveAxisText->setText("Move Y 0.1mm");
+        break;
+      case Unit::MILLIMETER:
+        moveAxisText->setText("Move Y 1mm");
+        break;
+      }
       break;
-    case Unit::MILLIMETER:
-      MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_LBL].setText("Move Z 1mm");
+
+    case Axis::Z:
+      switch (unit)
+      {
+      case Unit::CENTIMETER:
+        moveAxisText->setText("Move Z 10mm");
+        break;
+      case Unit::MICROMETER:
+        moveAxisText->setText("Move Z 0.1mm");
+        break;
+      case Unit::MILLIMETER:
+        moveAxisText->setText("Move Z 1mm");
+        break;
+      }
       break;
     }
-    break;
   }
 
+  LiquidLine *moveAxisValue = &MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_VAL];
   float pos = cartesian.getTargetPosition(axis);
 
   clearBuffer(moveAxisBuffer, MOVE_AXIS_VAL_SIZE);
-  snprintf(moveAxisBuffer, MOVE_AXIS_VAL_SIZE, "%.1f", pos / 1000);
-  MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_VAL].setText(moveAxisBuffer);
+  snprintf(moveAxisBuffer, MOVE_AXIS_VAL_SIZE, "%-3.1f", pos / 1000);
+  moveAxisValue->setText(moveAxisBuffer);
 
-  rotary.setBoundaries(INT16_MIN, INT16_MAX);
+  rotary.setBoundaries(-400, 400);
   rotary.setPosition(pos);
   rotary.setInterval(100);
 
-  display(ScreenID::MOVE_AXIS, false);
+  if (clear)
+  {
+    display(ScreenID::MOVE_AXIS);
+  }
+  else
+  {
+    moveAxisValue->displayText(lcd);
+  }
 }
 
-void displayLaserScreen()
+void displayLaserScreen(bool clear)
 {
+  LiquidLine *setPowerValue = &SET_POWER_LINES[SetPowerLine::SET_POWER_VAL];
   uint8_t maxPower = laser.getMaxPower();
 
   clearBuffer(powerBuffer, POWER_VAL_SIZE);
-  snprintf(powerBuffer, POWER_VAL_SIZE, "%i", maxPower);
-
-  SET_POWER_LINES[SetPowerLine::SET_POWER_LBL].setText("Set Laser PWM");
-  SET_POWER_LINES[SetPowerLine::SET_POWER_LBL].setText(powerBuffer);
+  snprintf(powerBuffer, POWER_VAL_SIZE, "%-3i", maxPower);
+  setPowerValue->setText(powerBuffer);
 
   rotary.setBoundaries(LSR_MIN_POWER, LSR_MAX_POWER);
   rotary.setPosition(maxPower);
 
-  display(ScreenID::SET_POWER, false);
+  if (clear)
+  {
+    display(ScreenID::SET_POWER);
+  }
+  else
+  {
+    setPowerValue->displayText(lcd);
+  }
 }
 
-void displayStepsScreen()
+void displayStepsScreen(bool clear)
 {
   Axis axis = cartesian.getCurrentAxis();
 
-  switch (axis)
+  if (clear)
   {
-  case Axis::X:
-    SET_STEPS_LINES[SetStepsLine::SET_STEPS_LBL].setText("Set X Steps/mm");
-    rotary.setBoundaries(DEFAULT_MIN_STEPS_X, DEFAULT_MAX_STEPS_X);
-    break;
+    LiquidLine *setStepsText = &SET_STEPS_LINES[SetStepsLine::SET_STEPS_LBL];
 
-  case Axis::Y:
-    SET_STEPS_LINES[SetStepsLine::SET_STEPS_LBL].setText("Set X Steps/mm");
-    rotary.setBoundaries(DEFAULT_MIN_STEPS_Y, DEFAULT_MAX_STEPS_Y);
-    break;
+    switch (axis)
+    {
+    case Axis::X:
+      rotary.setBoundaries(DEFAULT_MIN_STEPS_X, DEFAULT_MAX_STEPS_X);
+      setStepsText->setText("Set X steps/mm");
+      break;
 
-  case Axis::Z:
-    SET_STEPS_LINES[SetStepsLine::SET_STEPS_LBL].setText("Set X Steps/mm");
-    rotary.setBoundaries(DEFAULT_MIN_STEPS_Z, DEFAULT_MAX_STEPS_Z);
-    break;
+    case Axis::Y:
+      rotary.setBoundaries(DEFAULT_MIN_STEPS_Y, DEFAULT_MAX_STEPS_Y);
+      setStepsText->setText("Set Y steps/mm");
+      break;
+
+    case Axis::Z:
+      rotary.setBoundaries(DEFAULT_MIN_STEPS_Z, DEFAULT_MAX_STEPS_Z);
+      setStepsText->setText("Set Z steps/mm");
+      break;
+    }
   }
 
+  LiquidLine *setStepsValue = &SET_STEPS_LINES[SetStepsLine::SET_STEPS_VAL];
   long stepsPer = cartesian.getStepsPerMillimeter(axis);
 
   clearBuffer(stepsBuffer, STEPS_VAL_SIZE);
-  snprintf(stepsBuffer, STEPS_VAL_SIZE, "%i", stepsPer);
-  SET_STEPS_LINES[SetStepsLine::SET_STEPS_VAL].setText(stepsBuffer);
+  snprintf(stepsBuffer, STEPS_VAL_SIZE, "%-3i", stepsPer);
+  setStepsValue->setText(stepsBuffer);
 
   rotary.setPosition(stepsPer);
-  display(ScreenID::SET_STEPS, false);
+
+  if (clear)
+  {
+    display(ScreenID::SET_STEPS);
+  }
+  else
+  {
+    setStepsValue->displayText(lcd);
+  }
 }
 
-void displayVelocityScreen()
+void displayVelocityScreen(bool clear)
 {
   Axis axis = cartesian.getCurrentAxis();
 
-  switch (axis)
+  if (clear)
   {
-  case Axis::X:
-    SET_VEL_LINES[SetVelocityLine::SET_VELOCITY_LBL].setText("Set X mm/s");
-    rotary.setBoundaries(DEFAULT_MIN_STEPS_X, DEFAULT_MAX_SPEED_X);
-    break;
+    LiquidLine *setVelocityText = &SET_VEL_LINES[SetVelocityLine::SET_VELOCITY_LBL];
 
-  case Axis::Y:
-    SET_VEL_LINES[SetVelocityLine::SET_VELOCITY_LBL].setText("Set Y mm/s");
-    rotary.setBoundaries(DEFAULT_MIN_STEPS_Y, DEFAULT_MAX_SPEED_Y);
-    break;
+    switch (axis)
+    {
+    case Axis::X:
+      rotary.setBoundaries(DEFAULT_MIN_STEPS_X, DEFAULT_MAX_SPEED_X);
+      setVelocityText->setText("Set X mm/s");
+      break;
 
-  case Axis::Z:
-    SET_VEL_LINES[SetVelocityLine::SET_VELOCITY_LBL].setText("Set Z mm/s");
-    rotary.setBoundaries(DEFAULT_MIN_STEPS_Z, DEFAULT_MAX_SPEED_Z);
-    break;
+    case Axis::Y:
+      rotary.setBoundaries(DEFAULT_MIN_STEPS_Y, DEFAULT_MAX_SPEED_Y);
+      setVelocityText->setText("Set Y mm/s");
+      break;
+
+    case Axis::Z:
+      rotary.setBoundaries(DEFAULT_MIN_STEPS_Z, DEFAULT_MAX_SPEED_Z);
+      setVelocityText->setText("Set Z mm/s");
+      break;
+    }
   }
 
+  LiquidLine *setVelocityValue = &SET_VEL_LINES[SetVelocityLine::SET_VELOCITY_VAL];
   int maxSpeed = cartesian.getFeedRate(axis);
 
   clearBuffer(velocityBuffer, VEL_VAL_SIZE);
-  snprintf(velocityBuffer, VEL_VAL_SIZE, "%i", maxSpeed);
-
-  SET_VEL_LINES[SetVelocityLine::SET_VELOCITY_VAL].setText(velocityBuffer);
+  snprintf(velocityBuffer, VEL_VAL_SIZE, "%-3i", maxSpeed);
+  setVelocityValue->setText(velocityBuffer);
 
   rotary.setPosition(maxSpeed);
-  display(ScreenID::SET_VEL, false);
+
+  if (clear)
+  {
+    display(ScreenID::SET_VEL);
+  }
+  else
+  {
+    setVelocityValue->displayText(lcd);
+  }
 }
 
 void autohome()
@@ -996,7 +1077,7 @@ void pauseProcess()
 
   proc->stop();
   displayInfoScreen();
-  displayChar(PAUSE_CHAR);
+  displayIcon(PAUSE_CHAR);
 }
 
 void resumeProcess()
@@ -1006,7 +1087,7 @@ void resumeProcess()
 
   proc->setup();
   displayInfoScreen();
-  displayChar(PLAY_CHAR);
+  displayIcon(PLAY_CHAR);
 }
 
 void stopProcess()
@@ -1017,12 +1098,12 @@ void stopProcess()
 
   proc->stop();
   displayInfoScreen();
-  displayChar(STOP_CHAR);
+  displayIcon(STOP_CHAR);
 }
 
 void aboutScreenClicked()
 {
-  displayInfoScreen();
+  displayMenu(ScreenID::MAIN, true);
 }
 
 void accelerationScreenClicked()
@@ -1034,15 +1115,15 @@ void accelerationScreenClicked()
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::X);
-    displayAccelerationScreen();
+    displayAccelerationScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Y);
-    displayAccelerationScreen();
+    displayAccelerationScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Z);
-    displayAccelerationScreen();
+    displayAccelerationScreen(true);
     break;
   default:
     break;
@@ -1061,7 +1142,6 @@ void cardScreenClicked()
     snprintf(pathBuffer, FILE_PATH_SIZE, "/%s", filename);
 
     processes.push(std::make_shared<TFProcess>(SD, rtc, cartesian, laser, pathBuffer, paths[index - 1]));
-    cartesian.enableSteppers();
 
     MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
     MAIN_MENU_SCREEN.unhide(MainLine::STOP_PROC_OP);
@@ -1088,7 +1168,7 @@ void ctrlScreenClicked()
     displayMenu(ScreenID::MOTION, false);
     break;
   case 2:
-    displayLaserScreen();
+    displayLaserScreen(true);
     break;
   case 3:
     storeSettings();
@@ -1101,7 +1181,7 @@ void ctrlScreenClicked()
 
 void infoScreenClicked()
 {
-  display(ScreenID::MAIN, false);
+  displayMenu(ScreenID::MAIN, false);
 }
 
 void mainScreenClicked()
@@ -1144,7 +1224,7 @@ void mainScreenClicked()
     break;
 
   case MainLine::ABOUT_CNC_OP:
-    display(ScreenID::ABOUT, false);
+    displayAboutScreen();
     break;
 
   default:
@@ -1196,20 +1276,8 @@ void moveAxesScreenClicked()
 
 void moveAxisScreenClicked()
 {
-  Axis axis = cartesian.getCurrentAxis();
-
-  switch (axis)
-  {
-  case Axis::X:
-    display(ScreenID::MOVE_X, true);
-    break;
-  case Axis::Y:
-    display(ScreenID::MOVE_Y, true);
-    break;
-  case Axis::Z:
-    display(ScreenID::MOVE_Z, true);
-    break;
-  }
+  rotary.setInterval(1);
+  displayMenu(ScreenID::ACCEL, true);
 }
 
 void moveXScreenClicked()
@@ -1224,17 +1292,17 @@ void moveXScreenClicked()
   case 1:
     cartesian.setCurrentAxis(Axis::X);
     cartesian.setUnit(Unit::CENTIMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::X);
     cartesian.setUnit(Unit::MILLIMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::X);
     cartesian.setUnit(Unit::MICROMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   default:
     break;
@@ -1253,17 +1321,17 @@ void moveYScreenClicked()
   case 1:
     cartesian.setCurrentAxis(Axis::Y);
     cartesian.setUnit(Unit::CENTIMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Y);
     cartesian.setUnit(Unit::MILLIMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Y);
     cartesian.setUnit(Unit::MICROMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   default:
     break;
@@ -1282,17 +1350,17 @@ void moveZScreenClicked()
   case 1:
     cartesian.setCurrentAxis(Axis::Z);
     cartesian.setUnit(Unit::CENTIMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Z);
     cartesian.setUnit(Unit::MILLIMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Z);
     cartesian.setUnit(Unit::MICROMETER);
-    displayMoveAxisScreen();
+    displayMoveAxisScreen(true);
     break;
   default:
     break;
@@ -1328,38 +1396,26 @@ void prepScreenClicked()
 
 void setAccelScreenClicked()
 {
-  rotary.setBoundaries(0, 1);
   rotary.setInterval(1);
-  rotary.setPosition(0);
-
-  display(ScreenID::MOTION, true);
+  displayMenu(ScreenID::ACCEL, true);
 }
 
 void setPowerScreenClicked()
 {
-  rotary.setBoundaries(0, 1);
   rotary.setInterval(1);
-  rotary.setPosition(0);
-
-  display(ScreenID::CTRL, true);
+  displayMenu(ScreenID::CTRL, true);
 }
 
 void setStepsScreenClicked()
 {
-  rotary.setBoundaries(0, 1);
   rotary.setInterval(1);
-  rotary.setPosition(0);
-
-  display(ScreenID::MOTION, true);
+  displayMenu(ScreenID::STEPS, true);
 }
 
 void setVelScreenClicked()
 {
-  rotary.setBoundaries(0, 1);
   rotary.setInterval(1);
-  rotary.setPosition(0);
-
-  display(ScreenID::MOTION, true);
+  displayMenu(ScreenID::VEL, true);
 }
 
 void stepsScreenClicked()
@@ -1367,19 +1423,19 @@ void stepsScreenClicked()
   switch (STEPS_MENU_SCREEN.getCurrentLineIndex())
   {
   case 0:
-    display(ScreenID::MOTION, true);
+    displayMenu(ScreenID::MOTION, true);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::X);
-    displayStepsScreen();
+    displayStepsScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Y);
-    displayStepsScreen();
+    displayStepsScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Z);
-    displayStepsScreen();
+    displayStepsScreen(true);
     break;
   default:
     break;
@@ -1395,15 +1451,15 @@ void velocityScreenClicked()
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::X);
-    displayVelocityScreen();
+    displayVelocityScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Y);
-    displayVelocityScreen();
+    displayVelocityScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Z);
-    displayVelocityScreen();
+    displayVelocityScreen(true);
     break;
   default:
     break;
@@ -1498,7 +1554,7 @@ void moveAxis(Rotation direction)
     commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, u, 0, 0, FEED_RATE_MOVE_AXIS, 0));
   }
 
-  displayMoveAxisScreen();
+  displayMoveAxisScreen(false);
 }
 
 void setAcceleration()
@@ -1508,7 +1564,7 @@ void setAcceleration()
 
   cartesian.setAcceleration(axis, Unit::MILLIMETER, pos);
 
-  displayAccelerationScreen();
+  displayAccelerationScreen(false);
 }
 
 void setPower(Rotation rotation)
@@ -1517,7 +1573,7 @@ void setPower(Rotation rotation)
   long pos = rotary.getPosition();
 
   laser.setMaxPower(pos);
-  displayLaserScreen();
+  displayLaserScreen(false);
 }
 
 void setSteps(Rotation rotation)
@@ -1526,7 +1582,7 @@ void setSteps(Rotation rotation)
   long pos = rotary.getPosition();
 
   cartesian.setStepsPerMillimeter(axis, pos);
-  displayStepsScreen();
+  displayStepsScreen(false);
 }
 
 void setVelocity(Rotation rotation)
@@ -1535,7 +1591,7 @@ void setVelocity(Rotation rotation)
   long pos = rotary.getPosition();
 
   cartesian.setMaxSpeed(axis, Unit::MILLIMETER, pos);
-  displayVelocityScreen();
+  displayVelocityScreen(false);
 }
 
 void rotateCallback(Rotation rotation)
@@ -1852,6 +1908,8 @@ void setup()
 
 void loop()
 {
+  rotary.tick();
+
   if (!processes.empty() && !proc)
   {
     proc = processes.front();
@@ -1868,11 +1926,6 @@ void loop()
     if (!proc->continues())
     {
       proc->stop();
-      // pops next process
-      // TODO: reset
-      // disable steppers
-      // set feed rate to default
-      // set power to 0
       proc = nullptr;
       return;
     }
@@ -1889,8 +1942,6 @@ void loop()
       if (cmd)
       {
         cmd->setup();
-        // TODO: remove
-        delay(200);
       }
     }
 
@@ -1899,7 +1950,6 @@ void loop()
       if (!cmd->continues())
       {
         cmd->stop();
-        // pops next command
         cmd = nullptr;
         return;
       }

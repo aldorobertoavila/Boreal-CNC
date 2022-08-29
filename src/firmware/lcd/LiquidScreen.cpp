@@ -58,6 +58,11 @@ uint8_t LiquidScreen::getLineCount()
     return _lineCount;
 }
 
+uint8_t LiquidScreen::getVisibleLineCount()
+{
+    return _visibleCount;
+}
+
 void LiquidScreen::hide(uint8_t lineIndex)
 {
     if (lineIndex < _lineCount)

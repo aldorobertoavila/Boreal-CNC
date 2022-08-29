@@ -184,6 +184,8 @@ void TFProcess::setup()
     {
         _file.seek(_position);
     }
+
+    _cartesian.enableSteppers();
 }
 
 void TFProcess::stop()
@@ -192,4 +194,9 @@ void TFProcess::stop()
     {
         _file.close();
     }
+
+    _cartesian.disableSteppers();
+
+    _laser.setInlineMode(InlineMode::OFF);
+    _laser.turnOff();
 }
