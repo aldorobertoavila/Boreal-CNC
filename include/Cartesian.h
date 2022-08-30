@@ -11,8 +11,8 @@
 
 using namespace std;
 
-using LimitSwitchPtr = LimitSwitch*;
-using StepperMotorPtr = StepperMotor*;
+using LimitSwitchPtr = LimitSwitch *;
+using StepperMotorPtr = StepperMotor *;
 
 class Cartesian
 {
@@ -40,6 +40,8 @@ public:
     LimitSwitchPtr getLimitSwitch(Axis axis);
 
     Positioning getPositioning();
+
+    float getPrevTargetPosition(Axis axis);
 
     Resolution getResolution(Axis axis);
 
@@ -100,7 +102,8 @@ private:
     float _feedRates[AXES];
     float _homeOffset[AXES];
     float _maxSpeeds[AXES];
-    float _targetPosition[AXES];
+    float _prevTargetPos[AXES];
+    float _targetPos[AXES];
     long _minStepsPerMillimeter[AXES];
     long _stepsPerMillimeter[AXES];
 };

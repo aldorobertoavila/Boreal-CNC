@@ -39,9 +39,9 @@ public:
     virtual void stop() = 0;
 
 protected:
-    tm _prevTime;
     uint8_t _prevProgress;
     uint8_t _progress;
+    tm _prevTime;
     tm _time;
 };
 

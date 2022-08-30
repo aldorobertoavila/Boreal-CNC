@@ -33,7 +33,7 @@ uint8_t TFProcess::getProgress()
     {
         _prevProgress = _progress;
         _position = _file.position();
-        _progress = map(_position, 0, _file.size(), 0, 100);
+        _progress = map(_position, 0, _file.size(), 0, 101); // map position to [0, 100]
     }
 
     return _progress;
@@ -78,9 +78,6 @@ void TFProcess::nextCommand(CommandQueue &commands)
     }
 
     String line = _file.readStringUntil('\n');
-
-    // TODO: remove
-    Serial.println(line);
 
     if (line.isEmpty())
     {

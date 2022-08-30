@@ -80,6 +80,11 @@ Positioning Cartesian::getPositioning()
     return _positioning;
 }
 
+float Cartesian::getPrevTargetPosition(Axis axis)
+{
+    return _prevTargetPos[axis];
+}
+
 Resolution Cartesian::getResolution(Axis axis)
 {
     return _resolutions[axis];
@@ -97,7 +102,7 @@ long Cartesian::getStepsPerMillimeter(Axis axis)
 
 float Cartesian::getTargetPosition(Axis axis)
 {
-    return _targetPosition[axis];
+    return _targetPos[axis];
 }
 
 float Cartesian::getMaxSpeed(Axis axis)
@@ -212,7 +217,8 @@ void Cartesian::setTargetPosition(Axis axis, Unit unit, float u, float feedRate)
             stepper->move(steps);
         }
 
-        _targetPosition[axis] = u;
+        _prevTargetPos[axis] = _targetPos[axis];
+        _targetPos[axis] = u;
 
         stepper->setMaxSpeed(_feedRates[axis]);
         stepper->setResolution(_resolutions[axis]);

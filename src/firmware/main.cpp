@@ -59,14 +59,14 @@
 #define PROC_TIME_LBL_COL 15
 
 #define PROG_BAR_COL 0
-#define PROG_VAL_COL 15
+#define PROG_VAL_COL 16
 
 #define ACCEL_VAL_SIZE 4
 #define MOVE_AXIS_VAL_SIZE 4
 #define POS_VAL_SIZE 4
 #define POWER_VAL_SIZE 4
-#define PROC_TIME_SIZE 5
-#define PROG_VAL_SIZE 4
+#define PROC_TIME_SIZE 6
+#define PROG_VAL_SIZE 5
 #define STEPS_VAL_SIZE 4
 #define VEL_VAL_SIZE 4
 
@@ -218,7 +218,9 @@ LiquidMenu MOTION_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu STEPS_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 
 char INTERNAL_FILE_EXT = '~';
+
 const char *EMPTY_ROW = "                    ";
+const char *READY_MSG = "Ready!";
 const char *SYSTEM_VOLUME = "System Volume Information";
 const char *GCODE_FILE_EXT = ".gcode";
 
@@ -311,7 +313,7 @@ LiquidLine INFO_LINES[INFO_SIZE] = {
     LiquidLine(POS_VAL_Y_COL, SECOND_ROW, "0"),
     LiquidLine(POS_VAL_Z_COL, SECOND_ROW, "0"),
     LiquidLine(PROC_ICON_VAL_COL, THIRD_ROW, ""),
-    LiquidLine(PROC_NAME_LBL_COL, THIRD_ROW, "Ready!"),
+    LiquidLine(PROC_NAME_LBL_COL, THIRD_ROW, READY_MSG),
     LiquidLine(PROC_TIME_LBL_COL, THIRD_ROW, "00:00"),
     LiquidLine(PROG_BAR_COL, FOURTH_ROW, ""),
     LiquidLine(PROG_VAL_COL, FOURTH_ROW, "0%")};
@@ -414,7 +416,7 @@ const byte GAUGE_RIGHT[8] = {B11110, B00001, B00001, B00001, B00001, B00001, B00
 const byte GAUGE_MASK_LEFT[8] = {B01111, B11111, B11111, B11111, B11111, B11111, B11111, B01111};
 const byte GAUGE_MASK_RIGHT[8] = {B11110, B11111, B11111, B11111, B11111, B11111, B11111, B11110};
 
-const char *paths[MAX_FILES_SIZE];
+String paths[MAX_FILES_SIZE];
 
 byte gaugeLeftDynamic[8];
 byte gaugeRightDynamic[8];
@@ -578,9 +580,8 @@ void clearBuffer(char *buffer, uint8_t size)
   memset(buffer, ' ', size);
 }
 
-void formatPosition(Axis axis, char *buffer)
+void formatPosition(char *buffer, float u)
 {
-  float u = cartesian.getTargetPosition(axis);
   Unit unit = cartesian.getUnit();
 
   clearBuffer(buffer, POS_VAL_SIZE);
@@ -599,7 +600,7 @@ void formatPosition(Axis axis, char *buffer)
 void formatProcessTime(tm time)
 {
   clearBuffer(processTimeBuffer, PROC_TIME_SIZE);
-  snprintf(processTimeBuffer, PROC_TIME_SIZE, "%i:%i", time.tm_hour, time.tm_min);
+  strftime(processTimeBuffer, PROC_TIME_SIZE, "%H:%M", &time);
 }
 
 void formatProgressBar(uint8_t progress)
@@ -665,6 +666,8 @@ void formatProgressBar(uint8_t progress)
       }
     }
   }
+
+  progressBarBuffer[GAUGE_SIZE] = '\0';
 }
 
 void formatProgressValue(uint8_t progress)
@@ -688,11 +691,14 @@ void displayInfoScreen()
 
   if (proc)
   {
+    float targetX = cartesian.getTargetPosition(Axis::X);
+    float targetY = cartesian.getTargetPosition(Axis::Y);
+    float targetZ = cartesian.getTargetPosition(Axis::Z);
     uint8_t progress = proc->getProgress();
 
-    formatPosition(Axis::X, positionXBuffer);
-    formatPosition(Axis::Y, positionYBuffer);
-    formatPosition(Axis::Z, positionZBuffer);
+    formatPosition(positionXBuffer, targetX);
+    formatPosition(positionYBuffer, targetY);
+    formatPosition(positionZBuffer, targetZ);
 
     formatProcessTime(proc->getTime());
     formatProgressBar(progress);
@@ -719,7 +725,7 @@ void displayInfoScreen()
     INFO_LINES[InfoLine::POS_LBL_Z_VAL].setText("0");
 
     INFO_LINES[InfoLine::PROC_ICON_VAL].setText("");
-    INFO_LINES[InfoLine::PROC_NAME_LBL].setText("Ready!");
+    INFO_LINES[InfoLine::PROC_NAME_LBL].setText(READY_MSG);
     INFO_LINES[InfoLine::PROC_TIME_LBL].setText("00:00");
 
     INFO_LINES[InfoLine::PROG_BAR].setText(progressBarBuffer);
@@ -736,31 +742,45 @@ void updateInfoScreen()
     return;
   }
 
-  LiquidLine *positionValueX = &INFO_LINES[InfoLine::POS_LBL_X_VAL];
-  formatPosition(Axis::X, positionXBuffer);
+  LiquidLine *processName = &INFO_LINES[InfoLine::PROC_NAME_LBL];
 
-  if (positionValueX->getText() != positionXBuffer)
+  if (processName->getText() == READY_MSG)
   {
+    processName->setText(proc->getName());
+    processName->displayText(lcd);
+  }
+
+  float targetX = cartesian.getTargetPosition(Axis::X);
+
+  if (cartesian.getPrevTargetPosition(Axis::X) != targetX)
+  {
+    LiquidLine *positionValueX = &INFO_LINES[InfoLine::POS_LBL_X_VAL];
+    formatPosition(positionXBuffer, targetX);
+
     positionValueX->setText(positionXBuffer);
     positionValueX->displayText(lcd);
     return;
   }
 
-  LiquidLine *positionValueY = &INFO_LINES[InfoLine::POS_LBL_Y_VAL];
-  formatPosition(Axis::Y, positionYBuffer);
+  float targetY = cartesian.getTargetPosition(Axis::Y);
 
-  if (positionValueY->getText() != positionYBuffer)
+  if (cartesian.getPrevTargetPosition(Axis::Y) != targetY)
   {
+    LiquidLine *positionValueY = &INFO_LINES[InfoLine::POS_LBL_Y_VAL];
+    formatPosition(positionYBuffer, targetY);
+
     positionValueY->setText(positionYBuffer);
     positionValueY->displayText(lcd);
     return;
   }
 
-  LiquidLine *positionValueZ = &INFO_LINES[InfoLine::POS_LBL_Z_VAL];
-  formatPosition(Axis::Z, positionZBuffer);
+  float targetZ = cartesian.getTargetPosition(Axis::Z);
 
-  if (positionValueZ->getText() != positionZBuffer)
+  if (cartesian.getPrevTargetPosition(Axis::Z) != targetZ)
   {
+    LiquidLine *positionValueZ = &INFO_LINES[InfoLine::POS_LBL_Z_VAL];
+    formatPosition(positionZBuffer, targetZ);
+
     positionValueZ->setText(positionZBuffer);
     positionValueZ->displayText(lcd);
     return;
@@ -774,12 +794,9 @@ void updateInfoScreen()
     LiquidLine *processTimeValue = &INFO_LINES[InfoLine::PROC_TIME_LBL];
     formatProcessTime(time);
 
-    if (processTimeValue->getText() != processTimeBuffer)
-    {
-      processTimeValue->setText(processTimeBuffer);
-      processTimeValue->displayText(lcd);
-      return;
-    }
+    processTimeValue->setText(processTimeBuffer);
+    processTimeValue->displayText(lcd);
+    return;
   }
 
   uint8_t prevProgress = proc->getPrevProgress();
@@ -787,25 +804,15 @@ void updateInfoScreen()
 
   if (progress != prevProgress)
   {
+    LiquidLine *progressBar = &INFO_LINES[InfoLine::PROG_BAR];
     LiquidLine *progressValue = &INFO_LINES[InfoLine::PROG_VAL];
+    formatProgressBar(progress);
     formatProgressValue(progress);
 
-    if (progressValue->getText() != progressValueBuffer)
-    {
-      progressValue->setText(progressValueBuffer);
-      progressValue->displayText(lcd);
-
-      LiquidLine *progressBar = &INFO_LINES[InfoLine::PROG_BAR];
-      formatProgressBar(progress);
-
-      if (progressBar->getText() != progressBarBuffer)
-      {
-        progressBar->setText(progressBarBuffer);
-        progressBar->displayText(lcd);
-      }
-
-      return;
-    }
+    progressBar->setText(progressBarBuffer);
+    progressBar->displayText(lcd);
+    progressValue->setText(progressValueBuffer);
+    progressValue->displayText(lcd);
   }
 }
 
@@ -1096,9 +1103,10 @@ void stopProcess()
   MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
   MAIN_MENU_SCREEN.hide(MainLine::STOP_PROC_OP);
 
+  MAIN_MENU_SCREEN.unhide(MainLine::PREP_MENU_RTN);
+  MAIN_MENU_SCREEN.unhide(MainLine::START_FROM_TF_OP);
+
   proc->stop();
-  displayInfoScreen();
-  displayIcon(STOP_CHAR);
 }
 
 void aboutScreenClicked()
@@ -1136,12 +1144,12 @@ void cardScreenClicked()
 
   if (index > 0)
   {
-    const char *filename = paths[index - 1];
+    const char *filename = paths[index - 1].c_str();
 
     clearBuffer(pathBuffer, FILE_PATH_SIZE);
     snprintf(pathBuffer, FILE_PATH_SIZE, "/%s", filename);
 
-    processes.push(std::make_shared<TFProcess>(SD, rtc, cartesian, laser, pathBuffer, paths[index - 1]));
+    processes.push(std::make_shared<TFProcess>(SD, rtc, cartesian, laser, pathBuffer, filename));
 
     MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
     MAIN_MENU_SCREEN.unhide(MainLine::STOP_PROC_OP);
@@ -1220,6 +1228,7 @@ void mainScreenClicked()
 
   case MainLine::STOP_PROC_OP:
     stopProcess();
+    displayIcon(STOP_CHAR);
     displayInfoScreen();
     break;
 
@@ -1659,7 +1668,7 @@ void setupCardScreen()
   {
     if (i > 0)
     {
-      CARD_LINES[i] = LiquidLine(MENU_COL, FIRST_ROW, paths[i - 1]);
+      CARD_LINES[i] = LiquidLine(MENU_COL, FIRST_ROW, paths[i - 1].c_str());
     }
     else
     {
@@ -1925,8 +1934,10 @@ void loop()
   {
     if (!proc->continues())
     {
-      proc->stop();
+      stopProcess();
       proc = nullptr;
+      delay(PROCESS_EXPIRED);
+      displayInfoScreen();
       return;
     }
 
