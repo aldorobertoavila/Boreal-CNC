@@ -85,6 +85,15 @@
 #define SW_Y_PIN 39
 #define SW_Z_PIN 34
 
+enum Icon
+{
+  ARROW,
+  CHECK,
+  PLAY,
+  PAUSE,
+  STOP
+};
+
 enum InfoLine
 {
   TITLE_LBL,
@@ -259,7 +268,7 @@ const uint8_t LSR_MIN_POWER = 0;   // Minimum laser power (PWM)
 const uint8_t LSR_MAX_POWER = 150; // Maximum laser power (PWM)
 
 const unsigned long DEBOUNCE_TIME = 10;
-const int PROCESS_EXPIRED = 3000;
+const int PROCESS_EXPIRED = 10000;
 const int CHAR_PIXEL_WIDTH = 5;
 const int EMPTY_SPACE = 255;
 const int GAUGE_SIZE = 14;
@@ -399,6 +408,7 @@ LiquidLine VEL_LINES[VEL_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Vel Z")};
 
 const byte ARROW_CHAR[8] = {B00000, B00100, B00110, B11111, B11111, B00110, B00100, B00000};
+const byte CHECK_CHAR[8] = {B00000, B00001, B00011, B10110, B11100, B01000, B00000, B00000};
 const byte PLAY_CHAR[8] = {B00000, B10000, B11000, B11100, B11110, B11100, B11000, B10000};
 const byte PAUSE_CHAR[8] = {B00000, B11011, B11011, B11011, B11011, B11011, B11011, B00000};
 const byte STOP_CHAR[8] = {B00000, B00000, B11110, B11110, B11110, B11110, B00000, B00000};
@@ -438,6 +448,7 @@ uint8_t nFiles;
 File root;
 
 ScreenID currentScreen;
+Icon currentIcon;
 
 CommandQueue commands;
 ProcessQueue processes;
@@ -543,12 +554,30 @@ void display(ScreenID screenIndex)
   }
 }
 
-void displayIcon(const byte *icon)
+void displayIcon(Icon icon)
 {
-  lcd.createChar(LCD_ICON_CHAR, icon);
+  switch (icon)
+  {
+  case ARROW:
+    lcd.createChar(LCD_ICON_CHAR, ARROW_CHAR);
+    break;
+  case CHECK:
+    lcd.createChar(LCD_ICON_CHAR, CHECK_CHAR);
+    break;
+  case PLAY:
+    lcd.createChar(LCD_ICON_CHAR, PLAY_CHAR);
+    break;
+  case PAUSE:
+    lcd.createChar(LCD_ICON_CHAR, PAUSE_CHAR);
+    break;
+  case STOP:
+    lcd.createChar(LCD_ICON_CHAR, STOP_CHAR);
+    break;
+  }
 
   INFO_LINES[InfoLine::PROC_ICON_VAL].setSymbol(LCD_ICON_CHAR);
   INFO_LINES[InfoLine::PROC_ICON_VAL].displaySymbol(lcd);
+  currentIcon = icon;
 }
 
 void displayMenu(ScreenID screenIndex, bool forcePosition)
@@ -1077,27 +1106,7 @@ void storeSettings()
 {
 }
 
-void pauseProcess()
-{
-  MAIN_MENU_SCREEN.unhide(MainLine::RESUME_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
-
-  proc->pause();
-  displayInfoScreen();
-  displayIcon(PAUSE_CHAR);
-}
-
-void resumeProcess()
-{
-  MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
-
-  proc->setup();
-  displayInfoScreen();
-  displayIcon(PLAY_CHAR);
-}
-
-void stopProcess()
+void terminateProcess(bool clear, Icon icon)
 {
   MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
   MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
@@ -1107,6 +1116,45 @@ void stopProcess()
   MAIN_MENU_SCREEN.unhide(MainLine::START_FROM_TF_OP);
 
   proc->stop();
+
+  if (clear)
+  {
+    displayInfoScreen();
+  }
+
+  displayIcon(icon);
+}
+
+void completeProcess()
+{
+  terminateProcess(false, Icon::CHECK);
+}
+
+void pauseProcess()
+{
+  MAIN_MENU_SCREEN.unhide(MainLine::RESUME_PROC_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
+
+  proc->pause();
+
+  displayInfoScreen();
+  displayIcon(Icon::PAUSE);
+}
+
+void resumeProcess()
+{
+  MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
+
+  proc->setup();
+
+  displayInfoScreen();
+  displayIcon(Icon::PLAY);
+}
+
+void stopProcess(bool clear)
+{
+  terminateProcess(clear, Icon::STOP);
 }
 
 void aboutScreenClicked()
@@ -1218,18 +1266,14 @@ void mainScreenClicked()
 
   case MainLine::PAUSE_PROC_OP:
     pauseProcess();
-    displayInfoScreen();
     break;
 
   case MainLine::RESUME_PROC_OP:
     resumeProcess();
-    displayInfoScreen();
     break;
 
   case MainLine::STOP_PROC_OP:
-    stopProcess();
-    displayIcon(STOP_CHAR);
-    displayInfoScreen();
+    stopProcess(true);
     break;
 
   case MainLine::ABOUT_CNC_OP:
@@ -1926,24 +1970,36 @@ void loop()
 
     if (proc)
     {
+      displayIcon(Icon::PLAY);
       proc->setup();
     }
   }
 
   if (proc)
   {
-    updateInfoScreen();
-
-    if (proc->isStopped() || !proc->continues())
+    // process is not available & there's no commands left
+    if (!proc->continues() && commands.empty() && !cmd)
     {
-      stopProcess();
+      completeProcess();
       proc = nullptr;
       delay(PROCESS_EXPIRED);
       displayInfoScreen();
       return;
     }
 
-    if (!proc->isPaused())
+    if (proc->isStopped())
+    {
+      stopProcess(false);
+      proc = nullptr;
+      delay(PROCESS_EXPIRED);
+      displayInfoScreen();
+      return;
+    }
+
+    updateInfoScreen();
+
+    // execute commands if not paused & stopped
+    if (!proc->isPaused() && !proc->isStopped())
     {
       proc->nextCommand(commands);
 
