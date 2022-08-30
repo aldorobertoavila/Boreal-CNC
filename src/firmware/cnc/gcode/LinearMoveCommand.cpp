@@ -95,8 +95,10 @@ void LinearMoveCommand::setup()
 
 void LinearMoveCommand::stop()
 {
+    /*
     if (_power > 0 && _laser.isTurnOn())
     {
         _laser.turnOff();
     }
+    */
 }

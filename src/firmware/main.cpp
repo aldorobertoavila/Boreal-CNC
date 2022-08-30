@@ -234,6 +234,7 @@ const char *SYSTEM_VOLUME = "System Volume Information";
 const char *GCODE_FILE_EXT = ".gcode";
 
 const uint16_t DEFAULT_FEED_RATE = 3000;
+const uint16_t DEFAULT_LSR_POWER = 100;
 const uint16_t FEED_RATE_MOVE_AXIS = 1200;
 
 const float DEFAULT_MIN_ACCEL_X = 40; // Stepper X minimum mm/s^2
@@ -268,7 +269,7 @@ const uint8_t LSR_MIN_POWER = 0;   // Minimum laser power (PWM)
 const uint8_t LSR_MAX_POWER = 150; // Maximum laser power (PWM)
 
 const unsigned long DEBOUNCE_TIME = 10;
-const int PROCESS_EXPIRED = 10000;
+const int PROCESS_EXPIRED = 5000;
 const int CHAR_PIXEL_WIDTH = 5;
 const int EMPTY_SPACE = 255;
 const int GAUGE_SIZE = 14;
@@ -611,13 +612,13 @@ void clearBuffer(char *buffer, uint8_t size)
 
 void formatPosition(char *buffer, float u)
 {
-  Unit unit = cartesian.getUnit();
+  LengthUnit unit = cartesian.getLengthUnit();
 
   clearBuffer(buffer, POS_VAL_SIZE);
 
   switch (unit)
   {
-  case Unit::INCH:
+  case LengthUnit::INCH:
     snprintf(buffer, POS_VAL_SIZE, "%.1f", u);
     break;
   default:
@@ -766,11 +767,6 @@ void displayInfoScreen()
 
 void updateInfoScreen()
 {
-  if (currentScreen != ScreenID::INFO)
-  {
-    return;
-  }
-
   LiquidLine *processName = &INFO_LINES[InfoLine::PROC_NAME_LBL];
 
   if (processName->getText() == READY_MSG)
@@ -895,7 +891,7 @@ void displayAccelerationScreen(bool clear)
 void displayMoveAxisScreen(bool clear)
 {
   Axis axis = cartesian.getCurrentAxis();
-  Unit unit = cartesian.getUnit();
+  LengthUnit unit = cartesian.getLengthUnit();
 
   if (clear)
   {
@@ -906,13 +902,13 @@ void displayMoveAxisScreen(bool clear)
     case Axis::X:
       switch (unit)
       {
-      case Unit::CENTIMETER:
+      case LengthUnit::CENTIMETER:
         moveAxisText->setText("Move X 10mm");
         break;
-      case Unit::MICROMETER:
+      case LengthUnit::MICROMETER:
         moveAxisText->setText("Move X 0.1mm");
         break;
-      case Unit::MILLIMETER:
+      case LengthUnit::MILLIMETER:
         moveAxisText->setText("Move X 1mm");
         break;
       }
@@ -920,13 +916,13 @@ void displayMoveAxisScreen(bool clear)
     case Axis::Y:
       switch (unit)
       {
-      case Unit::CENTIMETER:
+      case LengthUnit::CENTIMETER:
         moveAxisText->setText("Move Y 10mm");
         break;
-      case Unit::MICROMETER:
+      case LengthUnit::MICROMETER:
         moveAxisText->setText("Move Y 0.1mm");
         break;
-      case Unit::MILLIMETER:
+      case LengthUnit::MILLIMETER:
         moveAxisText->setText("Move Y 1mm");
         break;
       }
@@ -935,13 +931,13 @@ void displayMoveAxisScreen(bool clear)
     case Axis::Z:
       switch (unit)
       {
-      case Unit::CENTIMETER:
+      case LengthUnit::CENTIMETER:
         moveAxisText->setText("Move Z 10mm");
         break;
-      case Unit::MICROMETER:
+      case LengthUnit::MICROMETER:
         moveAxisText->setText("Move Z 0.1mm");
         break;
-      case Unit::MILLIMETER:
+      case LengthUnit::MILLIMETER:
         moveAxisText->setText("Move Z 1mm");
         break;
       }
@@ -1096,9 +1092,16 @@ void setHomeOffsets()
   for (uint8_t i = 0; i < AXES; i++)
   {
     Axis axis = static_cast<Axis>(i);
-    float u = cartesian.toUnit(axis, Unit::MILLIMETER);
 
-    cartesian.setHomeOffset(axis, u);
+    StepperMotorPtr stepper = cartesian.getStepperMotor(axis);
+
+    if (!stepper)
+    {
+      long steps = stepper->getCurrentPosition();
+      float u = cartesian.toLengthUnit(axis, LengthUnit::MILLIMETER, steps);
+
+      cartesian.setHomeOffset(axis, u);
+    }
   }
 }
 
@@ -1340,21 +1343,21 @@ void moveXScreenClicked()
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
     cartesian.setCurrentAxis(Axis::X);
-    cartesian.setUnit(Unit::MILLIMETER);
+    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::X);
-    cartesian.setUnit(Unit::CENTIMETER);
+    cartesian.setLengthUnit(LengthUnit::CENTIMETER);
     displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::X);
-    cartesian.setUnit(Unit::MILLIMETER);
+    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::X);
-    cartesian.setUnit(Unit::MICROMETER);
+    cartesian.setLengthUnit(LengthUnit::MICROMETER);
     displayMoveAxisScreen(true);
     break;
   default:
@@ -1369,21 +1372,21 @@ void moveYScreenClicked()
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
     cartesian.setCurrentAxis(Axis::X);
-    cartesian.setUnit(Unit::MILLIMETER);
+    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::Y);
-    cartesian.setUnit(Unit::CENTIMETER);
+    cartesian.setLengthUnit(LengthUnit::CENTIMETER);
     displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Y);
-    cartesian.setUnit(Unit::MILLIMETER);
+    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Y);
-    cartesian.setUnit(Unit::MICROMETER);
+    cartesian.setLengthUnit(LengthUnit::MICROMETER);
     displayMoveAxisScreen(true);
     break;
   default:
@@ -1398,21 +1401,21 @@ void moveZScreenClicked()
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
     cartesian.setCurrentAxis(Axis::X);
-    cartesian.setUnit(Unit::MILLIMETER);
+    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::Z);
-    cartesian.setUnit(Unit::CENTIMETER);
+    cartesian.setLengthUnit(LengthUnit::CENTIMETER);
     displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Z);
-    cartesian.setUnit(Unit::MILLIMETER);
+    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Z);
-    cartesian.setUnit(Unit::MICROMETER);
+    cartesian.setLengthUnit(LengthUnit::MICROMETER);
     displayMoveAxisScreen(true);
     break;
   default:
@@ -1588,7 +1591,7 @@ void clickCallback()
 
 void moveAxis(Rotation direction)
 {
-  float u = cartesian.getUnit() == Unit::MICROMETER ? 100 : 1; // move 0.1mm if unit micron
+  float u = cartesian.getLengthUnit() == LengthUnit::MICROMETER ? 100 : 1; // move 0.1mm if unit micron
 
   if (direction == Rotation::COUNTERCLOCKWISE)
   {
@@ -1615,7 +1618,7 @@ void setAcceleration()
   Axis axis = cartesian.getCurrentAxis();
   long pos = rotary.getPosition();
 
-  cartesian.setAcceleration(axis, Unit::MILLIMETER, pos);
+  cartesian.setAcceleration(axis, LengthUnit::MILLIMETER, pos);
 
   displayAccelerationScreen(false);
 }
@@ -1643,7 +1646,7 @@ void setVelocity(Rotation rotation)
   Axis axis = cartesian.getCurrentAxis();
   long pos = rotary.getPosition();
 
-  cartesian.setMaxSpeed(axis, Unit::MILLIMETER, pos);
+  cartesian.setMaxSpeed(axis, LengthUnit::MILLIMETER, pos);
   displayVelocityScreen(false);
 }
 
@@ -1889,15 +1892,15 @@ void setup()
   lcd.createChar(LCD_GAUGE_RIGHT, GAUGE_RIGHT);
   lcd.createChar(LCD_GAUGE_EMPTY, GAUGE_EMPTY);
 
-  laser.setMaxPower(LSR_MAX_POWER);
+  laser.setMaxPower(DEFAULT_LSR_POWER);
 
-  cartesian.setFeedRate(Axis::X, DEFAULT_FEED_RATE);
-  cartesian.setFeedRate(Axis::Y, DEFAULT_FEED_RATE);
-  cartesian.setFeedRate(Axis::Z, DEFAULT_FEED_RATE);
+  cartesian.setFeedRate(Axis::X, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
+  cartesian.setFeedRate(Axis::Y, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
+  cartesian.setFeedRate(Axis::Z, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
 
-  cartesian.setAcceleration(Axis::X, Unit::MILLIMETER, DEFAULT_MIN_ACCEL_X);
-  cartesian.setAcceleration(Axis::Y, Unit::MILLIMETER, DEFAULT_MIN_ACCEL_Y);
-  cartesian.setAcceleration(Axis::Z, Unit::MILLIMETER, DEFAULT_MIN_ACCEL_Z);
+  cartesian.setAcceleration(Axis::X, LengthUnit::MILLIMETER, DEFAULT_MIN_ACCEL_X);
+  cartesian.setAcceleration(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_MIN_ACCEL_Y);
+  cartesian.setAcceleration(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_MIN_ACCEL_Z);
 
   cartesian.setDimension(Axis::X, DIMENSIONS_X);
   cartesian.setDimension(Axis::Y, DIMENSIONS_Y);
@@ -1907,9 +1910,9 @@ void setup()
   cartesian.setLimitSwitch(Axis::Y, switchY);
   cartesian.setLimitSwitch(Axis::Z, switchZ);
 
-  cartesian.setMaxSpeed(Axis::X, Unit::MILLIMETER, DEFAULT_MAX_SPEED_X);
-  cartesian.setMaxSpeed(Axis::Y, Unit::MILLIMETER, DEFAULT_MAX_SPEED_Y);
-  cartesian.setMaxSpeed(Axis::Z, Unit::MILLIMETER, DEFAULT_MAX_SPEED_Z);
+  cartesian.setMaxSpeed(Axis::X, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_X);
+  cartesian.setMaxSpeed(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_Y);
+  cartesian.setMaxSpeed(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_Z);
 
   cartesian.setMinStepsPerMillimeter(Axis::X, DEFAULT_MIN_STEPS_X);
   cartesian.setMinStepsPerMillimeter(Axis::Y, DEFAULT_MIN_STEPS_Y);
@@ -1977,7 +1980,7 @@ void loop()
 
   if (proc)
   {
-    // process is not available & there's no commands left
+    // stop if process is not available & there's no commands left
     if (!proc->continues() && commands.empty() && !cmd)
     {
       completeProcess();
@@ -1996,7 +1999,11 @@ void loop()
       return;
     }
 
-    updateInfoScreen();
+    // update position, progress bar & time if info screen
+    if (currentScreen == ScreenID::INFO)
+    {
+      updateInfoScreen();
+    }
 
     // execute commands if not paused & stopped
     if (!proc->isPaused() && !proc->isStopped())

@@ -51,19 +51,25 @@ public:
 
     float getTargetPosition(Axis axis);
 
-    Unit getUnit();
+    LengthUnit getLengthUnit();
 
-    void setAcceleration(Axis axis, Unit unit, float u);
+    void setAcceleration(Axis axis, float u);
+
+    void setAcceleration(Axis axis, LengthUnit unit, float u);
 
     void setCurrentAxis(Axis axis);
 
     void setDimension(Axis axis, float u);
 
-    void setFeedRate(Axis axis, float feedRate);
+    void setFeedRate(Axis axis, float u);
+
+    void setFeedRate(Axis axis, LengthUnit lengthUnit, TimeUnit timeUnit, float u);
 
     void setHomeOffset(Axis axis, float u);
 
-    void setMaxSpeed(Axis axis, Unit unit, float u);
+    void setMaxSpeed(Axis axis, float u);
+
+    void setMaxSpeed(Axis axis, LengthUnit unit, float u);
 
     void setMinStepsPerMillimeter(Axis axis, long steps);
 
@@ -77,25 +83,29 @@ public:
 
     void setStepsPerMillimeter(Axis axis, long steps);
 
-    void setTargetPosition(Axis axis, float u, float feedRate);
+    void setTargetPosition(Axis axis, float u);
 
-    void setTargetPosition(Axis axis, Unit unit, float u, float feedRate);
+    void setTargetPosition(Axis axis, LengthUnit unit, float u);
 
-    void setUnit(Unit unit);
+    void setLengthUnit(LengthUnit unit);
 
-    long toSteps(Axis axis, Unit unit, float u);
+    long toSteps(Axis axis, LengthUnit unit, float u);
 
-    float toUnit(Axis axis, Unit unit);
+    float toLengthUnit(Axis axis, LengthUnit unit, long steps);
 
 protected:
     Resolution toResolution(float factor);
+
+    float toLengthUnit(LengthUnit from, LengthUnit to, float u);
+
+    float toTimeUnit(TimeUnit from, TimeUnit to, float u);
 
 private:
     StepperMotorPtr _steppers[AXES];
     LimitSwitchPtr _switches[AXES];
     Resolution _resolutions[AXES];
     Positioning _positioning;
-    Unit _unit;
+    LengthUnit _unit;
     Axis _currentAxis;
     float _acceleration[AXES];
     float _dimensions[AXES];

@@ -151,10 +151,10 @@ private:
     Positioning _positioning;
 };
 
-class SetUnitCommand : public Command
+class SetLengthUnitCommand : public Command
 {
 public:
-    SetUnitCommand(Cartesian &cartesian, Unit unit);
+    SetLengthUnitCommand(Cartesian &cartesian, LengthUnit unit);
 
     bool continues() override;
 
@@ -166,7 +166,7 @@ public:
 
 private:
     Cartesian &_cartesian;
-    Unit _unit;
+    LengthUnit _unit;
 };
 
 class LaserOnCommand : public Command
