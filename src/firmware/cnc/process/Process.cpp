@@ -4,7 +4,9 @@ TFProcess::TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, c
 {
     this->_filename = filename;
     this->_path = path;
-    this->_position = 0;
+
+    this->_paused = false;
+    this->_stopped = false;
 }
 
 bool TFProcess::continues()
@@ -32,8 +34,7 @@ uint8_t TFProcess::getProgress()
     if (_file)
     {
         _prevProgress = _progress;
-        _position = _file.position();
-        _progress = map(_position, 0, _file.size(), 0, 101); // map position to [0, 100]
+        _progress = map(_file.position(), 0, _file.size(), 0, 101); // map position to [0, 100]
     }
 
     return _progress;
@@ -47,6 +48,16 @@ tm TFProcess::getTime()
     }
 
     return _time;
+}
+
+bool TFProcess::isPaused()
+{
+    return _paused;
+}
+
+bool TFProcess::isStopped()
+{
+    return _stopped;
 }
 
 float TFProcess::parseNumber(String &line, char arg, float val)
@@ -67,6 +78,11 @@ float TFProcess::parseNumber(String &line, char arg, float val)
 
 void TFProcess::nextCommand(CommandQueue &commands)
 {
+    if (_stopped || _paused)
+    {
+        return;
+    }
+
     if (!_file)
     {
         return;
@@ -172,14 +188,29 @@ void TFProcess::nextCommand(CommandQueue &commands)
     }
 }
 
+void TFProcess::pause()
+{
+    _laser.setInlineMode(InlineMode::OFF);
+    _laser.turnOff();
+    _paused = true;
+}
+
 void TFProcess::setup()
 {
-    _rtc.setTime();
-    _file = _fs.open(_path);
-
-    if (_file)
+    if (_stopped)
     {
-        _file.seek(_position);
+        return;
+    }
+
+    if(_paused)
+    {
+        _paused = false;
+    }
+
+    if (!_file)
+    {
+        _rtc.setTime();
+        _file = _fs.open(_path);
     }
 
     _cartesian.enableSteppers();
@@ -196,4 +227,5 @@ void TFProcess::stop()
 
     _laser.setInlineMode(InlineMode::OFF);
     _laser.turnOff();
+    _stopped = true;
 }

@@ -32,7 +32,13 @@ public:
 
     virtual tm getTime() = 0;
 
+    virtual bool isPaused() = 0;
+
+    virtual bool isStopped() = 0;
+
     virtual void nextCommand(CommandQueue &commands) = 0;
+
+    virtual void pause() = 0;
 
     virtual void setup() = 0;
 
@@ -43,6 +49,8 @@ protected:
     uint8_t _progress;
     tm _prevTime;
     tm _time;
+    bool _paused;
+    bool _stopped;
 };
 
 using ProcessPtr = std::shared_ptr<Process>;
@@ -65,7 +73,13 @@ public:
 
     tm getTime() override;
 
+    bool isPaused() override;
+
+    bool isStopped() override;
+
     void nextCommand(CommandQueue &commands) override;
+
+    void pause() override;
 
     void setup() override;
 
@@ -81,5 +95,4 @@ protected:
     fs::File _file;
     const char *_filename;
     const char *_path;
-    size_t _position;
 };

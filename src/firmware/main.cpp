@@ -1082,7 +1082,7 @@ void pauseProcess()
   MAIN_MENU_SCREEN.unhide(MainLine::RESUME_PROC_OP);
   MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
 
-  proc->stop();
+  proc->pause();
   displayInfoScreen();
   displayIcon(PAUSE_CHAR);
 }
@@ -1932,7 +1932,9 @@ void loop()
 
   if (proc)
   {
-    if (!proc->continues())
+    updateInfoScreen();
+
+    if (proc->isStopped())
     {
       stopProcess();
       proc = nullptr;
@@ -1941,31 +1943,32 @@ void loop()
       return;
     }
 
-    updateInfoScreen();
-
-    proc->nextCommand(commands);
-
-    if (!commands.empty() && !cmd)
+    if (!proc->isPaused())
     {
-      cmd = commands.front();
-      commands.pop();
+      proc->nextCommand(commands);
+
+      if (!commands.empty() && !cmd)
+      {
+        cmd = commands.front();
+        commands.pop();
+
+        if (cmd)
+        {
+          cmd->setup();
+        }
+      }
 
       if (cmd)
       {
-        cmd->setup();
-      }
-    }
+        if (!cmd->continues())
+        {
+          cmd->stop();
+          cmd = nullptr;
+          return;
+        }
 
-    if (cmd)
-    {
-      if (!cmd->continues())
-      {
-        cmd->stop();
-        cmd = nullptr;
-        return;
+        cmd->execute();
       }
-
-      cmd->execute();
     }
   }
 }
