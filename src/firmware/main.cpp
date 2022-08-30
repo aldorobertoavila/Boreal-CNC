@@ -1934,7 +1934,7 @@ void loop()
   {
     updateInfoScreen();
 
-    if (proc->isStopped())
+    if (proc->isStopped() || !proc->continues())
     {
       stopProcess();
       proc = nullptr;

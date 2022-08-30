@@ -34,7 +34,7 @@ uint8_t TFProcess::getProgress()
     if (_file)
     {
         _prevProgress = _progress;
-        _progress = map(_file.position(), 0, _file.size(), 0, 101); // map position to [0, 100]
+        _progress = map(_file.position(), 0, _file.size(), 0, 100); // map position to [0, 100]
     }
 
     return _progress;
