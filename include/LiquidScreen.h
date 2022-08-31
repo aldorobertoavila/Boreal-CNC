@@ -46,7 +46,7 @@ protected:
     uint8_t _cols;
     uint8_t _rows;
     LCD &_lcd;
-    LiquidLinePtr *_lines;
+    LiquidLinePtr _lines[MAX_LINES];
 };
 
 class LiquidMenu : public LiquidScreen
