@@ -1351,7 +1351,21 @@ void moveAxesScreenClicked()
 void moveAxisScreenClicked()
 {
   rotary.setInterval(1);
-  displayMenu(ScreenID::ACCEL, true);
+
+  switch(cartesian.getCurrentAxis())
+  {
+    case Axis::X:
+      displayMenu(ScreenID::MOVE_X, true);
+      break;
+
+    case Axis::Y:
+      displayMenu(ScreenID::MOVE_Y, true);
+      break;
+
+    case Axis::Z:
+      displayMenu(ScreenID::MOVE_Z, true);
+      break;
+  }
 }
 
 void moveXScreenClicked()
