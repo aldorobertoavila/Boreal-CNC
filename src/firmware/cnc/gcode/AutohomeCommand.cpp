@@ -47,7 +47,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(axis, LengthUnit::MILLIMETER, dimension);
+            _cartesian.setTargetPosition(axis, dimension);
             _currentState = AutohomeState::RELEASE;
 
             stepper->pause(500);
@@ -63,7 +63,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(axis, LengthUnit::MILLIMETER, -dimension);
+            _cartesian.setTargetPosition(axis, -dimension);
             _currentState = AutohomeState::RETURN;
 
             stepper->pause(500);
@@ -81,7 +81,7 @@ void AutohomeCommand::execute()
 
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(axis, LengthUnit::MILLIMETER, homeOffset);
+            _cartesian.setTargetPosition(axis, homeOffset);
             _currentState = AutohomeState::OFFSET;
 
             stepper->pause(500);
@@ -102,7 +102,7 @@ void AutohomeCommand::execute()
 
             axis++;
             _cartesian.setCurrentAxis(axis);
-            _cartesian.setTargetPosition(axis, LengthUnit::MILLIMETER, -dimension);
+            _cartesian.setTargetPosition(axis, -dimension);
             _currentState = AutohomeState::PRESS;
         }
 
@@ -123,7 +123,7 @@ void AutohomeCommand::setup()
 
     long dimension = _cartesian.getDimension(Axis::X);
 
-    _cartesian.setTargetPosition(Axis::X, LengthUnit::MILLIMETER, -dimension);
+    _cartesian.setTargetPosition(Axis::X, -dimension);
 }
 
 void AutohomeCommand::stop()

@@ -47,31 +47,31 @@ void LinearMoveCommand::setup()
 
     if (_x > 0)
     {
-        if(_feedRate > 0)
+        if (_feedRate > 0)
         {
             _cartesian.setFeedRate(Axis::X, _feedRate);
         }
-        
+
         _cartesian.setTargetPosition(Axis::X, _x);
     }
 
     if (_y > 0)
     {
-        if(_feedRate > 0)
+        if (_feedRate > 0)
         {
             _cartesian.setFeedRate(Axis::Y, _feedRate);
         }
-        
+
         _cartesian.setTargetPosition(Axis::Y, _y);
     }
 
     if (_z > 0)
     {
-        if(_feedRate > 0)
+        if (_feedRate > 0)
         {
             _cartesian.setFeedRate(Axis::Z, _feedRate);
         }
-        
+
         _cartesian.setTargetPosition(Axis::Z, _z);
     }
 

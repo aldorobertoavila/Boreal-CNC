@@ -1611,13 +1611,14 @@ void moveAxis(Rotation direction)
   switch (cartesian.getCurrentAxis())
   {
   case Axis::X:
-    commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, u, 0, 0, FEED_RATE_MOVE_AXIS, 0));
+    // commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, u, 0, 0, FEED_RATE_MOVE_AXIS, 0));
     break;
   case Axis::Y:
-    commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, u, 0, 0, FEED_RATE_MOVE_AXIS, 0));
+    // commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, 0, u, 0, FEED_RATE_MOVE_AXIS, 0));
     break;
   case Axis::Z:
-    commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, u, 0, 0, FEED_RATE_MOVE_AXIS, 0));
+    // commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, 0, 0, u, FEED_RATE_MOVE_AXIS, 0));
+    break;
   }
 
   displayMoveAxisScreen(false);
@@ -1912,6 +1913,18 @@ void setup()
   cartesian.setLimitSwitch(Axis::Y, switchY);
   cartesian.setLimitSwitch(Axis::Z, switchZ);
 
+  cartesian.setMinStepsPerMillimeter(Axis::X, DEFAULT_MIN_STEPS_X);
+  cartesian.setMinStepsPerMillimeter(Axis::Y, DEFAULT_MIN_STEPS_Y);
+  cartesian.setMinStepsPerMillimeter(Axis::Z, DEFAULT_MIN_STEPS_Z);
+
+  cartesian.setStepsPerMillimeter(Axis::X, DEFAULT_STEPS_X);
+  cartesian.setStepsPerMillimeter(Axis::Y, DEFAULT_STEPS_Y);
+  cartesian.setStepsPerMillimeter(Axis::Z, DEFAULT_STEPS_Z);
+
+  cartesian.setMaxSpeed(Axis::X, LengthUnit::MILLIMETER, DEFAULT_SPEED_X);
+  cartesian.setMaxSpeed(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_SPEED_Y);
+  cartesian.setMaxSpeed(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_SPEED_Z);
+
   cartesian.setFeedRate(Axis::X, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
   cartesian.setFeedRate(Axis::Y, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
   cartesian.setFeedRate(Axis::Z, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
@@ -1923,18 +1936,6 @@ void setup()
   cartesian.setDimension(Axis::X, DIMENSIONS_X);
   cartesian.setDimension(Axis::Y, DIMENSIONS_Y);
   cartesian.setDimension(Axis::Z, DIMENSIONS_Z);
-
-  cartesian.setMaxSpeed(Axis::X, LengthUnit::MILLIMETER, DEFAULT_SPEED_X);
-  cartesian.setMaxSpeed(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_SPEED_Y);
-  cartesian.setMaxSpeed(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_SPEED_Z);
-
-  cartesian.setMinStepsPerMillimeter(Axis::X, DEFAULT_MIN_STEPS_X);
-  cartesian.setMinStepsPerMillimeter(Axis::Y, DEFAULT_MIN_STEPS_Y);
-  cartesian.setMinStepsPerMillimeter(Axis::Z, DEFAULT_MIN_STEPS_Z);
-
-  cartesian.setStepsPerMillimeter(Axis::X, DEFAULT_STEPS_X);
-  cartesian.setStepsPerMillimeter(Axis::Y, DEFAULT_STEPS_Y);
-  cartesian.setStepsPerMillimeter(Axis::Z, DEFAULT_STEPS_Z);
 
   rotary.setOnClicked(clickCallback);
   rotary.setOnRotation(rotateCallback);
