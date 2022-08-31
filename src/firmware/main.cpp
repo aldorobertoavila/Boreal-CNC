@@ -237,17 +237,29 @@ const uint16_t DEFAULT_FEED_RATE = 3000;
 const uint16_t DEFAULT_LSR_POWER = 100;
 const uint16_t FEED_RATE_MOVE_AXIS = 1200;
 
-const float DEFAULT_MIN_ACCEL_X = 40; // Stepper X minimum mm/s^2
-const float DEFAULT_MIN_ACCEL_Y = 40; // Stepper Y minimum mm/s^2
-const float DEFAULT_MIN_ACCEL_Z = 40; // Stepper Z minimum mm/s^2
+const float DEFAULT_ACCEL_X = 40; // Stepper X default mm/s^2
+const float DEFAULT_ACCEL_Y = 40; // Stepper Y default mm/s^2
+const float DEFAULT_ACCEL_Z = 40; // Stepper Z default mm/s^2
+
+const float DEFAULT_MIN_ACCEL_X = 20; // Stepper X minimum mm/s^2
+const float DEFAULT_MIN_ACCEL_Y = 20; // Stepper Y minimum mm/s^2
+const float DEFAULT_MIN_ACCEL_Z = 20; // Stepper Z minimum mm/s^2
 
 const float DEFAULT_MAX_ACCEL_X = 100; // Stepper X maximum mm/s^2
 const float DEFAULT_MAX_ACCEL_Y = 100; // Stepper Y maximum mm/s^2
 const float DEFAULT_MAX_ACCEL_Z = 100; // Stepper Z maximum mm/s^2
 
-const float DEFAULT_MAX_SPEED_X = 60; // Stepper X mm/s
-const float DEFAULT_MAX_SPEED_Y = 60; // Stepper Y mm/s
-const float DEFAULT_MAX_SPEED_Z = 60; // Stepper Z mm/s
+const float DEFAULT_SPEED_X = 50; // Stepper X default mm/s
+const float DEFAULT_SPEED_Y = 50; // Stepper X default mm/s
+const float DEFAULT_SPEED_Z = 50; // Stepper X default mm/s
+
+const float DEFAULT_MAX_SPEED_X = 80; // Stepper maximum X mm/s
+const float DEFAULT_MAX_SPEED_Y = 80; // Stepper maximum Y mm/s
+const float DEFAULT_MAX_SPEED_Z = 80; // Stepper maximum Z mm/s
+
+const float DEFAULT_MIN_SPEED_X = 10; // Stepper minimum X mm/s
+const float DEFAULT_MIN_SPEED_Y = 10; // Stepper minimum Y mm/s
+const float DEFAULT_MIN_SPEED_Z = 10; // Stepper minimum Z mm/s
 
 const long DEFAULT_MIN_STEPS_X = 5;  // Stepper X minimum steps/mm (full res)
 const long DEFAULT_MIN_STEPS_Y = 5;  // Stepper Y minimum steps/mm (full res)
@@ -1045,24 +1057,24 @@ void displayVelocityScreen(bool clear)
     switch (axis)
     {
     case Axis::X:
-      rotary.setBoundaries(DEFAULT_MIN_STEPS_X, DEFAULT_MAX_SPEED_X);
+      rotary.setBoundaries(DEFAULT_MIN_SPEED_X, DEFAULT_MAX_SPEED_X);
       setVelocityText->setText("Set X mm/s");
       break;
 
     case Axis::Y:
-      rotary.setBoundaries(DEFAULT_MIN_STEPS_Y, DEFAULT_MAX_SPEED_Y);
+      rotary.setBoundaries(DEFAULT_MIN_SPEED_Y, DEFAULT_MAX_SPEED_Y);
       setVelocityText->setText("Set Y mm/s");
       break;
 
     case Axis::Z:
-      rotary.setBoundaries(DEFAULT_MIN_STEPS_Z, DEFAULT_MAX_SPEED_Z);
+      rotary.setBoundaries(DEFAULT_MIN_SPEED_Z, DEFAULT_MAX_SPEED_Z);
       setVelocityText->setText("Set Z mm/s");
       break;
     }
   }
 
   LiquidLine *setVelocityValue = &SET_VEL_LINES[SetVelocityLine::SET_VELOCITY_VAL];
-  int maxSpeed = cartesian.getFeedRate(axis);
+  int maxSpeed = cartesian.getMaxSpeed(axis);
 
   clearBuffer(velocityBuffer, VEL_VAL_SIZE);
   snprintf(velocityBuffer, VEL_VAL_SIZE, "%-3i", maxSpeed);
@@ -1906,17 +1918,17 @@ void setup()
   cartesian.setFeedRate(Axis::Y, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
   cartesian.setFeedRate(Axis::Z, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
 
-  cartesian.setAcceleration(Axis::X, LengthUnit::MILLIMETER, DEFAULT_MIN_ACCEL_X);
-  cartesian.setAcceleration(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_MIN_ACCEL_Y);
-  cartesian.setAcceleration(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_MIN_ACCEL_Z);
+  cartesian.setAcceleration(Axis::X, LengthUnit::MILLIMETER, DEFAULT_ACCEL_X);
+  cartesian.setAcceleration(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_ACCEL_Y);
+  cartesian.setAcceleration(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_ACCEL_Z);
 
   cartesian.setDimension(Axis::X, DIMENSIONS_X);
   cartesian.setDimension(Axis::Y, DIMENSIONS_Y);
   cartesian.setDimension(Axis::Z, DIMENSIONS_Z);
 
-  cartesian.setMaxSpeed(Axis::X, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_X);
-  cartesian.setMaxSpeed(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_Y);
-  cartesian.setMaxSpeed(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_Z);
+  cartesian.setMaxSpeed(Axis::X, LengthUnit::MILLIMETER, DEFAULT_SPEED_X);
+  cartesian.setMaxSpeed(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_SPEED_Y);
+  cartesian.setMaxSpeed(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_SPEED_Z);
 
   cartesian.setMinStepsPerMillimeter(Axis::X, DEFAULT_MIN_STEPS_X);
   cartesian.setMinStepsPerMillimeter(Axis::Y, DEFAULT_MIN_STEPS_Y);
