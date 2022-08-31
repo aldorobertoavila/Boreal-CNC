@@ -1894,6 +1894,14 @@ void setup()
 
   laser.setMaxPower(DEFAULT_LSR_POWER);
 
+  cartesian.setStepperMotor(Axis::X, stepperX);
+  cartesian.setStepperMotor(Axis::Y, stepperY);
+  cartesian.setStepperMotor(Axis::Z, stepperZ);
+ 
+  cartesian.setLimitSwitch(Axis::X, switchX);
+  cartesian.setLimitSwitch(Axis::Y, switchY);
+  cartesian.setLimitSwitch(Axis::Z, switchZ);
+
   cartesian.setFeedRate(Axis::X, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
   cartesian.setFeedRate(Axis::Y, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
   cartesian.setFeedRate(Axis::Z, LengthUnit::MILLIMETER, TimeUnit::MINUTE, DEFAULT_FEED_RATE);
@@ -1906,10 +1914,6 @@ void setup()
   cartesian.setDimension(Axis::Y, DIMENSIONS_Y);
   cartesian.setDimension(Axis::Z, DIMENSIONS_Z);
 
-  cartesian.setLimitSwitch(Axis::X, switchX);
-  cartesian.setLimitSwitch(Axis::Y, switchY);
-  cartesian.setLimitSwitch(Axis::Z, switchZ);
-
   cartesian.setMaxSpeed(Axis::X, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_X);
   cartesian.setMaxSpeed(Axis::Y, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_Y);
   cartesian.setMaxSpeed(Axis::Z, LengthUnit::MILLIMETER, DEFAULT_MAX_SPEED_Z);
@@ -1917,10 +1921,6 @@ void setup()
   cartesian.setMinStepsPerMillimeter(Axis::X, DEFAULT_MIN_STEPS_X);
   cartesian.setMinStepsPerMillimeter(Axis::Y, DEFAULT_MIN_STEPS_Y);
   cartesian.setMinStepsPerMillimeter(Axis::Z, DEFAULT_MIN_STEPS_Z);
-
-  cartesian.setStepperMotor(Axis::X, stepperX);
-  cartesian.setStepperMotor(Axis::Y, stepperY);
-  cartesian.setStepperMotor(Axis::Z, stepperZ);
 
   cartesian.setStepsPerMillimeter(Axis::X, DEFAULT_STEPS_X);
   cartesian.setStepsPerMillimeter(Axis::Y, DEFAULT_STEPS_Y);
