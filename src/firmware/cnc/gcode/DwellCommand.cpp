@@ -7,11 +7,12 @@ DwellCommand::DwellCommand(unsigned long remainTime)
 
 bool DwellCommand::continues()
 {
-    return millis() - _startTime > _remainTime;
+    return _remainTime > 0 ? _timeElapsed < _remainTime : false;
 }
 
 void DwellCommand::execute()
 {
+    _timeElapsed = millis() - _startTime;
 }
 
 void DwellCommand::setup()
@@ -21,5 +22,12 @@ void DwellCommand::setup()
 
 void DwellCommand::stop()
 {
-    _remainTime = 0;
+    if(_timeElapsed >= _remainTime)
+    {
+        _remainTime = 0; 
+    }
+    else
+    {
+        _remainTime -= _timeElapsed;
+    }
 }

@@ -4,6 +4,8 @@
 Laser::Laser(uint8_t pwmPin)
 {
     this->_pwmPin = pwmPin;
+
+    turnOff();
 }
 
 InlineMode Laser::getInlineMode()

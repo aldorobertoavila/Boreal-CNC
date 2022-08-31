@@ -8,7 +8,7 @@ LaserOnCommand::LaserOnCommand(Laser &laser, uint8_t power, InlineMode mode) : _
 
 bool LaserOnCommand::continues()
 {
-    return !_laser.isTurnOn();
+    return _power > 0 ? !_laser.isTurnOn() : false;
 }
 
 void LaserOnCommand::execute()

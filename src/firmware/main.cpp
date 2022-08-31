@@ -63,7 +63,7 @@
 
 #define ACCEL_VAL_SIZE 4
 #define MOVE_AXIS_VAL_SIZE 4
-#define POS_VAL_SIZE 4
+#define POS_VAL_SIZE 5
 #define POWER_VAL_SIZE 4
 #define PROC_TIME_SIZE 6
 #define PROG_VAL_SIZE 5
@@ -237,7 +237,7 @@ const uint16_t FEED_RATE_MOVE_AXIS = 1200;
 
 const float DEFAULT_ACCEL_X = 40; // Stepper X default mm/s^2
 const float DEFAULT_ACCEL_Y = 40; // Stepper Y default mm/s^2
-const float DEFAULT_ACCEL_Z = 40; // Stepper Z default mm/s^2
+const float DEFAULT_ACCEL_Z = 30; // Stepper Z default mm/s^2
 
 const float DEFAULT_MIN_ACCEL_X = 20; // Stepper X minimum mm/s^2
 const float DEFAULT_MIN_ACCEL_Y = 20; // Stepper Y minimum mm/s^2
@@ -247,8 +247,8 @@ const float DEFAULT_MAX_ACCEL_X = 100; // Stepper X maximum mm/s^2
 const float DEFAULT_MAX_ACCEL_Y = 100; // Stepper Y maximum mm/s^2
 const float DEFAULT_MAX_ACCEL_Z = 100; // Stepper Z maximum mm/s^2
 
-const float DEFAULT_SPEED_X = 50; // Stepper X default mm/s
-const float DEFAULT_SPEED_Y = 50; // Stepper X default mm/s
+const float DEFAULT_SPEED_X = 60; // Stepper X default mm/s
+const float DEFAULT_SPEED_Y = 60; // Stepper X default mm/s
 const float DEFAULT_SPEED_Z = 50; // Stepper X default mm/s
 
 const float DEFAULT_MAX_SPEED_X = 80; // Stepper maximum X mm/s
@@ -629,10 +629,11 @@ void formatPosition(char *buffer, float u)
   switch (unit)
   {
   case LengthUnit::INCH:
-    snprintf(buffer, POS_VAL_SIZE, "%.1f", u);
+    // spaces will clear the LCD
+    snprintf(buffer, POS_VAL_SIZE, "%.1f   ", u);
     break;
   default:
-    snprintf(buffer, POS_VAL_SIZE, "%i", (int)u);
+    snprintf(buffer, POS_VAL_SIZE, "%i   ", (int)u);
     break;
   }
 }
@@ -794,7 +795,6 @@ void updateInfoScreen()
 
     positionValueX->setText(positionXBuffer);
     positionValueX->displayText(lcd);
-    return;
   }
 
   float targetY = cartesian.getTargetPosition(Axis::Y);
@@ -806,7 +806,6 @@ void updateInfoScreen()
 
     positionValueY->setText(positionYBuffer);
     positionValueY->displayText(lcd);
-    return;
   }
 
   float targetZ = cartesian.getTargetPosition(Axis::Z);
@@ -818,7 +817,6 @@ void updateInfoScreen()
 
     positionValueZ->setText(positionZBuffer);
     positionValueZ->displayText(lcd);
-    return;
   }
 
   tm prevTime = proc->getPrevTime();
@@ -831,7 +829,6 @@ void updateInfoScreen()
 
     processTimeValue->setText(processTimeBuffer);
     processTimeValue->displayText(lcd);
-    return;
   }
 
   uint8_t prevProgress = proc->getPrevProgress();
@@ -1141,6 +1138,17 @@ void terminateProcess(bool clear, Icon icon)
 void completeProcess()
 {
   terminateProcess(false, Icon::CHECK);
+}
+
+void deleteProcess()
+{
+  cmd = nullptr;
+  proc = nullptr;
+
+  while (!commands.empty())
+  {
+    commands.pop();
+  }
 }
 
 void pauseProcess()
@@ -1877,16 +1885,6 @@ void setup()
   pinMode(SDA, PULLUP);
   pinMode(SCL, PULLUP);
 
-  Serial.print("SD ");
-
-  if (!SD.begin(SS))
-  {
-    Serial.println("failed to mount!");
-    return;
-  }
-
-  Serial.println("mount!");
-
   Wire.begin();
   Wire.setClock(800000);
 
@@ -1902,6 +1900,17 @@ void setup()
   lcd.createChar(LCD_GAUGE_LEFT, GAUGE_LEFT);
   lcd.createChar(LCD_GAUGE_RIGHT, GAUGE_RIGHT);
   lcd.createChar(LCD_GAUGE_EMPTY, GAUGE_EMPTY);
+
+  Serial.print("SD ");
+
+  if (!SD.begin(SS))
+  {
+    Serial.println("failed to mount!");
+    // TODO display in LCD
+    return;
+  }
+
+  Serial.println("mount!");
 
   laser.setMaxPower(DEFAULT_LSR_POWER);
 
@@ -1995,7 +2004,7 @@ void loop()
     if (!proc->continues() && commands.empty() && !cmd)
     {
       completeProcess();
-      proc = nullptr;
+      deleteProcess();
       delay(PROCESS_EXPIRED);
       displayInfoScreen();
       return;
@@ -2004,7 +2013,7 @@ void loop()
     if (proc->isStopped())
     {
       stopProcess(false);
-      proc = nullptr;
+      deleteProcess();
       delay(PROCESS_EXPIRED);
       displayInfoScreen();
       return;

@@ -108,6 +108,7 @@ public:
 private:
     unsigned long _remainTime; // ms
     unsigned long _startTime;
+    unsigned long _timeElapsed;
 };
 
 class LinearMoveCommand : public Command

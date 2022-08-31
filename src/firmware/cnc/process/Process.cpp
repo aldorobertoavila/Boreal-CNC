@@ -69,11 +69,18 @@ float TFProcess::parseNumber(String &line, char arg, float val)
         return val;
     }
 
-    line = line.substring(index + 1);
-    index = line.indexOf(' ');
-    line = line.substring(0, index);
+    // Serial.println(line);
 
-    return line.toInt();
+    String number = line.substring(index + 1);
+
+    // Serial.println(number);
+
+    index = number.indexOf(' ');
+    number = number.substring(0, index);
+
+    // Serial.println(number);
+
+    return number.toFloat();
 }
 
 void TFProcess::nextCommand(CommandQueue &commands)
@@ -161,6 +168,14 @@ void TFProcess::nextCommand(CommandQueue &commands)
 
     case 28:
         commands.push(std::make_shared<AutohomeCommand>(_cartesian, _laser));
+        break;
+
+    case 90:
+        commands.push(std::make_shared<SetPositioningCommand>(_cartesian, Positioning::ABSOLUTE));
+        break;
+    
+    case 91:
+        commands.push(std::make_shared<SetPositioningCommand>(_cartesian, Positioning::RELATIVE));
         break;
     default:
         break;
