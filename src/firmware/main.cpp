@@ -177,19 +177,18 @@ enum ScreenID
 };
 
 Laser laser(LSR_PIN);
-
 LCD lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
-Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
-
 Cartesian cartesian;
+SPIClass spi(VSPI);
 
+Rotary rotary(EN_DT_PIN, EN_CLK_PIN, EN_SW_PIN);
 RTC rtc;
 
-ShiftRegisterMotorInterface SHIFT_REGISTER_X1(SPI, CS_RS1_PIN, MSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_X2(SPI, CS_RS2_PIN, MSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_Y(SPI, CS_RS3_PIN, MSBFIRST);
-ShiftRegisterMotorInterface SHIFT_REGISTER_Z(SPI, CS_RS4_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_X1(spi, CS_RS1_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_X2(spi, CS_RS2_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_Y(spi, CS_RS3_PIN, MSBFIRST);
+ShiftRegisterMotorInterface SHIFT_REGISTER_Z(spi, CS_RS4_PIN, MSBFIRST);
 
 BilateralMotorInterface BILATERAL_X(SHIFT_REGISTER_X1, SHIFT_REGISTER_X2);
 
@@ -1878,6 +1877,8 @@ void setup()
   pinMode(SDA, PULLUP);
   pinMode(SCL, PULLUP);
 
+  spi.begin();
+
   Serial.print("SD ");
 
   if (!SD.begin(SS))
@@ -1970,7 +1971,7 @@ void setup()
   setupStepsScreen();
   setupVelocityScreen();
 
-  cartesian.disableSteppers();
+  cartesian.enableSteppers();
   displayInfoScreen();
 }
 
