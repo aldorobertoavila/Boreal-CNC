@@ -162,6 +162,7 @@ enum ScreenID
   INFO,
   MAIN,
   MOTION,
+  MOUNT_ERR,
   MOVE_AXES,
   MOVE_AXIS,
   MOVE_X,
@@ -213,6 +214,7 @@ LiquidMenu PREP_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu CTRL_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu CARD_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 
+LiquidScreen MOUNT_ERR_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu MOVE_AXES_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu MOVE_X_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 LiquidMenu MOVE_Y_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
@@ -291,6 +293,7 @@ const uint8_t CARD_SIZE = 12;
 const uint8_t CTRL_SIZE = 3;
 const uint8_t INFO_SIZE = 12;
 const uint8_t MAIN_SIZE = 9;
+const uint8_t MOUNT_ERR_SIZE = 3;
 const uint8_t MOVE_AXES_SIZE = 4;
 const uint8_t MOVE_AXIS_SIZE = 2;
 const uint8_t MOVE_X_SIZE = 4;
@@ -348,6 +351,11 @@ LiquidLine MAIN_LINES[MAIN_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Resume"),
     LiquidLine(MENU_COL, FIRST_ROW, "Stop  "),
     LiquidLine(MENU_COL, FIRST_ROW, "About CNC     ")};
+
+LiquidLine MOUNT_ERR_LINES[MOUNT_ERR_SIZE] = {
+    LiquidLine(FIRST_COL, FIRST_ROW, "SD failed to mount!"),
+    LiquidLine(FIRST_COL, THIRD_ROW, "-Insert if absent"),
+    LiquidLine(FIRST_COL, FOURTH_ROW, "-Format to FAT16/32")};
 
 LiquidLine MOVE_AXES_LINES[MOVE_AXES_SIZE] = {
     LiquidLine(MENU_COL, FIRST_ROW, "Prepare"),
@@ -523,6 +531,8 @@ LiquidScreen *getScreen(ScreenID screenIndex)
     return &MAIN_MENU_SCREEN;
   case ScreenID::MOTION:
     return &MOTION_MENU_SCREEN;
+  case ScreenID::MOUNT_ERR:
+    return &MOUNT_ERR_SCREEN;
   case ScreenID::MOVE_AXES:
     return &MOVE_AXES_MENU_SCREEN;
   case ScreenID::MOVE_AXIS:
@@ -1788,6 +1798,14 @@ void setupMainScreen()
   MAIN_MENU_SCREEN.hide(MainLine::STOP_PROC_OP);
 }
 
+void setupMountErrorScreen()
+{
+  for (uint8_t i = 0; i < MOUNT_ERR_SIZE; i++)
+  {
+    MOUNT_ERR_SCREEN.append(i, MOUNT_ERR_LINES[i]);
+  }
+}
+
 void setupMoveAxesScreen()
 {
   for (uint8_t i = 0; i < MOVE_AXES_SIZE; i++)
@@ -1915,16 +1933,17 @@ void setup()
   lcd.createChar(LCD_GAUGE_RIGHT, GAUGE_RIGHT);
   lcd.createChar(LCD_GAUGE_EMPTY, GAUGE_EMPTY);
 
-  Serial.print("SD ");
-
   if (!SD.begin(SS))
   {
-    Serial.println("failed to mount!");
-    // TODO display in LCD
+    Serial.println("SD failed to mount!");
+    setupMountErrorScreen();
+    display(MOUNT_ERR);
     return;
   }
-
-  Serial.println("mount!");
+  else
+  {
+    Serial.println("SD mount!");
+  }
 
   laser.setMaxPower(DEFAULT_LSR_POWER);
 
