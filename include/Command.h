@@ -2,7 +2,6 @@
 
 #include <Cartesian.h>
 #include <Laser.h>
-#include <Status.h>
 
 enum AutohomeState
 {
@@ -15,90 +14,72 @@ enum AutohomeState
 class Command
 {
 public:
-    virtual void complete() = 0;
+    virtual bool continues() = 0;
 
     virtual void execute() = 0;
-
-    virtual Status status() { return _currentStatus; };
 
     virtual void setup() = 0;
 
     virtual void stop() = 0;
-
-protected:
-    Status _currentStatus;
 };
 
-class InstantCommand : public Command
-{
-public:
-    void complete() override{};
-
-    Status status() override { return Status::COMPLETED; };
-
-    void setup() override{};
-
-    void stop() override{};
-};
-
-class MoveCommand : public Command
-{
-public:
-    MoveCommand(Cartesian &cartesian, Laser &laser, float feedRate, uint8_t power);
-
-    void complete() override;
-
-    void stop() override;
-
-protected:
-    Cartesian &_cartesian;
-    Laser &_laser;
-    float _feedRate;
-    uint8_t _power;
-};
-
-class ArcMoveCommand : public MoveCommand
+class ArcMoveCommand : public Command
 {
 public:
     ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, float feedRate, uint8_t power);
+
+    bool continues() override;
 
     void execute() override;
 
     void setup() override;
 
+    void stop() override;
+
 private:
+    Cartesian &_cartesian;
+    Laser &_laser;
     float _x;
     float _y;
     float _z;
     float _i;
     float _j;
     float _k;
+    float _feedRate;
+    uint8_t _power;
 };
 
-class AutohomeCommand : public MoveCommand
+class AutohomeCommand : public Command
 {
 public:
     AutohomeCommand(Cartesian &cartesian, Laser &laser);
 
+    bool continues() override;
+
     void execute() override;
 
     void setup() override;
+
+    void stop() override;
 
 private:
     Cartesian &_cartesian;
     Laser &_laser;
-    Axis _currentAxis;
     AutohomeState _currentState;
 };
 
-class CircleMoveCommand : public MoveCommand
+class CircleMoveCommand : public Command
 {
 public:
     CircleMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float r, float feedRate, uint8_t power);
 
+    bool continues() override;
+
     void execute() override;
 
     void setup() override;
+
+    void stop() override;
 
 private:
     Cartesian &_cartesian;
@@ -116,7 +97,7 @@ class DwellCommand : public Command
 public:
     DwellCommand(unsigned long remainTime);
 
-    void complete() override;
+    bool continues() override;
 
     void execute() override;
 
@@ -127,21 +108,25 @@ public:
 private:
     unsigned long _remainTime; // ms
     unsigned long _startTime;
+    unsigned long _timeElapsed;
 };
 
-class LinearMoveCommand : public MoveCommand
+class LinearMoveCommand : public Command
 {
 public:
     LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float feedRate, uint8_t power);
+
+    bool continues() override;
 
     void execute() override;
 
     void setup() override;
 
+    void stop() override;
+
 private:
     Cartesian &_cartesian;
     Laser &_laser;
-    Axis _currentAxis;
     float _x;
     float _y;
     float _z;
@@ -149,49 +134,73 @@ private:
     uint8_t _power;
 };
 
-class SetPositioningCommand : public InstantCommand
+class SetPositioningCommand : public Command
 {
 public:
     SetPositioningCommand(Cartesian &cartesian, Positioning pos);
 
+    bool continues() override;
+
     void execute() override;
+
+    void setup() override{};
+
+    void stop() override{};
 
 private:
     Cartesian &_cartesian;
-    Positioning _pos;
+    Positioning _positioning;
 };
 
-class SetUnitCommand : public InstantCommand
+class SetLengthUnitCommand : public Command
 {
 public:
-    SetUnitCommand(Cartesian &cartesian, Unit unit);
+    SetLengthUnitCommand(Cartesian &cartesian, LengthUnit unit);
+
+    bool continues() override;
 
     void execute() override;
 
+    void setup() override{};
+
+    void stop() override{};
+
 private:
     Cartesian &_cartesian;
-    Unit _unit;
+    LengthUnit _unit;
 };
 
-class LaserOnCommand : public InstantCommand
+class LaserOnCommand : public Command
 {
 public:
     LaserOnCommand(Laser &laser, uint8_t power, InlineMode mode);
 
+    bool continues() override;
+
     void execute() override;
 
+    void setup() override{};
+
+    void stop() override{};
+
 private:
+    Laser &_laser;
     InlineMode _mode;
     uint8_t _power;
-    Laser &_laser;
 };
 
-class LaserOffCommand : public InstantCommand
+class LaserOffCommand : public Command
 {
 public:
     LaserOffCommand(Laser &laser);
 
+    bool continues() override;
+
     void execute() override;
+
+    void setup() override{};
+
+    void stop() override{};
 
 private:
     Laser &_laser;

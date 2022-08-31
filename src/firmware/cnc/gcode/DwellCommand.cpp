@@ -5,29 +5,29 @@ DwellCommand::DwellCommand(unsigned long remainTime)
     this->_remainTime = remainTime;
 }
 
-void DwellCommand::execute()
+bool DwellCommand::continues()
 {
-    if (millis() - _startTime > _remainTime)
-    {
-        complete();
-    }
+    return _remainTime > 0 ? _timeElapsed < _remainTime : false;
 }
 
-void DwellCommand::complete()
+void DwellCommand::execute()
 {
-    _remainTime = 0;
-    _currentStatus = Status::COMPLETED;
+    _timeElapsed = millis() - _startTime;
 }
 
 void DwellCommand::setup()
 {
     _startTime = millis();
-    _currentStatus = Status::CONTINUE;
 }
 
 void DwellCommand::stop()
 {
-    _remainTime = 0;
-
-    _currentStatus = Status::STOPPED;
+    if(_timeElapsed >= _remainTime)
+    {
+        _remainTime = 0; 
+    }
+    else
+    {
+        _remainTime -= _timeElapsed;
+    }
 }

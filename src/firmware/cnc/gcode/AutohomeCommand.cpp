@@ -1,21 +1,41 @@
 #include <Command.h>
 
-AutohomeCommand::AutohomeCommand(Cartesian &cartesian, Laser &laser) : _cartesian(cartesian), _laser(laser), MoveCommand(cartesian, laser, 0, 0)
+AutohomeCommand::AutohomeCommand(Cartesian &cartesian, Laser &laser) : _cartesian(cartesian), _laser(laser)
 {
+}
+
+bool AutohomeCommand::continues()
+{
+    Axis axis = _cartesian.getCurrentAxis();
+
+    if (axis == Axis::Z && _currentState == AutohomeState::OFFSET)
+    {
+        StepperMotorPtr stepper = _cartesian.getStepperMotor(axis);
+
+        if (stepper)
+        {
+            return stepper->distanceTo() != 0;
+        }
+
+        return false;
+    }
+
+    return true;
 }
 
 void AutohomeCommand::execute()
 {
-    StepperMotorPtr stepper = _cartesian.getStepperMotor(_currentAxis);
-    LimitSwitchPtr sw = _cartesian.getLimitSwitch(_currentAxis);
+    Axis axis = _cartesian.getCurrentAxis();
+
+    StepperMotorPtr stepper = _cartesian.getStepperMotor(axis);
+    LimitSwitchPtr sw = _cartesian.getLimitSwitch(axis);
 
     if (!stepper || !sw)
     {
-        _currentStatus = Status::ERROR;
         return;
     }
 
-    float dimension = _cartesian.getDimension(_currentAxis);
+    float dimension = _cartesian.getDimension(axis);
 
     switch (_currentState)
     {
@@ -27,7 +47,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(_currentAxis, Unit::MILLIMETER, dimension);
+            _cartesian.setTargetPosition(axis, dimension);
             _currentState = AutohomeState::RELEASE;
 
             stepper->pause(500);
@@ -43,7 +63,7 @@ void AutohomeCommand::execute()
         {
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(_currentAxis, Unit::MILLIMETER, -dimension);
+            _cartesian.setTargetPosition(axis, -dimension);
             _currentState = AutohomeState::RETURN;
 
             stepper->pause(500);
@@ -57,11 +77,11 @@ void AutohomeCommand::execute()
 
         if (sw->wasPressed() || sw->isPressed())
         {
-            float homeOffset = _cartesian.getHomeOffset(_currentAxis);
+            float homeOffset = _cartesian.getHomeOffset(axis);
 
             stepper->setCurrentPosition(0);
 
-            _cartesian.setTargetPosition(_currentAxis, Unit::MILLIMETER, homeOffset);
+            _cartesian.setTargetPosition(axis, homeOffset);
             _currentState = AutohomeState::OFFSET;
 
             stepper->pause(500);
@@ -75,14 +95,14 @@ void AutohomeCommand::execute()
 
         if (stepper->distanceTo() == 0)
         {
-            if (_currentAxis == Axis::Z)
+            if (axis == Axis::Z)
             {
-                complete();
                 return;
             }
 
-            _currentAxis++;
-            _cartesian.setTargetPosition(_currentAxis, Unit::MILLIMETER, -dimension);
+            axis++;
+            _cartesian.setCurrentAxis(axis);
+            _cartesian.setTargetPosition(axis, -dimension);
             _currentState = AutohomeState::PRESS;
         }
 
@@ -95,13 +115,17 @@ void AutohomeCommand::execute()
 
 void AutohomeCommand::setup()
 {
-    long dimension = _cartesian.getDimension(_currentAxis);
-
+    _cartesian.enableSteppers();
+    _cartesian.setCurrentAxis(Axis::X);
     _laser.turnOff();
 
-    _currentAxis = Axis::X;
     _currentState = AutohomeState::PRESS;
-    _currentStatus = Status::CONTINUE;
 
-    _cartesian.setTargetPosition(_currentAxis, Unit::MILLIMETER, -dimension);
+    long dimension = _cartesian.getDimension(Axis::X);
+
+    _cartesian.setTargetPosition(Axis::X, -dimension);
+}
+
+void AutohomeCommand::stop()
+{
 }

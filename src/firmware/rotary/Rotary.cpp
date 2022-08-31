@@ -11,6 +11,7 @@ Rotary::Rotary(uint8_t clkPin, uint8_t dtPin, uint8_t swPin)
 
   this->_lowerBound = 0;
   this->_upperBound = 1;
+  this->_interval = 1;
 
   pinMode(_clkPin, INPUT);
   pinMode(_dtPin, INPUT);

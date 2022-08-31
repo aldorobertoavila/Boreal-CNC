@@ -1,55 +1,98 @@
 #pragma once
 
-#include <Status.h>
+#include <Command.h>
 
 #include <Arduino.h>
+#include <ESP32Time.h>
 #include <FS.h>
 
-#include <ESP32Time.h>
+#include <queue>
+
+#define CMD_QUEUE_SIZE 10
 
 using namespace std;
 
 using RTC = ESP32Time;
 
+using CommandPtr = std::shared_ptr<Command>;
+using CommandQueue = queue<CommandPtr>;
+
 class Process
 {
 public:
-    Process(fs::FS &fs, RTC &rtc, String path, String filename);
+    virtual bool continues();
 
-    unsigned long getLastStopTime();
+    virtual uint8_t getPrevProgress() = 0;
 
-    uint8_t getPreviousProgress();
+    virtual tm getPrevTime() = 0;
 
-    String getPreviousTime();
+    virtual const char *getName() = 0;
 
-    uint8_t getProgress();
+    virtual uint8_t getProgress() = 0;
 
-    String getTime();
+    virtual tm getTime() = 0;
 
-    String getName();
+    virtual bool isPaused() = 0;
 
-    String readNextLine();
+    virtual bool isStopped() = 0;
 
-    void pause();
+    virtual void nextCommand(CommandQueue &commands) = 0;
 
-    void resume();
+    virtual void pause() = 0;
 
-    void setup();
+    virtual void setup() = 0;
 
-    Status status();
+    virtual void stop() = 0;
 
-    void stop();
-
-private:
-    fs::FS &_fs;
-    fs::File _file;
-    RTC _rtc;
-    String _filename;
-    String _path;
-    String _previousTime;
-    Status _status;
-    String _time;
-    uint8_t _previousProgress;
+protected:
+    uint8_t _prevProgress;
     uint8_t _progress;
-    unsigned long _lastStopTime;
+    tm _prevTime;
+    tm _time;
+    bool _paused;
+    bool _stopped;
+};
+
+using ProcessPtr = std::shared_ptr<Process>;
+using ProcessQueue = queue<ProcessPtr>;
+
+class TFProcess : public Process
+{
+public:
+    TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, const char *path, const char *filename);
+
+    bool continues() override;
+
+    uint8_t getPrevProgress() override;
+
+    tm getPrevTime() override;
+
+    const char *getName() override;
+
+    uint8_t getProgress() override;
+
+    tm getTime() override;
+
+    bool isPaused() override;
+
+    bool isStopped() override;
+
+    void nextCommand(CommandQueue &commands) override;
+
+    void pause() override;
+
+    void setup() override;
+
+    void stop() override;
+
+protected:
+    float parseNumber(String &line, char arg, float val);
+
+    Cartesian &_cartesian;
+    fs::FS &_fs;
+    Laser &_laser;
+    RTC &_rtc;
+    fs::File _file;
+    const char *_filename;
+    const char *_path;
 };

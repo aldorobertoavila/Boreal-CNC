@@ -1,9 +1,15 @@
 #pragma once
 
-enum Unit
+enum LengthUnit
 {
     CENTIMETER,
     MILLIMETER,
     MICROMETER,
     INCH
+};
+
+enum TimeUnit
+{
+    SECOND,
+    MINUTE
 };

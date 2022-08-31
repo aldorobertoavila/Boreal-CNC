@@ -1,6 +1,6 @@
 #include <Command.h>
 
-ArcMoveCommand::ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, float feedRate, uint8_t power) : MoveCommand(cartesian, laser, feedRate, power)
+ArcMoveCommand::ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, float y, float z, float i, float j, float k, float feedRate, uint8_t power) : _cartesian(cartesian), _laser(laser)
 {
     this->_x = x;
     this->_y = y;
@@ -8,21 +8,23 @@ ArcMoveCommand::ArcMoveCommand(Cartesian &cartesian, Laser &laser, float x, floa
     this->_i = i;
     this->_j = j;
     this->_k = k;
+    this->_feedRate = feedRate;
+    this->_power = power;
+}
+
+bool ArcMoveCommand::continues()
+{
+    return false;
 }
 
 void ArcMoveCommand::execute()
 {
-    complete();
 }
 
 void ArcMoveCommand::setup()
 {
-    _currentStatus = Status::CONTINUE;
+}
 
-    if (_laser.getInlineMode() == InlineMode::OFF)
-    {
-        _laser.setPower(_power);
-    }
-
-    _laser.turnOn();
+void ArcMoveCommand::stop()
+{
 }

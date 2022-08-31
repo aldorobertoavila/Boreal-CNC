@@ -11,8 +11,8 @@
 
 using namespace std;
 
-using LimitSwitchPtr = std::shared_ptr<LimitSwitch>;
-using StepperMotorPtr = std::shared_ptr<StepperMotor>;
+using LimitSwitchPtr = LimitSwitch *;
+using StepperMotorPtr = StepperMotor *;
 
 class Cartesian
 {
@@ -31,6 +31,8 @@ public:
 
     float getDimension(Axis axis);
 
+    float getFeedRate(Axis axis);
+
     float getHomeOffset(Axis axis);
 
     float getMaxSpeed(Axis axis);
@@ -38,6 +40,8 @@ public:
     LimitSwitchPtr getLimitSwitch(Axis axis);
 
     Positioning getPositioning();
+
+    float getPrevTargetPosition(Axis axis);
 
     Resolution getResolution(Axis axis);
 
@@ -47,57 +51,69 @@ public:
 
     float getTargetPosition(Axis axis);
 
-    Unit getUnit();
+    LengthUnit getLengthUnit();
 
-    void setAcceleration(Axis axis, Unit unit, float u);
+    void setAcceleration(Axis axis, float u);
+
+    void setAcceleration(Axis axis, LengthUnit unit, float u);
 
     void setCurrentAxis(Axis axis);
 
     void setDimension(Axis axis, float u);
 
+    void setFeedRate(Axis axis, float u);
+
+    void setFeedRate(Axis axis, LengthUnit lengthUnit, TimeUnit timeUnit, float u);
+
     void setHomeOffset(Axis axis, float u);
 
-    void setMaxSpeed(Axis axis, Unit unit, float u);
+    void setMaxSpeed(Axis axis, float u);
+
+    void setMaxSpeed(Axis axis, LengthUnit unit, float u);
 
     void setMinStepsPerMillimeter(Axis axis, long steps);
 
-    void setLimitSwitch(Axis axis, LimitSwitchPtr sw);
+    void setLimitSwitch(Axis axis, LimitSwitch &sw);
 
     void setPositioning(Positioning positioning);
 
     void setResolution(Axis axis, Resolution res);
 
-    void setStepperMotor(Axis axis, StepperMotorPtr stepper);
+    void setStepperMotor(Axis axis, StepperMotor &stepper);
 
     void setStepsPerMillimeter(Axis axis, long steps);
 
     void setTargetPosition(Axis axis, float u);
 
-    void setTargetPosition(Axis axis, Unit unit, float u);
+    void setTargetPosition(Axis axis, LengthUnit unit, float u);
 
-    void setTargetPosition(float x, float y, float z);
+    void setLengthUnit(LengthUnit unit);
 
-    void setUnit(Unit unit);
+    long toSteps(Axis axis, LengthUnit unit, float u);
 
-    long toSteps(Axis axis, Unit unit, float u);
-
-    float toUnit(Axis axis, Unit unit);
+    float toLengthUnit(Axis axis, LengthUnit unit, long steps);
 
 protected:
     Resolution toResolution(float factor);
+
+    float toLengthUnit(LengthUnit from, LengthUnit to, float u);
+
+    float toTimeUnit(TimeUnit from, TimeUnit to, float u);
 
 private:
     StepperMotorPtr _steppers[AXES];
     LimitSwitchPtr _switches[AXES];
     Resolution _resolutions[AXES];
     Positioning _positioning;
-    Unit _unit;
+    LengthUnit _unit;
     Axis _currentAxis;
     float _acceleration[AXES];
     float _dimensions[AXES];
+    float _feedRates[AXES];
     float _homeOffset[AXES];
-    float _maxSpeed[AXES];
-    float _targetPosition[AXES];
+    float _maxSpeeds[AXES];
+    float _prevTargetPos[AXES];
+    float _targetPos[AXES];
     long _minStepsPerMillimeter[AXES];
     long _stepsPerMillimeter[AXES];
 };
