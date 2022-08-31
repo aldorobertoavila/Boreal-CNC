@@ -59,6 +59,8 @@ ShiftRegisterMotorInterface::ShiftRegisterMotorInterface(SPIClass &spi, uint8_t 
     this->_csPin = csPin;
     this->_spi = spi;
 
+    pinMode(_csPin, OUTPUT);
+
     bitWrite(_dataIn, ENABLE_OUT, LOW);
     bitWrite(_dataIn, RESET_OUT, HIGH);
     bitWrite(_dataIn, SLEEP_OUT, HIGH);

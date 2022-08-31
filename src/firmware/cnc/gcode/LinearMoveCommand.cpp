@@ -11,7 +11,6 @@ LinearMoveCommand::LinearMoveCommand(Cartesian &cartesian, Laser &laser, float x
 
 bool LinearMoveCommand::continues()
 {
-    /*
     StepperMotorPtr stepperX = _cartesian.getStepperMotor(Axis::X);
     StepperMotorPtr stepperY = _cartesian.getStepperMotor(Axis::Y);
     StepperMotorPtr stepperZ = _cartesian.getStepperMotor(Axis::Z);
@@ -22,14 +21,10 @@ bool LinearMoveCommand::continues()
     }
 
     return stepperX->distanceTo() != 0 || stepperY->distanceTo() != 0 || stepperZ->distanceTo() != 0;
-    */
-
-   return false;
 }
 
 void LinearMoveCommand::execute()
 {
-    /*
     Axis axis = _cartesian.getCurrentAxis();
 
     StepperMotorPtr stepper = _cartesian.getStepperMotor(axis);
@@ -43,12 +38,11 @@ void LinearMoveCommand::execute()
         axis++;
         _cartesian.setCurrentAxis(axis);
     }
-    */
 }
 
 void LinearMoveCommand::setup()
 {
-    /*
+    _cartesian.enableSteppers();
     _cartesian.setCurrentAxis(Axis::X);
 
     if (_x > 0)
@@ -90,15 +84,12 @@ void LinearMoveCommand::setup()
     {
         _laser.setPower(_power);
     }
-    */
 }
 
 void LinearMoveCommand::stop()
 {
-    /*
     if (_power > 0 && _laser.isTurnOn())
     {
         _laser.turnOff();
     }
-    */
 }

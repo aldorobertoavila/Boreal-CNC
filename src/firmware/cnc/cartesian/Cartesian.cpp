@@ -12,7 +12,7 @@ void Cartesian::disableSteppers()
     {
         StepperMotorPtr stepper = getStepperMotor(static_cast<Axis>(i));
 
-        if (stepper)
+        if (stepper && stepper->isEnable())
         {
             stepper->disable();
         }
@@ -25,7 +25,7 @@ void Cartesian::enableSteppers()
     {
         StepperMotorPtr stepper = getStepperMotor(static_cast<Axis>(i));
 
-        if (stepper)
+        if (stepper && !stepper->isEnable())
         {
             stepper->enable();
         }
