@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Command.h>
+#include <Rotary.h>
 
 #include <Arduino.h>
 #include <ESP32Time.h>
@@ -20,21 +21,36 @@ using CommandQueue = queue<CommandPtr>;
 class Process
 {
 public:
+    virtual uint8_t getPrevProgress()
+    {
+        return _prevProgress;
+    }
+
+    virtual tm getPrevTime()
+    {
+        return _prevTime;
+    }
+
+    virtual tm getTime()
+    {
+        return _time;
+    }
+
+    virtual bool isPaused()
+    {
+        return _paused;
+    }
+
+    virtual bool isStopped() 
+    {
+        return _stopped;
+    }
+
     virtual bool continues();
-
-    virtual uint8_t getPrevProgress() = 0;
-
-    virtual tm getPrevTime() = 0;
-
-    virtual const char *getName() = 0;
 
     virtual uint8_t getProgress() = 0;
 
-    virtual tm getTime() = 0;
-
-    virtual bool isPaused() = 0;
-
-    virtual bool isStopped() = 0;
+    virtual const char *getName() = 0;
 
     virtual void nextCommand(CommandQueue &commands) = 0;
 
@@ -63,19 +79,11 @@ public:
 
     bool continues() override;
 
-    uint8_t getPrevProgress() override;
-
-    tm getPrevTime() override;
-
     const char *getName() override;
 
     uint8_t getProgress() override;
 
     tm getTime() override;
-
-    bool isPaused() override;
-
-    bool isStopped() override;
 
     void nextCommand(CommandQueue &commands) override;
 
@@ -89,10 +97,39 @@ protected:
     float parseNumber(String &line, char arg, float val);
 
     Cartesian &_cartesian;
-    fs::FS &_fs;
     Laser &_laser;
     RTC &_rtc;
+    fs::FS &_fs;
     fs::File _file;
     const char *_filename;
     const char *_path;
+};
+
+class CommandProcess : public Process
+{
+public:
+    CommandProcess(const char *name, Cartesian &cartesian, RTC &rtc, CommandPtr command);
+
+    bool continues() override;
+
+    const char *getName() override;
+
+    uint8_t getProgress() override;
+
+    tm getTime() override;
+
+    void nextCommand(CommandQueue &commands) override;
+
+    void pause() override{};
+
+    void setup() override;
+
+    void stop() override;
+
+protected:
+    Cartesian &_cartesian;
+    RTC &_rtc;
+    CommandPtr _command;
+    const char *_name;
+    bool _done;
 };

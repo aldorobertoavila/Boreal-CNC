@@ -229,13 +229,19 @@ LiquidMenu STEPS_MENU_SCREEN(lcd, LCD_COLS, LCD_ROWS);
 char INTERNAL_FILE_EXT = '~';
 
 const char *EMPTY_ROW = "                    ";
+
+const char *AUTOHOME_MSG = "Autohome";
+const char *MOVE_X_MSG = "Move X";
+const char *MOVE_Y_MSG = "Move Y";
+const char *MOVE_Z_MSG = "Move Z";
 const char *READY_MSG = "Ready!";
+
 const char *SYSTEM_VOLUME = "System Volume Information";
 const char *GCODE_FILE_EXT = ".gcode";
 
 const uint16_t DEFAULT_FEED_RATE = 3000;
 const uint16_t DEFAULT_LSR_POWER = 100;
-const uint16_t FEED_RATE_MOVE_AXIS = 1200;
+const uint16_t MOVE_AXIS_FEED_RATE = 1200;
 
 const float DEFAULT_ACCEL_X = 40; // Stepper X default mm/s^2
 const float DEFAULT_ACCEL_Y = 40; // Stepper Y default mm/s^2
@@ -738,6 +744,7 @@ void displayAboutScreen()
 void displayInfoScreen()
 {
   rotary.setBoundaries(0, 1);
+  rotary.setInterval(1);
   rotary.setPosition(0);
 
   if (proc)
@@ -907,6 +914,7 @@ void displayAccelerationScreen(bool clear)
 
 void displayMoveAxisScreen(bool clear)
 {
+  /*
   Axis axis = cartesian.getCurrentAxis();
   LengthUnit unit = cartesian.getLengthUnit();
 
@@ -961,8 +969,11 @@ void displayMoveAxisScreen(bool clear)
       break;
     }
   }
+  */
 
+  /*
   LiquidLine *moveAxisValue = &MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_VAL];
+
   float pos = cartesian.getTargetPosition(axis);
 
   clearBuffer(moveAxisBuffer, MOVE_AXIS_VAL_SIZE);
@@ -981,6 +992,7 @@ void displayMoveAxisScreen(bool clear)
   {
     moveAxisValue->displayText(lcd);
   }
+  */
 }
 
 void displayLaserScreen(bool clear)
@@ -1097,9 +1109,85 @@ void displayVelocityScreen(bool clear)
   }
 }
 
+void onFinished(bool clear, Icon icon)
+{
+  MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::STOP_PROC_OP);
+
+  MAIN_MENU_SCREEN.unhide(MainLine::PREP_MENU_RTN);
+  MAIN_MENU_SCREEN.unhide(MainLine::START_FROM_TF_OP);
+
+  proc->stop();
+
+  if (clear)
+  {
+    displayInfoScreen();
+  }
+
+  displayIcon(icon);
+}
+
+void onCompleted()
+{
+  onFinished(false, Icon::CHECK);
+}
+
+void onDeleted()
+{
+  cmd = nullptr;
+  proc = nullptr;
+
+  while (!commands.empty())
+  {
+    commands.pop();
+  }
+}
+
+void onPaused()
+{
+  MAIN_MENU_SCREEN.unhide(MainLine::RESUME_PROC_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
+
+  proc->pause();
+
+  displayInfoScreen();
+  displayIcon(Icon::PAUSE);
+}
+
+void onPushed()
+{
+  MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN.unhide(MainLine::STOP_PROC_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::PREP_MENU_RTN);
+  MAIN_MENU_SCREEN.hide(MainLine::START_FROM_TF_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
+
+  displayInfoScreen();
+}
+
+void onResume()
+{
+  MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
+  MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
+
+  proc->setup();
+
+  displayInfoScreen();
+  displayIcon(Icon::PLAY);
+}
+
+void onStopped(bool clear)
+{
+  onFinished(clear, Icon::STOP);
+}
+
 void autohome()
 {
-  commands.push(std::make_shared<AutohomeCommand>(cartesian, laser));
+  CommandPtr command = std::make_shared<AutohomeCommand>(cartesian, laser);
+
+  processes.push(std::make_shared<CommandProcess>(AUTOHOME_MSG, cartesian, rtc, command));
+  onPushed();
 }
 
 void setHomeOffsets()
@@ -1120,72 +1208,6 @@ void setHomeOffsets()
       cartesian.setHomeOffset(axis, u);
     }
   }
-}
-
-void storeSettings()
-{
-}
-
-void terminateProcess(bool clear, Icon icon)
-{
-  MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainLine::STOP_PROC_OP);
-
-  MAIN_MENU_SCREEN.unhide(MainLine::PREP_MENU_RTN);
-  MAIN_MENU_SCREEN.unhide(MainLine::START_FROM_TF_OP);
-
-  proc->stop();
-
-  if (clear)
-  {
-    displayInfoScreen();
-  }
-
-  displayIcon(icon);
-}
-
-void completeProcess()
-{
-  terminateProcess(false, Icon::CHECK);
-}
-
-void deleteProcess()
-{
-  cmd = nullptr;
-  proc = nullptr;
-
-  while (!commands.empty())
-  {
-    commands.pop();
-  }
-}
-
-void pauseProcess()
-{
-  MAIN_MENU_SCREEN.unhide(MainLine::RESUME_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainLine::PAUSE_PROC_OP);
-
-  proc->pause();
-
-  displayInfoScreen();
-  displayIcon(Icon::PAUSE);
-}
-
-void resumeProcess()
-{
-  MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
-  MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
-
-  proc->setup();
-
-  displayInfoScreen();
-  displayIcon(Icon::PLAY);
-}
-
-void stopProcess(bool clear)
-{
-  terminateProcess(clear, Icon::STOP);
 }
 
 void aboutScreenClicked()
@@ -1230,13 +1252,7 @@ void cardScreenClicked()
 
     processes.push(std::make_shared<TFProcess>(SD, rtc, cartesian, laser, pathBuffer, filename));
 
-    MAIN_MENU_SCREEN.unhide(MainLine::PAUSE_PROC_OP);
-    MAIN_MENU_SCREEN.unhide(MainLine::STOP_PROC_OP);
-    MAIN_MENU_SCREEN.hide(MainLine::PREP_MENU_RTN);
-    MAIN_MENU_SCREEN.hide(MainLine::START_FROM_TF_OP);
-    MAIN_MENU_SCREEN.hide(MainLine::RESUME_PROC_OP);
-
-    displayInfoScreen();
+    onPushed();
   }
   else
   {
@@ -1256,10 +1272,6 @@ void ctrlScreenClicked()
     break;
   case 2:
     displayLaserScreen(true);
-    break;
-  case 3:
-    storeSettings();
-    displayInfoScreen();
     break;
   default:
     break;
@@ -1296,15 +1308,15 @@ void mainScreenClicked()
     break;
 
   case MainLine::PAUSE_PROC_OP:
-    pauseProcess();
+    onPaused();
     break;
 
   case MainLine::RESUME_PROC_OP:
-    resumeProcess();
+    onResume();
     break;
 
   case MainLine::STOP_PROC_OP:
-    stopProcess(true);
+    onStopped(true);
     break;
 
   case MainLine::ABOUT_CNC_OP:
@@ -1360,22 +1372,24 @@ void moveAxesScreenClicked()
 
 void moveAxisScreenClicked()
 {
-  rotary.setInterval(1);
+  int u = rotary.getPosition() / 1000;
+  ProcessPtr process;
 
   switch (cartesian.getCurrentAxis())
   {
   case Axis::X:
-    displayMenu(ScreenID::MOVE_X, true);
+    process = std::make_shared<CommandProcess>(MOVE_X_MSG, cartesian, rtc, std::make_shared<LinearMoveCommand>(cartesian, laser, u, 0, 0, MOVE_AXIS_FEED_RATE, 0));
     break;
-
   case Axis::Y:
-    displayMenu(ScreenID::MOVE_Y, true);
+    process = std::make_shared<CommandProcess>(MOVE_Y_MSG, cartesian, rtc, std::make_shared<LinearMoveCommand>(cartesian, laser, 0, u, 0, MOVE_AXIS_FEED_RATE, 0));
     break;
-
   case Axis::Z:
-    displayMenu(ScreenID::MOVE_Z, true);
+    process = std::make_shared<CommandProcess>(MOVE_Z_MSG, cartesian, rtc, std::make_shared<LinearMoveCommand>(cartesian, laser, 0, 0, u, MOVE_AXIS_FEED_RATE, 0));
     break;
   }
+
+  // processes.push(process);
+  displayInfoScreen();
 }
 
 void moveXScreenClicked()
@@ -1384,8 +1398,6 @@ void moveXScreenClicked()
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
-    cartesian.setCurrentAxis(Axis::X);
-    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::X);
@@ -1477,7 +1489,6 @@ void prepScreenClicked()
     break;
   case 2:
     autohome();
-    displayInfoScreen();
     break;
   case 3:
     setHomeOffsets();
@@ -1633,26 +1644,6 @@ void clickCallback()
 
 void moveAxis(Rotation direction)
 {
-  float u = cartesian.getLengthUnit() == LengthUnit::MICROMETER ? 100 : 1; // move 0.1mm if unit micron
-
-  if (direction == Rotation::COUNTERCLOCKWISE)
-  {
-    u = -u;
-  }
-
-  switch (cartesian.getCurrentAxis())
-  {
-  case Axis::X:
-    // commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, u, 0, 0, FEED_RATE_MOVE_AXIS, 0));
-    break;
-  case Axis::Y:
-    // commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, 0, u, 0, FEED_RATE_MOVE_AXIS, 0));
-    break;
-  case Axis::Z:
-    // commands.push(std::make_shared<LinearMoveCommand>(cartesian, laser, 0, 0, u, FEED_RATE_MOVE_AXIS, 0));
-    break;
-  }
-
   displayMoveAxisScreen(false);
 }
 
@@ -2036,8 +2027,8 @@ void loop()
     // stop if process is not available & there's no commands left
     if (!proc->continues() && commands.empty() && !cmd)
     {
-      completeProcess();
-      deleteProcess();
+      onCompleted();
+      onDeleted();
       delay(PROCESS_EXPIRED);
       displayInfoScreen();
       return;
@@ -2045,8 +2036,8 @@ void loop()
 
     if (proc->isStopped())
     {
-      stopProcess(false);
-      deleteProcess();
+      onStopped(false);
+      onDeleted();
       delay(PROCESS_EXPIRED);
       displayInfoScreen();
       return;

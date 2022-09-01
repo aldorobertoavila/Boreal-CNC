@@ -84,13 +84,6 @@ void LinearMoveCommand::setup()
     {
         _laser.setPower(_power);
     }
-
-    Serial.print("Stepper X");
-    Serial.println(_x);
-    Serial.print("Stepper Y");
-    Serial.println(_y);
-    Serial.print("Stepper Z");
-    Serial.println(_z);
 }
 
 void LinearMoveCommand::stop()

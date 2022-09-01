@@ -1,6 +1,6 @@
 #include <Process.h>
 
-TFProcess::TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, const char *path, const char *filename) : _fs(fs), _rtc(rtc), _cartesian(cartesian), _laser(laser)
+TFProcess::TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, const char *path, const char *filename) : _cartesian(cartesian), _fs(fs), _laser(laser), _rtc(rtc)
 {
     this->_filename = filename;
     this->_path = path;
@@ -12,16 +12,6 @@ TFProcess::TFProcess(fs::FS &fs, RTC &rtc, Cartesian &cartesian, Laser &laser, c
 bool TFProcess::continues()
 {
     return _file && _file.available();
-}
-
-uint8_t TFProcess::getPrevProgress()
-{
-    return _prevProgress;
-}
-
-tm TFProcess::getPrevTime()
-{
-    return _prevTime;
 }
 
 const char *TFProcess::getName()
@@ -50,16 +40,6 @@ tm TFProcess::getTime()
     return _time;
 }
 
-bool TFProcess::isPaused()
-{
-    return _paused;
-}
-
-bool TFProcess::isStopped()
-{
-    return _stopped;
-}
-
 float TFProcess::parseNumber(String &line, char arg, float val)
 {
     int index = line.indexOf(arg);
@@ -69,16 +49,10 @@ float TFProcess::parseNumber(String &line, char arg, float val)
         return val;
     }
 
-    // Serial.println(line);
-
     String number = line.substring(index + 1);
-
-    // Serial.println(number);
 
     index = number.indexOf(' ');
     number = number.substring(0, index);
-
-    // Serial.println(number);
 
     return number.toFloat();
 }
@@ -173,7 +147,7 @@ void TFProcess::nextCommand(CommandQueue &commands)
     case 90:
         commands.push(std::make_shared<SetPositioningCommand>(_cartesian, Positioning::ABSOLUTE));
         break;
-    
+
     case 91:
         commands.push(std::make_shared<SetPositioningCommand>(_cartesian, Positioning::RELATIVE));
         break;
@@ -217,7 +191,7 @@ void TFProcess::setup()
         return;
     }
 
-    if(_paused)
+    if (_paused)
     {
         _paused = false;
     }
@@ -243,4 +217,62 @@ void TFProcess::stop()
     _laser.setInlineMode(InlineMode::OFF);
     _laser.turnOff();
     _stopped = true;
+}
+
+CommandProcess::CommandProcess(const char *name, Cartesian &cartesian, RTC &rtc, CommandPtr command) : _cartesian(cartesian), _rtc(rtc)
+{
+    this->_command = command;
+    this->_name = name;
+
+    this->_paused = false;
+    this->_stopped = false;
+    this->_done = false;
+}
+
+bool CommandProcess::continues()
+{
+    return !_done;
+}
+
+const char *CommandProcess::getName()
+{
+    return _name;
+}
+
+uint8_t CommandProcess::getProgress()
+{
+    return 0;
+}
+
+tm CommandProcess::getTime()
+{
+    _time = _rtc.getTimeStruct();
+    return _time;
+}
+
+void CommandProcess::nextCommand(CommandQueue &commands)
+{
+    if (_stopped || _paused)
+    {
+        return;
+    }
+
+    if (_done)
+    {
+        return;
+    }
+
+    commands.push(_command);
+    _done = true;
+}
+
+void CommandProcess::setup()
+{
+    _rtc.setTime();
+}
+
+void CommandProcess::stop()
+{
+    _cartesian.setCurrentAxis(Axis::X);
+    _cartesian.setLengthUnit(LengthUnit::MILLIMETER);
 }
