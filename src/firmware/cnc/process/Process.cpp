@@ -212,6 +212,9 @@ void TFProcess::stop()
         _file.close();
     }
 
+    _cartesian.setCurrentAxis(Axis::X);
+    _cartesian.setLengthUnit(LengthUnit::MILLIMETER);
+    _cartesian.setPositioning(Positioning::ABSOLUTE);
     _cartesian.disableSteppers();
 
     _laser.setInlineMode(InlineMode::OFF);
@@ -275,4 +278,5 @@ void CommandProcess::stop()
 {
     _cartesian.setCurrentAxis(Axis::X);
     _cartesian.setLengthUnit(LengthUnit::MILLIMETER);
+    _cartesian.setPositioning(Positioning::ABSOLUTE);
 }

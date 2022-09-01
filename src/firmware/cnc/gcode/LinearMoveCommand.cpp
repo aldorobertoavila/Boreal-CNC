@@ -45,34 +45,48 @@ void LinearMoveCommand::setup()
     _cartesian.enableSteppers();
     _cartesian.setCurrentAxis(Axis::X);
 
-    if (_x > 0)
+    Positioning pos = _cartesian.getPositioning();
+
+    if (pos == Positioning::ABSOLUTE)
     {
-        if (_feedRate > 0)
+        if (_x > 0)
+        {
+            _cartesian.setTargetPosition(Axis::X, _x);
+        }
+
+        if (_y > 0)
+        {
+            _cartesian.setTargetPosition(Axis::Y, _y);
+        }
+
+        if (_z > 0)
+        {
+            _cartesian.setTargetPosition(Axis::Z, _z);
+        }
+    }
+    else
+    {
+        _cartesian.setTargetPosition(Axis::X, _x);
+        _cartesian.setTargetPosition(Axis::Y, _y);
+        _cartesian.setTargetPosition(Axis::Z, _z);
+    }
+
+    if (_feedRate > 0)
+    {
+        if (_x != 0)
         {
             _cartesian.setFeedRate(Axis::X, _feedRate);
         }
 
-        _cartesian.setTargetPosition(Axis::X, _x);
-    }
-
-    if (_y > 0)
-    {
-        if (_feedRate > 0)
+        if (_y != 0)
         {
             _cartesian.setFeedRate(Axis::Y, _feedRate);
         }
 
-        _cartesian.setTargetPosition(Axis::Y, _y);
-    }
-
-    if (_z > 0)
-    {
-        if (_feedRate > 0)
+        if (_z != 0)
         {
             _cartesian.setFeedRate(Axis::Z, _feedRate);
         }
-
-        _cartesian.setTargetPosition(Axis::Z, _z);
     }
 
     if (!_laser.isTurnOn() && _laser.getInlineMode() == ON)

@@ -62,7 +62,7 @@
 #define PROG_VAL_COL 16
 
 #define ACCEL_VAL_SIZE 4
-#define MOVE_AXIS_VAL_SIZE 4
+#define MOVE_AXIS_VAL_SIZE 7
 #define POS_VAL_SIZE 5
 #define POWER_VAL_SIZE 4
 #define PROC_TIME_SIZE 6
@@ -914,7 +914,6 @@ void displayAccelerationScreen(bool clear)
 
 void displayMoveAxisScreen(bool clear)
 {
-  /*
   Axis axis = cartesian.getCurrentAxis();
   LengthUnit unit = cartesian.getLengthUnit();
 
@@ -968,21 +967,22 @@ void displayMoveAxisScreen(bool clear)
       }
       break;
     }
-  }
-  */
 
-  /*
+    float dim = cartesian.getDimension(axis);
+
+    rotary.setBoundaries(-dim, dim);
+    rotary.setInterval(unit == LengthUnit::MICROMETER ? 100 : 1);
+    rotary.setPosition(0);
+  }
+
   LiquidLine *moveAxisValue = &MOVE_AXIS_LINES[MoveAxisLine::MOVE_AXIS_VAL];
 
-  float pos = cartesian.getTargetPosition(axis);
+  float pos = rotary.getPosition();
+  float u = cartesian.toLengthUnit(unit, LengthUnit::MILLIMETER, pos);
 
   clearBuffer(moveAxisBuffer, MOVE_AXIS_VAL_SIZE);
-  snprintf(moveAxisBuffer, MOVE_AXIS_VAL_SIZE, "%-3.1f", pos / 1000);
+  snprintf(moveAxisBuffer, MOVE_AXIS_VAL_SIZE, "%.01f   ", u);
   moveAxisValue->setText(moveAxisBuffer);
-
-  rotary.setBoundaries(-400, 400);
-  rotary.setPosition(pos);
-  rotary.setInterval(100);
 
   if (clear)
   {
@@ -992,7 +992,6 @@ void displayMoveAxisScreen(bool clear)
   {
     moveAxisValue->displayText(lcd);
   }
-  */
 }
 
 void displayLaserScreen(bool clear)
@@ -1372,7 +1371,7 @@ void moveAxesScreenClicked()
 
 void moveAxisScreenClicked()
 {
-  int u = rotary.getPosition() / 1000;
+  long u = rotary.getPosition();
   ProcessPtr process;
 
   switch (cartesian.getCurrentAxis())
@@ -1388,7 +1387,7 @@ void moveAxisScreenClicked()
     break;
   }
 
-  // processes.push(process);
+  processes.push(process);
   displayInfoScreen();
 }
 
@@ -1402,16 +1401,19 @@ void moveXScreenClicked()
   case 1:
     cartesian.setCurrentAxis(Axis::X);
     cartesian.setLengthUnit(LengthUnit::CENTIMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::X);
     cartesian.setLengthUnit(LengthUnit::MILLIMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::X);
     cartesian.setLengthUnit(LengthUnit::MICROMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   default:
@@ -1425,22 +1427,23 @@ void moveYScreenClicked()
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
-    cartesian.setCurrentAxis(Axis::X);
-    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::Y);
     cartesian.setLengthUnit(LengthUnit::CENTIMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Y);
     cartesian.setLengthUnit(LengthUnit::MILLIMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Y);
     cartesian.setLengthUnit(LengthUnit::MICROMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   default:
@@ -1454,22 +1457,23 @@ void moveZScreenClicked()
   {
   case 0:
     displayMenu(ScreenID::MOVE_AXES, true);
-    cartesian.setCurrentAxis(Axis::X);
-    cartesian.setLengthUnit(LengthUnit::MILLIMETER);
     break;
   case 1:
     cartesian.setCurrentAxis(Axis::Z);
     cartesian.setLengthUnit(LengthUnit::CENTIMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   case 2:
     cartesian.setCurrentAxis(Axis::Z);
     cartesian.setLengthUnit(LengthUnit::MILLIMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   case 3:
     cartesian.setCurrentAxis(Axis::Z);
     cartesian.setLengthUnit(LengthUnit::MICROMETER);
+    cartesian.setPositioning(Positioning::RELATIVE);
     displayMoveAxisScreen(true);
     break;
   default:

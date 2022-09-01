@@ -93,10 +93,10 @@ public:
 
     float toLengthUnit(Axis axis, LengthUnit unit, long steps);
 
+    float toLengthUnit(LengthUnit from, LengthUnit to, float u);
+
 protected:
     Resolution toResolution(float factor);
-
-    float toLengthUnit(LengthUnit from, LengthUnit to, float u);
 
     float toTimeUnit(TimeUnit from, TimeUnit to, float u);
 
