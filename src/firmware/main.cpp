@@ -79,7 +79,7 @@
 #define EN_DT_PIN 2
 #define EN_SW_PIN 17
 
-#define LSR_PIN 32 // TODO: use GPIO 13
+#define LSR_PIN 13
 
 #define SW_X_PIN 36
 #define SW_Y_PIN 39
@@ -1757,7 +1757,7 @@ void setupCardScreen()
     }
     else
     {
-      CARD_LINES[i] = LiquidLine(MENU_COL, FIRST_ROW, "Main");
+      CARD_LINES[i] = LiquidLine(MENU_COL, FIRST_ROW, "Main             ");
     }
 
     CARD_MENU_SCREEN.append(i, CARD_LINES[i]);
